@@ -12,7 +12,7 @@ HMatrix::HMatrix(int nProc_, int level_)
   //  partitions as the number of leaves.
   // ================================================
   // number of partitions
-  this->nPart = pow(2, level);
+  //  this->nPart = pow(2, level);
   
   // assume evenly distributed across machines
   assert( nPart % nProc == 0);
@@ -29,19 +29,19 @@ HMatrix::init
   assert( b.rows() >  0 && b.cols() >  0 );
 
   // populate data
-  uTree.init( nProc, U, ctx, runtime );
-  vTree.init( nProc, V, ctx, runtime );
-  dBlck.init( nProc, U, V, D, ctx, runtime );
+  uTree.init( nProc, U );
+  vTree.init( nProc, V );
+  dBlck.init( nProc, U, V, D );
 
   // data partition
-  uTree.partition( level );
-  vTree.partition( level );
-  dBlck.partition( level );
+  uTree.partition( level, ctx, runtime );
+  vTree.partition( level, ctx, runtime );
+  dBlck.partition( level, ctx, runtime );
     
 #ifdef DEBUG
-  U.display("U");
-  V.display("V");
-  K.display("K");
+  uTree.display("U");
+  vTree.display("V");
+  dBlck.display("K");
 #endif
 }
 
@@ -78,10 +78,13 @@ Matrix HMatrix::solve
     LMatrix VTd; gemmRed( 1.0, V, d, 0.0, VTd, ctx, runtime );
 
     // form and solve the small linear system
-    LMatrix S = LMatrix::Identity( VTu.rows() + VTd.rows(), ctx, runtime);
+    VTu.node_solve( VTd, ctx, runtime );
+
+    /*LMatrix S = LMatrix::Identity( VTu.rows() + VTd.rows(), ctx, runtime);
     S.set_off_diagonal_blcks( VTu, ctx, runtime );
     S.solve( VTd.coarse(), ctx, runtime );
-    
+    */
+      
     // broadcast operation
     // d -= u * VTd
     gemmBro( -1.0, u, VTd, 1.0, d, ctx, runtime );

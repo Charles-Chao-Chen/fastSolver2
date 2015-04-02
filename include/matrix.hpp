@@ -3,6 +3,8 @@
 
 #include "vector.h"
 
+class Vector;
+
 class Matrix {
 public:
   Matrix();
@@ -17,6 +19,9 @@ public:
 
   // print the values on screen
   void display();
+
+  // destructor
+  void destroy();
   
 private:
   int nPart;
