@@ -42,16 +42,14 @@ void top_level_task(const Task *task,
   //  so the solve should be accurate (with round-off errors)
   // ========================================================
   // number of levels for the (balanced) binary tree
-  int level = 4;
+  int level = 2;
   HMatrix Ah( nProc, level );
-  Ah.init( b, U, V, D );
-  Ah.solve();
+  Ah.init( U, V, D );
+  Matrix x = Ah.solve( b );
 
-  /*
-  // direct solve
-  Matrix A = U*V.transpose() + D;
-  Vector x = A/Rhs;
-  */
+  // check solution
+  Vector r = b - (U * (V.T() * x) + D .* x);
+  std::cout << "Residual: " << r.norm() << std::endl;
 }
 
 int main(int argc, char *argv[]) {
