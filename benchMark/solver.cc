@@ -48,7 +48,7 @@ void top_level_task(const Task *task,
   Matrix x = Ah.solve( b );
 
   // check solution
-  Vector r = b - (U * (V.T() * x) + D .* x);
+  Vector r = b - ( U * (V.T() * x) + D.multiply(x) );
   std::cout << "Residual: " << r.norm() << std::endl;
 }
 

@@ -28,19 +28,15 @@ HMatrix::init
   assert( D.rows() == D.cols() );
   assert( b.rows() >  0 && b.cols() >  0 );
 
-  this->U.init( nProc, U, ctx, runtime );
+  // populate data
+  uTree.init( nProc, U, ctx, runtime );
+  vTree.init( nProc, V, ctx, runtime );
+  dBlck.init( nProc, U, V, D, ctx, runtime );
 
-  for (int i=0; i<level; i++) {
-    LMatrix temp;
-    temp.init( nProc, nPart, V, ctx, runtime );
-    this->V.push_back();
-  }
-  
-  this->K.init( nProc, nPart, U, V, D, ctx, runtime );
-
-  U.tree_partition( level );
-  for (int i=0; i<level; i++) {this->V[i].partition(i);}
-  K.partition( level );
+  // data partition
+  uTree.partition( level );
+  vTree.partition( level );
+  dBlck.partition( level );
     
 #ifdef DEBUG
   U.display("U");
@@ -49,12 +45,14 @@ HMatrix::init
 #endif
 }
 
-HMatrix::solve(const Matrix& b, Context ctx, HighLevelRuntime* runtime) {
+Matrix HMatrix::solve
+(const Matrix& b, Context ctx, HighLevelRuntime* runtime) {
 
-  U.init_rhs(b);
+  // initialize the right hand side
+  uTree.init_rhs(b);
   
-  // leaf solve: U = K \ U
-  K.solve( U.leaf(), ctx, runtime );
+  // leaf solve: U = dense \ U
+  dBlck.solve( uTree.leaf(), ctx, runtime );
   
   // upward pass:
   // --             --  --    --     --      --
@@ -71,14 +69,21 @@ HMatrix::solve(const Matrix& b, Context ctx, HighLevelRuntime* runtime) {
   
   for (int i=Level; i>0; i--) {
 
+    LMatrix  V = vTree.level(i);
+    LMatrix& u = uTree.level(i).uMat;
+    LMatrix& d = uTree.level(i).dMat;
+    
     // reduction operation
-    LMatrix VTu = V[i].T() * U.part_u[i];
-    LMatrix VTd = V[i].T() * U.part_d[i];
+    LMatrix VTu; gemmRed( 1.0, V, u, 0.0, VTu, ctx, runtime );
+    LMatrix VTd; gemmRed( 1.0, V, d, 0.0, VTd, ctx, runtime );
 
     // form and solve the small linear system
-    VTu.form_square().solve( VTd.coarse(), ctx, runtime );
+    LMatrix S = LMatrix::Identity( VTu.rows() + VTd.rows(), ctx, runtime);
+    S.set_off_diagonal_blcks( VTu, ctx, runtime );
+    S.solve( VTd.coarse(), ctx, runtime );
     
     // broadcast operation
-    U.part_d[i] -= U.part_u[i] * VTd;
+    // d -= u * VTd
+    gemmBro( -1.0, u, VTd, 1.0, d, ctx, runtime );
   }
 }
