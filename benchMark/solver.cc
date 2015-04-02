@@ -41,14 +41,10 @@ void top_level_task(const Task *task,
   //  where the off-diagonal blocks are exactly low rank,
   //  so the solve should be accurate (with round-off errors)
   // ========================================================
-  // number of cores on each machine
-  int nCore = 8;
   // number of levels for the (balanced) binary tree
   int level = 4;
-  // assume one leaf every core for now
-  assert( pow(2,level) == nProc*nCore );
-  HMatrix Ah( nProc, nCore, level );
-  Ah.init( Rhs, U, V, D );
+  HMatrix Ah( nProc, level );
+  Ah.init( b, U, V, D );
   Ah.solve();
 
   /*

@@ -147,22 +147,13 @@ $(GPU_RUNTIME_OBJS): %.o : %.cu
 clean:
 	@$(RM) -rf $(OUTFILE) $(GEN_OBJS)  \
 	*~  \
+	../include/*~ ../src/*~ \
 
 cleanall:
 	@$(RM) -rf $(ALL_OBJS) *~
 
 tar:	
 	tar cvfz fastSolver.tgz
-
-r1n:
-	mpiexec -n 1 \
-	-env MV2_SHOW_CPU_BINDING=1 \
-	-env MV2_ENABLE_AFFINITY=0  \
-	-env GASNET_IB_SPAWNER=mpi  \
-	-env GASNET_BACKTRACE=1     \
-	./main -cat legion_prof -level 5 \
-	-ll:cpu 12 -ll:csize 30000 \
-	-hl:sched 8192 -hl:window 8192
 
 r2n:
 	mpiexec -n 2 -ppn 1	\
@@ -178,16 +169,6 @@ r2n:
 	-ll:csize  30000 	\
 	-hl:sched  8192  	\
 	-hl:window 8192
-
-r4n:
-	mpiexec -n 4 -ppn 1	\
-	-env MV2_SHOW_CPU_BINDING=1 \
-	-env MV2_ENABLE_AFFINITY=0  \
-	-env GASNET_IB_SPAWNER=mpi  \
-	-env GASNET_BACKTRACE=1     \
-	./main -level 5 \
-	-ll:cpu 12 -ll:csize 10000 \
-	-hl:sched 8192 -hl:window 8192
 
 # --- legion profile ---
 

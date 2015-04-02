@@ -8,7 +8,7 @@ class HMatrix {
 public:
   HMatrix();
 
-  HMatrix(int nProc);
+  HMatrix(int nProc, int level);
   
   // build U * V' + D, with the right hand side b
   void init
@@ -21,9 +21,10 @@ public:
 private:
   int nProc;
   int nPart;
-  LMatrix U;
-  LMatrix V;
-  LMatrix K;
+  int level;
+  UMatrices U;
+  VMatrices V;
+  DenseBlocks K;
 };
 
 #endif
