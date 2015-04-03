@@ -43,7 +43,7 @@ void LMatrix::solve
 // | V0'*u0   I    |  | eta1 |     | V0'*d0 |
 // --             --  --    --     --      --
 //  VTd will be overwritten by eta
-// Note VTd should have been reordered (in gemmRed)
+// Note VTd needs to be reordered,
 //  as shown in the above picture.
 void LMatrix::node_solve
 (LMatrix& b, Context ctx, HighLevelRuntime* runtime, bool wait) {
@@ -84,26 +84,63 @@ void LMatrix::solve
   }
 }
 
-// compute A.transpose() * B
+// compute A.transpose() * B and reduce to C
 void LMatrix::gemmRed // static method
 (double alpha, const LMatrix& A, const LMatrix& B,
  double beta,  const LMatrix& C,
- Context ctx, HighLevelRuntime *runtime, bool wait=true) {
+ Context ctx, HighLevelRuntime *runtime, bool wait) {
 
   // A and B have the same number of partition
   assert( A.num_partition() == B.num_partition() );
 
   LogicalPartition APart = A.logical_partition();
   LogicalPartition BPart = B.logical_partition();
-  
+  LogicalPartition CPart = B.logical_partition();
+    
   Domain domain = A.color_domain();
   GemmRedTask::Args args(alpha, beta);
   TaskArgument tArgs(&args, sizeof(args));
   GemmRedTask launcher(domain, tArgs, ArgumentMap());
   
-  RegionRequirement A(APart, 0,      READ_ONLY, EXCLUSIVE, region);
-  RegionRequirement B(BPart, 0,      READ_ONLY, EXCLUSIVE, region);
-  RegionRequirement C(BPart, SWITCH, REDOP_ADD, EXCLUSIVE, region);
+  RegionRequirement A(APart, 0,        READ_ONLY, EXCLUSIVE, region);
+  RegionRequirement B(BPart, 0,        READ_ONLY, EXCLUSIVE, region);
+  RegionRequirement C(CPart, DIVISION, REDOP_ADD, EXCLUSIVE, region);
+  A.add_field(FIDLDID_V);
+  B.add_field(FIDLDID_V);
+  C.add_field(FIDLDID_V);
+  launcher.add_region_requirement(A);
+  launcher.add_region_requirement(B);
+  launcher.add_region_requirement(C);
+  
+  FutureMap fm = runtime->execute_index_space(ctx, launcher);
+
+  if(wait) {
+    std::cout << "Wait for solve..." << std::endl;
+    fm.wait_all_results();
+  }  
+}
+  
+// compute A * B; broadcast B
+void LMatrix::gemmBro // static method
+(double alpha, const LMatrix& A, const LMatrix& B,
+ double beta,  const LMatrix& C,
+ Context ctx, HighLevelRuntime *runtime, bool wait) {
+
+  // A and C have the same number of partition
+  assert( A.num_partition() == C.num_partition() );
+
+  LogicalPartition APart = A.logical_partition();
+  LogicalPartition BPart = B.logical_partition();
+  LogicalPartition CPart = B.logical_partition();
+    
+  Domain domain = A.color_domain();
+  GemmRedTask::Args args(alpha, beta);
+  TaskArgument tArgs(&args, sizeof(args));
+  GemmRedTask launcher(domain, tArgs, ArgumentMap());
+  
+  RegionRequirement A(APart, 0,        READ_ONLY,  EXCLUSIVE, region);
+  RegionRequirement B(BPart, DIVISION, READ_ONLY,  EXCLUSIVE, region);
+  RegionRequirement C(CPart, 0,        READ_WRITE, EXCLUSIVE, region);
   A.add_field(FIDLDID_V);
   B.add_field(FIDLDID_V);
   C.add_field(FIDLDID_V);

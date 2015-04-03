@@ -74,8 +74,8 @@ Matrix HMatrix::solve
     LMatrix& d = uTree.level(i).dMat;
     
     // reduction operation
-    LMatrix VTu; gemmRed( 1.0, V, u, 0.0, VTu, ctx, runtime );
-    LMatrix VTd; gemmRed( 1.0, V, d, 0.0, VTd, ctx, runtime );
+    LMatrix VTu; LMatrix::gemmRed( 1.0, V, u, 0.0, VTu, ctx, runtime );
+    LMatrix VTd; LMatrix::gemmRed( 1.0, V, d, 0.0, VTd, ctx, runtime );
 
     // form and solve the small linear system
     VTu.node_solve( VTd, ctx, runtime );
@@ -87,6 +87,6 @@ Matrix HMatrix::solve
       
     // broadcast operation
     // d -= u * VTd
-    gemmBro( -1.0, u, VTd, 1.0, d, ctx, runtime );
+    LMatrix::gemmBro( -1.0, u, VTd, 1.0, d, ctx, runtime );
   }
 }
