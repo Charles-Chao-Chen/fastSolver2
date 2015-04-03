@@ -50,7 +50,22 @@ public:
   // print the values on screen
   void display(const std::string&, Context, HighLevelRuntime*);
 
+  // gemm reduction
+  static void gemmRed
+  (double, const LMatrix&, const LMatrix&,
+   double, const LMatrix&, Context, HighLevelRuntime*, bool wait=true);
+  
+  // gemm broadcast
+  static void gemmBro
+  (double, const LMatrix&, const LMatrix&,
+   double, const LMatrix&, Context, HighLevelRuntime*, bool wait=true);
+  
 private:
+
+  // helper for solve() and node_solve()
+  template <typename SolveType>
+  void solve(LMatrix&, Context, HighLevelRuntime*, bool wait=true);
+  
   //int mRows, mCols, mblock;
   int nProc;
   int nPart;
