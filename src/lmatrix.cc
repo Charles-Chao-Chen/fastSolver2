@@ -12,6 +12,8 @@ int LMatrix::num_partition() const {return nPart;}
 
 Domain LMatrix::color_domain() const {return domain;}
 
+LogicalRegion LMatrix::logical_region() const {return region;}
+
 LogicalPartition LMatrix::logical_partition() const {return lpart;}
 
 void LMatrix::init
