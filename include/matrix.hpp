@@ -2,12 +2,14 @@
 #define _matrix_hpp
 
 #include <vector>
+#include <string>
 
 class Vector {
 public:
   Vector();
   Vector(int N);
-
+  ~Vector();
+  
   // number of rows
   int rows() const;
 
@@ -25,17 +27,22 @@ public:
   Vector multiply(const Vector&);
   friend Vector operator + (const Vector&, const Vector&);
   friend Vector operator - (const Vector&, const Vector&);
+
+  // for debugging purpose
+  void display(const std::string&) const;
   
 private:
   int nPart;
   int mRows;
-  std::vector<int> seeds;
+  double *data;
+  std::vector<long> seeds;
 };
 
 class Matrix {
 public:
   Matrix();
   Matrix(int nRow, int nCol);
+  ~Matrix();
 
   // consistant with eigen routines
   int rows() const;
@@ -45,6 +52,10 @@ public:
   // the partition is horizontal
   void rand(int nPart);
 
+  // return the entry / reference
+  double operator() (int i, int j) const;
+  double& operator() (int i, int j);
+
   // return the matrix transpose
   Matrix T();
 
@@ -52,16 +63,14 @@ public:
   friend Vector operator * (const Matrix&, const Vector&);
   
   // print the values on screen
-  void display() const;
-
-  // destructor
-  void destroy();
+  void display(const std::string&) const;
   
 private:
   int nPart;
   int mRows;
   int mCols;
-  std::vector<int> seeds;
+  double *data;
+  std::vector<long> seeds;
 };
 
 #endif

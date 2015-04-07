@@ -22,8 +22,6 @@ public:
 	      MappingTagID tag = 0);
 
   static void register_tasks(void);
-
-private:
   
   static int TASKID;
   
