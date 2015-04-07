@@ -5,8 +5,9 @@ void UTree::init(int nProc_, const Matrix& UMat_) {
   this->UMat  = UMat_;
 }
 
-void UTree::init_rhs(const Vector& Rhs) {
-  level(0).dMat.init(Rhs);
+void UTree::init_rhs
+(const Vector& Rhs, Context ctx, HighLevelRuntime *runtime) {
+  level(0).dMat.init(Rhs, ctx, runtime);
 }
 
 Vector UTree::rhs() {

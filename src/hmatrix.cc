@@ -52,7 +52,7 @@ Vector HMatrix::solve
   assert( b.rows() > 0 );
   
   // initialize the right hand side
-  uTree.init_rhs(b);
+  uTree.init_rhs(b, ctx, runtime);
   
   // leaf solve: U = dense \ U
   kTree.solve( uTree.leaf(), ctx, runtime );

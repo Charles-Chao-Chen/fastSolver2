@@ -1,27 +1,28 @@
 #include "lmatrix.hpp"
-#include "macros.hpp"
+#include "macros.hpp" // for FIELDID_V
+#include "solver_tasks.hpp"
 
 LMatrix::LMatrix() {}
 
-int LMatrix::num_partition() {
-  return nPart;
-}
+int LMatrix::rows() const {return mRows;}
 
-LogicalPartition LMatrix::logical_partition() {
-  return runtime->get_logical_partition(ctx, region, ipart);
-}
+int LMatrix::cols() const {return mCols;}
 
-Domain LMatrix::color_domain() {
-  return color_domain;
-}
+int LMatrix::num_partition() const {return nPart;}
+
+Domain LMatrix::color_domain() const {return domain;}
+
+LogicalPartition LMatrix::logical_partition() const {return lpart;}
 
 void LMatrix::init
-(const int nProc_, const Matrix& U_, const Matrix& V_, const Vector& D_) {
+(const Vector& Rhs, Context ctx, HighLevelRuntime *runtime, bool wait) {
+  assert( this->rows() == Rhs.rows() );
+  
+}
 
-  this->nProc = nProc_;
-  this->U = U_;
-  this->V = V_;
-  this->D = D_;  
+void LMatrix::create
+(const Matrix& Rhs, Context ctx, HighLevelRuntime *runtime, bool wait) {
+  
 }
 
 // solve A x = b for each partition
@@ -30,8 +31,11 @@ void LMatrix::solve
 (LMatrix& b, Context ctx, HighLevelRuntime* runtime, bool wait) {
 
   // check if the matrix is square
-  if ( this->rows() != this->cols() )
-    Error("not a square matrix!");
+  assert( this->rows() == this->cols() );
+
+  // check if the dimensions match
+  assert( this->rows() == b.rows() );
+  assert( b.cols() > 0 );
 
   solve<LeafSolveTask>(b, ctx, runtime, wait);
 }
@@ -50,10 +54,10 @@ void LMatrix::node_solve
 
   // pair up neighbor cells
   this->coarse_partition();
-  b   ->coarse_partition();
+  b.coarse_partition();
   solve<NodeSolveTask>(b, ctx, runtime, wait);
   // recover the original partition
-  b   ->fine_partition();
+  b.fine_partition();
 }
 
 template <typename SolveTask>
@@ -65,16 +69,18 @@ void LMatrix::solve
 
   LogicalPartition APart = this->logical_partition();
   LogicalPartition bPart = b.logical_partition();
-  
+
+  LogicalRegion ARegion = this->logical_region();
+  LogicalRegion bRegion = b.logical_region();
+
   Domain domain = this->color_domain();
   SolveTask launcher(domain, TaskArgument(), ArgumentMap());
-  
-  RegionRequirement A(APart, 0, READ_ONLY,  EXCLUSIVE, region);
-  RegionRequirement b(bPart, 0, READ_WRTIE, EXCLUSIVE, region);
-  A.add_field(FIDLDID_V);
-  b.add_field(FIDLDID_V);
-  launcher.add_region_requirement(A);
-  launcher.add_region_requirement(b);
+  RegionRequirement AReq(APart, 0, READ_ONLY,  EXCLUSIVE, ARegion);
+  RegionRequirement bReq(bPart, 0, READ_WRITE, EXCLUSIVE, bRegion);
+  AReq.add_field(FIELDID_V);
+  bReq.add_field(FIELDID_V);
+  launcher.add_region_requirement(AReq);
+  launcher.add_region_requirement(bReq);
   
   FutureMap fm = runtime->execute_index_space(ctx, launcher);
 
@@ -95,22 +101,26 @@ void LMatrix::gemmRed // static method
 
   LogicalPartition APart = A.logical_partition();
   LogicalPartition BPart = B.logical_partition();
-  LogicalPartition CPart = B.logical_partition();
-    
+  LogicalPartition CPart = C.logical_partition();
+
+  LogicalRegion AReg = A.logical_region();
+  LogicalRegion BReg = B.logical_region();
+  LogicalRegion CReg = C.logical_region();
+      
   Domain domain = A.color_domain();
-  GemmRedTask::Args args(alpha, beta);
+  GemmRedTask::TaskArgs args = {alpha, beta};
   TaskArgument tArgs(&args, sizeof(args));
   GemmRedTask launcher(domain, tArgs, ArgumentMap());
   
-  RegionRequirement A(APart, 0,        READ_ONLY, EXCLUSIVE, region);
-  RegionRequirement B(BPart, 0,        READ_ONLY, EXCLUSIVE, region);
-  RegionRequirement C(CPart, DIVISION, REDOP_ADD, EXCLUSIVE, region);
-  A.add_field(FIDLDID_V);
-  B.add_field(FIDLDID_V);
-  C.add_field(FIDLDID_V);
-  launcher.add_region_requirement(A);
-  launcher.add_region_requirement(B);
-  launcher.add_region_requirement(C);
+  RegionRequirement AReq(APart, 0,           READ_ONLY, EXCLUSIVE, AReg);
+  RegionRequirement BReq(BPart, 0,           READ_ONLY, EXCLUSIVE, BReg);
+  RegionRequirement CReq(CPart, CONTRACTION, REDOP_ADD, EXCLUSIVE, CReg);
+  AReq.add_field(FIELDID_V);
+  BReq.add_field(FIELDID_V);
+  CReq.add_field(FIELDID_V);
+  launcher.add_region_requirement(AReq);
+  launcher.add_region_requirement(BReq);
+  launcher.add_region_requirement(CReq);
   
   FutureMap fm = runtime->execute_index_space(ctx, launcher);
 
@@ -129,24 +139,28 @@ void LMatrix::gemmBro // static method
   // A and C have the same number of partition
   assert( A.num_partition() == C.num_partition() );
 
-  LogicalPartition APart = A.logical_partition();
-  LogicalPartition BPart = B.logical_partition();
-  LogicalPartition CPart = B.logical_partition();
-    
+  LogicalPartition AP = A.logical_partition();
+  LogicalPartition BP = B.logical_partition();
+  LogicalPartition CP = C.logical_partition();
+
+  LogicalRegion AReg = A.logical_region();
+  LogicalRegion BReg = B.logical_region();
+  LogicalRegion CReg = C.logical_region();
+
   Domain domain = A.color_domain();
-  GemmRedTask::Args args(alpha, beta);
+  GemmBroTask::TaskArgs args = {alpha, beta};
   TaskArgument tArgs(&args, sizeof(args));
   GemmRedTask launcher(domain, tArgs, ArgumentMap());
   
-  RegionRequirement A(APart, 0,        READ_ONLY,  EXCLUSIVE, region);
-  RegionRequirement B(BPart, DIVISION, READ_ONLY,  EXCLUSIVE, region);
-  RegionRequirement C(CPart, 0,        READ_WRITE, EXCLUSIVE, region);
-  A.add_field(FIDLDID_V);
-  B.add_field(FIDLDID_V);
-  C.add_field(FIDLDID_V);
-  launcher.add_region_requirement(A);
-  launcher.add_region_requirement(B);
-  launcher.add_region_requirement(C);
+  RegionRequirement AReq(AP, 0,           READ_ONLY,  EXCLUSIVE, AReg);
+  RegionRequirement BReq(BP, CONTRACTION, READ_ONLY,  EXCLUSIVE, BReg);
+  RegionRequirement CReq(CP, 0,           READ_WRITE, EXCLUSIVE, CReg);
+  AReq.add_field(FIELDID_V);
+  BReq.add_field(FIELDID_V);
+  CReq.add_field(FIELDID_V);
+  launcher.add_region_requirement(AReq);
+  launcher.add_region_requirement(BReq);
+  launcher.add_region_requirement(CReq);
   
   FutureMap fm = runtime->execute_index_space(ctx, launcher);
 

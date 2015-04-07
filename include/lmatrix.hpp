@@ -14,8 +14,17 @@ class LMatrix {
 public:
   LMatrix();
 
+  int rows() const;
+  int cols() const;
+  int num_partition() const;
+  Domain color_domain() const;
+  LogicalRegion logical_region() const;
+  LogicalPartition logical_partition() const;
+  
   // for UTree::init_rhs()
-  void init(const Vector& Rhs);
+  void init
+  (const Vector& Rhs, Context, HighLevelRuntime*,
+   bool wait=WAIT_DEFAULT);
 
   // for UTree::rhs()
   Vector to_vector();
@@ -63,7 +72,18 @@ public:
   
 private:
 
-  //int mRows, mCols, mblock;
+  // helper functions
+  void coarse_partition();
+  void fine_partition();
+
+  template <typename T>
+  void solve
+  (LMatrix& b, Context ctx, HighLevelRuntime *runtime,
+   bool wait=WAIT_DEFAULT);
+
+  // private variables
+  int mRows, mCols;
+
   int nProc;
   int nPart;
     
@@ -73,7 +93,7 @@ private:
   Domain           domain;
   LogicalRegion    region;
   IndexPartition   ipart;
-  //LogicalPartition lpart;
+  LogicalPartition lpart;
 };
 
 #endif

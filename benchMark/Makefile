@@ -14,12 +14,16 @@ OUTFILE	:= 	solver
 
 # List all the application source files here
 GEN_SRC	:= 	solver.cc \
-		../src/hmatrix.cc ../src/tree.cc
+		../src/hmatrix.cc ../src/tree.cc \
+		../src/lmatrix.cc ../src/matrix.cc \
+		../src/tasks/leaf_solve.cc ../src/tasks/node_solve.cc \
+		../src/tasks/gemm_reduce.cc   ../src/tasks/gemm_broadcast.cc \
+		../src/tasks/projector.cc ../src/tasks/reduce_add.cc
 
 GEN_GPU_SRC	:=				# .cu files
 
 # You can modify these variables, some will be appended to by the runtime makefile
-INC_FLAGS	:= -I ../include/ 	
+INC_FLAGS	:= -I ../include/ -I ../include/tasks/
 CC_FLAGS	:=
 
 #-g  \
@@ -148,6 +152,7 @@ clean:
 	@$(RM) -rf $(OUTFILE) $(GEN_OBJS)  \
 	*~  \
 	../include/*~ ../src/*~ \
+	../include/tasks/*~ ../src/tasks/*~
 
 cleanall:
 	@$(RM) -rf $(ALL_OBJS) *~

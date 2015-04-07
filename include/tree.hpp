@@ -12,7 +12,7 @@ public:
   void init(int, const Matrix&);
   
   // initialize problem right hand side
-  void init_rhs(const Vector&);
+  void init_rhs(const Vector&, Context ctx, HighLevelRuntime *runtime);
 
   // return right hand side (overwritten by solution)
   Vector rhs();
