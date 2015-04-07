@@ -17,14 +17,76 @@ LogicalRegion LMatrix::logical_region() const {return region;}
 LogicalPartition LMatrix::logical_partition() const {return lpart;}
 
 void LMatrix::init
-(const Vector& Rhs, Context ctx, HighLevelRuntime *runtime, bool wait) {
-  assert( this->rows() == Rhs.rows() );
-  
+(const Vector& vec, Context ctx, HighLevelRuntime *runtime, bool wait) {
+  assert( this->rows() == vec.rows() );
+  assert( this->cols() == 1 );
+  assert( this->num_partition() == vec.num_partition() );
+  ArgumentMap argMap;
+  for (int i = 0; i < nPart; i++) {
+    long s = vec.rand_seeds(i);
+    argMap.set_point(DomainPoint::from_point<1>(Point<1>(i)),
+		     TaskArgument(&s,sizeof(s)));
+  }  
+  InitMatrixTask launcher(domain, TaskArgument(), argMap);
+  RegionRequirement req(lpart, 0, WRITE_DISCARD, EXCLUSIVE, region);
+  req.add_field(FIELDID_V);
+  launcher.add_region_requirement(req);
+  FutureMap fm = runtime->execute_index_space(ctx, launcher);
+    
+  if(wait) {
+    std::cout << "Wait for init..." << std::endl;
+    fm.wait_all_results();
+  }
 }
 
 void LMatrix::create
-(const Matrix& Rhs, Context ctx, HighLevelRuntime *runtime, bool wait) {
+(const Matrix& mat, Context ctx, HighLevelRuntime *runtime, bool wait) {
+  // create the region
+  assert( this->rows() == mat.rows() );
+  assert( this->cols() == mat.cols() );
+  assert( this->num_partition() == vec.num_partition() );
+  ArgumentMap argMap;
+  for (int i = 0; i < nPart; i++) {
+    long s = mat.rand_seeds(i);
+    argMap.set_point(DomainPoint::from_point<1>(Point<1>(i)),
+		     TaskArgument(&s,sizeof(s)));
+  }  
+  InitMatrixTask launcher(domain, TaskArgument(), argMap);
+  RegionRequirement req(lpart, 0, WRITE_DISCARD, EXCLUSIVE, region);
+  req.add_field(FIELDID_V);
+  launcher.add_region_requirement(req);
+  FutureMap fm = runtime->execute_index_space(ctx, launcher);
+    
+  if(wait) {
+    std::cout << "Wait for init..." << std::endl;
+    fm.wait_all_results();
+  }
+}
+
+Vector LMatrix::to_vector() {
+  // inline launcher
+}
+
+void LMatrix::create_dense_partition
+(int nPart, const Matrix& U, const Matrix& V, const Vector& D,
+ Context ctx, HighLevelRuntime *runtime, bool wait=WAIT_DEFAULT) {
+
+  // create region and nProc partition
+  // populate data
+  // create nPart partition
+}
+
+void LMatrix::partition
+(int level, Context ctx, HighLevelRuntime *runtime) {
   
+}
+
+void LMatrix::coarse_partition() {
+
+}
+
+void LMatrix::fine_partition() {
+
 }
 
 // solve A x = b for each partition
@@ -176,3 +238,8 @@ void LMatrix::gemmBro // static method
   }  
 }
   
+void LMatrix::display
+(const std::string& name, Context ctx, HighLevelRuntime *runtime) {
+
+
+}

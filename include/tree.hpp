@@ -37,8 +37,9 @@ private:
   int nProc;
   int nlevel;
   int nRhs;
-  Matrix UMat;
-  std::vector<UDMat> U;
+  Matrix  UMat;
+  LMatrix Rhs;
+  std::vector<UDMat> U;  
 };
 
 class VTree {

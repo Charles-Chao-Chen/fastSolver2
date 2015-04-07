@@ -35,7 +35,7 @@ public:
    bool wait=WAIT_DEFAULT);
 
   // for KTree::partition()
-  void create_dense_blocks
+  void create_dense_partition
   (int, const Matrix& U, const Matrix& V, const Vector& D,
    Context, HighLevelRuntime*, bool wait=WAIT_DEFAULT);
 

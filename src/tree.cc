@@ -7,11 +7,11 @@ void UTree::init(int nProc_, const Matrix& UMat_) {
 
 void UTree::init_rhs
 (const Vector& Rhs, Context ctx, HighLevelRuntime *runtime) {
-  level(0).dMat.init(Rhs, ctx, runtime);
+  this->Rhs.init(Rhs, ctx, runtime);
 }
 
 Vector UTree::rhs() {
-  return level(0).dMat.to_vector();
+  return Rhs.to_vector();
 }
 
 void UTree::partition
@@ -62,7 +62,7 @@ void KTree::init
 
 void KTree::partition
 (int level, Context ctx, HighLevelRuntime *runtime) {
-  K.create_dense_blocks(nlevel, UMat, VMat, DVec, ctx, runtime);
+  K.create_dense_partition(nlevel, UMat, VMat, DVec, ctx, runtime);
 }
 
 void KTree::solve
