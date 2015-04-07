@@ -72,9 +72,9 @@ Vector HMatrix::solve
   
   for (int i=level; i>0; i--) {
 
-    LMatrix V = vTree.level(i);
-    LMatrix u = uTree.level(i).uMat;
-    LMatrix d = uTree.level(i).dMat;
+    LMatrix& V = vTree.level(i);
+    LMatrix& u = uTree.level(i).uMat;
+    LMatrix& d = uTree.level(i).dMat;
     
     // reduction operation
     LMatrix VTu; LMatrix::gemmRed( 1.0, V, u, 0.0, VTu, ctx, runtime );

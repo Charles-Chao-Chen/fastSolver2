@@ -5,6 +5,19 @@ enum {
   FIELDID_V,
 };
 
-#define Error(msg) ;
+// error message
+#include <cstdlib> // for EXIT_FAILURE
+#include <cassert>
+#define Error(msg) {				\
+    std::cerr					\
+      << "Error in file : " << __FILE__		\
+      << ", function : " << __func__		\
+      << ", line : " << __LINE__		\
+      << "\n\t" << msg << std::endl;		\
+    assert(false);				\
+  }
+  //exit(EXIT_FAILURE)
+
+const bool WAIT_DEFAULT = true; // waiting for tasks
 
 #endif

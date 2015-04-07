@@ -20,11 +20,11 @@ void UTree::partition
 
 }
 
-LMatrix UTree::leaf() {
+LMatrix& UTree::leaf() {
   return level(nlevel-1).uMat;
 }
 
-UDMat UTree::level(int i) const {
+UTree::UDMat& UTree::level(int i) {
   assert( i > 0 );
   assert( i < nlevel );
   return U[i];
@@ -44,7 +44,7 @@ void VTree::partition
   V.partition(nlevel, ctx, runtime);
 }
 
-LMatrix VTree::level(int i) const {
+LMatrix& VTree::level(int i) {
   assert( i > 0 );
   assert( i < nlevel );
   return V;
@@ -56,15 +56,15 @@ void KTree::init
   this->nProc = nProc_;
   this->UMat  = UMat_;
   this->VMat  = VMat_;
-  this->KMat  = KVec_;
+  this->DVec  = DVec_;
 }
 
 void KTree::partition
 (int level, Context ctx, HighLevelRuntime *runtime) {
-  K.create_dense_blocks(nlevel, UMat, VMat, Dvec, ctx, runtime);
+  K.create_dense_blocks(nlevel, UMat, VMat, DVec, ctx, runtime);
 }
 
 void KTree::solve
-(const LMatrix& U, Context ctx, HighLevelRuntime *runtime) {
-  K.solve(U);
+(LMatrix& U, Context ctx, HighLevelRuntime *runtime) {
+  K.solve(U, ctx, runtime);
 }

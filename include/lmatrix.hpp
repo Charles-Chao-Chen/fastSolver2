@@ -6,6 +6,7 @@
 #include "legion.h"
 using namespace LegionRuntime::HighLevel;
 
+#include "macros.hpp" // for WAIT_DEFAULT
 #include "matrix.hpp"
 
 // legion matrix
@@ -20,35 +21,45 @@ public:
   Vector to_vector();
 
   // for VTree::copy()
-  void create(const Matrix& VMat, Context, HighLevelRuntime*);
+  void create
+  (const Matrix& VMat, Context, HighLevelRuntime*,
+   bool wait=WAIT_DEFAULT);
 
   // for KTree::partition()
   void create_dense_blocks
   (int, const Matrix& U, const Matrix& V, const Vector& D,
-   Context, HighLevelRuntime*);
-  
+   Context, HighLevelRuntime*, bool wait=WAIT_DEFAULT);
+
+  // uniform partition
   // for VTree::partition() and
   // for this->create_dense_blocks()
-  //  uniformly partition
   void partition(int level, Context, HighLevelRuntime*);
 
   // solve linear system
-  void solve(LMatrix&, Context, HighLevelRuntime*, bool wait=true);
+  // for KTree::solve()
+  void solve
+  (LMatrix&, Context, HighLevelRuntime*, bool wait=WAIT_DEFAULT);
 
-  void node_solve(LMatrix&, Context, HighLevelRuntime*, bool wait=true);
-  
+  // solve node system
+  // for HMatrix::solve()
+  void node_solve
+  (LMatrix&, Context, HighLevelRuntime*, bool wait=WAIT_DEFAULT);
+
   // print the values on screen
+  // for debugging
   void display(const std::string&, Context, HighLevelRuntime*);
 
   // gemm reduction
   static void gemmRed
   (double, const LMatrix&, const LMatrix&,
-   double, const LMatrix&, Context, HighLevelRuntime*, bool wait=true);
+   double, const LMatrix&, Context, HighLevelRuntime*,
+   bool wait=WAIT_DEFAULT);
   
   // gemm broadcast
   static void gemmBro
   (double, const LMatrix&, const LMatrix&,
-   double, const LMatrix&, Context, HighLevelRuntime*, bool wait=true);
+   double, const LMatrix&, Context, HighLevelRuntime*,
+   bool wait=WAIT_DEFAULT);
   
 private:
 
@@ -64,68 +75,5 @@ private:
   IndexPartition   ipart;
   //LogicalPartition lpart;
 };
-
-/*
-// legion matrix
-class LMatrix {
-public:
-  LMatrix();
-
-  // get the number of partitions
-  int num_partition();
-
-  // get the logical partition
-  LogicalPartition logical_partition();
-
-  // get the coloar domain
-  Domain color_domain();
-    
-  // initialize dense diagonal blocks
-  void init
-  (const int nProc, const Matrix& U, const Matrix& V, const Vector& D);
-
-  // partition the data
-  void partition(int level, Context, HighLevelRuntime*);
-
-  // solve linear system
-  void solve(LMatrix&, Context, HighLevelRuntime*, bool wait=true);
-
-  void node_solve(LMatrix&, Context, HighLevelRuntime*, bool wait=true);
-  
-  // print the values on screen
-  void display(const std::string&, Context, HighLevelRuntime*);
-
-  // gemm reduction
-  static void gemmRed
-  (double, const LMatrix&, const LMatrix&,
-   double, const LMatrix&, Context, HighLevelRuntime*, bool wait=true);
-  
-  // gemm broadcast
-  static void gemmBro
-  (double, const LMatrix&, const LMatrix&,
-   double, const LMatrix&, Context, HighLevelRuntime*, bool wait=true);
-  
-private:
-
-  // helper for solve() and node_solve()
-  template <typename SolveType>
-  void solve(LMatrix&, Context, HighLevelRuntime*, bool wait=true);
-  
-  //int mRows, mCols, mblock;
-  int nProc;
-  int nPart;
-  
-  Matrix U, V;
-  Vector D;
-  
-  IndexSpace       ispace;
-  FieldSpace       fspace;
-  Blockify<2>      blkify;
-  Domain           domain;
-  LogicalRegion    region;
-  IndexPartition   ipart;
-  //LogicalPartition lpart;
-};
-*/
 
 #endif

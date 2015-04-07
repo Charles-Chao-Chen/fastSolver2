@@ -28,10 +28,10 @@ public:
   };
 
   // return the legion matrix for one level
-  UDMat level(int) const;
+  UDMat& level(int);
 
   // legion matrices at leaf level
-  LMatrix leaf() const;
+  LMatrix& leaf();
   
 private:
   int nProc;
@@ -52,7 +52,7 @@ public:
   (int level, Context ctx, HighLevelRuntime *runtime);
 
   // return the legion matrix for one level
-  LMatrix level(int) const;
+  LMatrix& level(int);
   
 private:
   int nProc;
@@ -79,7 +79,7 @@ public:
 
   // wrapper for legion matrix solve
   // leaf solve task
-  void solve(const LMatrix&, Context ctx, HighLevelRuntime *runtime);
+  void solve(LMatrix&, Context ctx, HighLevelRuntime *runtime);
   
 private:
   int nProc;

@@ -14,7 +14,7 @@ OUTFILE	:= 	solver
 
 # List all the application source files here
 GEN_SRC	:= 	solver.cc \
-		../src/hmatrix.cc
+		../src/hmatrix.cc ../src/tree.cc
 
 GEN_GPU_SRC	:=				# .cu files
 
