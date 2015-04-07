@@ -1,7 +1,10 @@
 #ifndef _reduce_add_hpp
 #define _reduce_add_hpp
 
-extern int REDOP_ADD;
+#include "legion.h"
+using namespace LegionRuntime::HighLevel;
+
+extern const int REDOP_ADD;
 
 // Reduction Op
 class Add {

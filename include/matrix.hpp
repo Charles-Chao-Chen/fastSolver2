@@ -6,13 +6,13 @@
 class Vector {
 public:
   Vector();
-  Vector(int nProc);
+  Vector(int N);
 
   // number of rows
   int rows() const;
 
   // 2-norm
-  double norm();
+  double norm() const;
 
   // random entries
   void rand(int nPart);
@@ -21,8 +21,10 @@ public:
   Vector multiply(const Vector&);
   friend Vector operator + (const Vector&, const Vector&);
   friend Vector operator - (const Vector&, const Vector&);
+  
 private:
   int nPart;
+  int mRows;
   std::vector<int> seeds;
 };
 

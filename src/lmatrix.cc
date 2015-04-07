@@ -106,9 +106,11 @@ void LMatrix::gemmRed // static method
   LogicalRegion AReg = A.logical_region();
   LogicalRegion BReg = B.logical_region();
   LogicalRegion CReg = C.logical_region();
-      
+
+  assert( A.nPart % B.nPart == 0 );
   Domain domain = A.color_domain();
-  GemmRedTask::TaskArgs args = {alpha, beta};
+  int colorSize = A.nPart / B.nPart;
+  GemmRedTask::TaskArgs args = {colorSize, alpha, beta};
   TaskArgument tArgs(&args, sizeof(args));
   GemmRedTask launcher(domain, tArgs, ArgumentMap());
   
@@ -147,8 +149,10 @@ void LMatrix::gemmBro // static method
   LogicalRegion BReg = B.logical_region();
   LogicalRegion CReg = C.logical_region();
 
+  assert( A.nPart % B.nPart == 0 );
   Domain domain = A.color_domain();
-  GemmBroTask::TaskArgs args = {alpha, beta};
+  int colorSize = A.nPart / B.nPart;
+  GemmBroTask::TaskArgs args = {colorSize, alpha, beta};
   TaskArgument tArgs(&args, sizeof(args));
   GemmRedTask launcher(domain, tArgs, ArgumentMap());
   

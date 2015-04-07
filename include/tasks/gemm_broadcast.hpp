@@ -8,6 +8,7 @@ class GemmBroTask : public IndexLauncher {
 public:
   
   struct TaskArgs {
+    int    colorSize; // used in projector
     double alpha;
     double beta;
   };

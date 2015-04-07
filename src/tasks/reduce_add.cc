@@ -1,6 +1,6 @@
 #include "reduce_add.hpp"
 
-ReductionOpID REDOP_ADD = 4321;
+const ReductionOpID REDOP_ADD = 4321;
 
 const double Add::identity = 0.0;
 

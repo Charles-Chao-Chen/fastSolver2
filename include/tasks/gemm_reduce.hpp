@@ -8,6 +8,7 @@ class GemmRedTask : public IndexLauncher {
 public:
   
   struct TaskArgs {
+    int    colorSize; // used in projector
     double alpha;
     double beta;
   };
@@ -19,12 +20,13 @@ public:
 	      bool must = false,
 	      MapperID id = 0,
 	      MappingTagID tag = 0);
-  
-  static int TASKID;
 
   static void register_tasks(void);
 
-public:
+private:
+  
+  static int TASKID;
+  
   static void
   cpu_task(const Task *task,
 	   const std::vector<PhysicalRegion> &regions,

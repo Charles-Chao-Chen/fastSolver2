@@ -4,7 +4,10 @@
 #include "legion.h"
 using namespace LegionRuntime::HighLevel;
 
-static ProjectionID CONTRACTION = 1988;
+extern const ProjectionID CONTRACTION;
+
+void register_projector(Machine machine, HighLevelRuntime *runtime,
+			const std::set<Processor> &local_procs);
 
 class Contraction : public ProjectionFunctor {
 public:
