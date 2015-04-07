@@ -1,4 +1,3 @@
-
 ifndef LG_RT_DIR
 $(error LG_RT_DIR variable is not defined, aborting build)
 endif
@@ -14,12 +13,13 @@ USE_CUDA=0
 OUTFILE	:= 	solver
 
 # List all the application source files here
-GEN_SRC	:= 	solver.cc
+GEN_SRC	:= 	solver.cc \
+		../src/hmatrix.cc
 
 GEN_GPU_SRC	:=				# .cu files
 
 # You can modify these variables, some will be appended to by the runtime makefile
-INC_FLAGS	:= 	
+INC_FLAGS	:= -I ../include/ 	
 CC_FLAGS	:=
 
 #-g  \

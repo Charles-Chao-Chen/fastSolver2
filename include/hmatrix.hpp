@@ -1,9 +1,8 @@
 #ifndef _hmatrix_hpp
 #define _hmatrix_hpp
 
-#include <vector>
-#include "matrix.hpp"  // for  Matrix class
-#include "lmatrix.hpp" // for LMatrix class
+#include "matrix.hpp" // for  Matrix class
+#include "tree.hpp"   // for UTree, VTree and KTree
 
 // the hierarchical tree is balanced
 class HMatrix {
@@ -12,23 +11,23 @@ public:
 
   HMatrix(int nProc, int level);
 
-  // build U * V' + D, with the right hand side b
+  // build U * V' + D
   void init
-  (const Matrix& U, const Matrix& V, const Matrix& D,
+  (const Matrix& U, const Matrix& V, const Vector& D,
    Context, HighLevelRuntime*);
 
   // fast solver
-  Matrix solve(const Matrix& b, Context, HighLevelRuntime*);
+  Vector solve(const Vector& b, Context, HighLevelRuntime*);
 
   // destructor
   void destroy(Context, HighLevelRuntime*);
   
 private:
-  int     nProc;
-  int     level;
-  UTree   uTree;
-  VTree   vTree;
-  LMatrix dBlck; // dense (diagonal) blocks
+  int   nProc;
+  int   level;
+  UTree uTree;
+  VTree vTree;
+  KTree kTree;
 };
 
 #endif

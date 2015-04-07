@@ -12,47 +12,50 @@ HMatrix::HMatrix(int nProc_, int level_)
   //  partitions as the number of leaves.
   // ================================================
   // number of partitions
-  //  this->nPart = pow(2, level);
+  int nPart = pow(2, level);
   
   // assume evenly distributed across machines
   assert( nPart % nProc == 0);
 }
 
-HMatrix::init
-(const Matrix& U, const Matrix& V, const Matrix& D,
+void HMatrix::init
+(const Matrix& U, const Matrix& V, const Vector& D,
  Context ctx, HighLevelRuntime* runtime) {
   
   // sanity check
-  assert( b.rows() == U.rows() == V.rows() == D.rows() );
-  assert( U.cols() == V.cols() >  0 );
-  assert( D.rows() == D.cols() );
-  assert( b.rows() >  0 && b.cols() >  0 );
+  assert( U.rows() == V.rows() );
+  assert( U.rows() == D.rows() );
+  assert( U.cols() == V.cols() );
+  assert( U.cols()  > 0 );
 
   // populate data
   uTree.init( nProc, U );
   vTree.init( nProc, V );
-  dBlck.init( nProc, U, V, D );
+  kTree.init( nProc, U, V, D );
 
   // data partition
   uTree.partition( level, ctx, runtime );
   vTree.partition( level, ctx, runtime );
-  dBlck.partition( level, ctx, runtime );
+  kTree.partition( level, ctx, runtime );
     
 #ifdef DEBUG
   uTree.display("U");
   vTree.display("V");
-  dBlck.display("K");
+  kTree.display("K");
 #endif
 }
 
-Matrix HMatrix::solve
-(const Matrix& b, Context ctx, HighLevelRuntime* runtime) {
+Vector HMatrix::solve
+(const Vector& b, Context ctx, HighLevelRuntime* runtime) {
 
+  // check input
+  assert( b.rows() > 0 );
+  
   // initialize the right hand side
   uTree.init_rhs(b);
   
   // leaf solve: U = dense \ U
-  dBlck.solve( uTree.leaf(), ctx, runtime );
+  kTree.solve( uTree.leaf(), ctx, runtime );
   
   // upward pass:
   // --             --  --    --     --      --
@@ -67,11 +70,11 @@ Matrix HMatrix::solve
   // | x1 |   | d1 - u1*eta1 |
   // -    -   --            --
   
-  for (int i=Level; i>0; i--) {
+  for (int i=level; i>0; i--) {
 
-    LMatrix  V = vTree.level(i);
-    LMatrix& u = uTree.level(i).uMat;
-    LMatrix& d = uTree.level(i).dMat;
+    LMatrix V = vTree.level(i);
+    LMatrix u = uTree.level(i).uMat;
+    LMatrix d = uTree.level(i).dMat;
     
     // reduction operation
     LMatrix VTu; LMatrix::gemmRed( 1.0, V, u, 0.0, VTu, ctx, runtime );
@@ -79,14 +82,11 @@ Matrix HMatrix::solve
 
     // form and solve the small linear system
     VTu.node_solve( VTd, ctx, runtime );
-
-    /*LMatrix S = LMatrix::Identity( VTu.rows() + VTd.rows(), ctx, runtime);
-    S.set_off_diagonal_blcks( VTu, ctx, runtime );
-    S.solve( VTd.coarse(), ctx, runtime );
-    */
       
     // broadcast operation
     // d -= u * VTd
     LMatrix::gemmBro( -1.0, u, VTd, 1.0, d, ctx, runtime );
   }
+  
+  return uTree.rhs();
 }

@@ -1,15 +1,22 @@
 #ifndef _tree_hpp
 #define _tree_hpp
 
+#include <vector>
+
+#include "lmatrix.hpp"
+
 class UTree {
 public:
 
-  // constructor
-  UTree(int, const Matrix&);
-
+  // init data
+  void init(int, const Matrix&);
+  
   // initialize problem right hand side
-  void init_rhs(const Matrix&);
+  void init_rhs(const Vector&);
 
+  // return right hand side (overwritten by solution)
+  Vector rhs();
+  
   // create partition
   void partition
   (int level, Context ctx, HighLevelRuntime *runtime);
@@ -23,21 +30,22 @@ public:
   // return the legion matrix for one level
   UDMat level(int) const;
 
-  // return the legion matrix at leaf level
-  LMatrix leaf(int) const;
+  // legion matrices at leaf level
+  LMatrix leaf() const;
   
 private:
   int nProc;
-  int level;
-  Matrix U;
-  std::vector<UDMat> Upart;
+  int nlevel;
+  int nRhs;
+  Matrix UMat;
+  std::vector<UDMat> U;
 };
 
 class VTree {
 public:
 
-  // constructor
-  VTree(int, const Matrix&);
+  // init data
+  void init(int, const Matrix&);
 
   // create partition
   void partition
@@ -48,35 +56,37 @@ public:
   
 private:
   int nProc;
-  int level;
-  Matrix  V;
+  int nlevel;
+  Matrix VMat;
 
   // for the simple case of U * V' + D,
   // partition is the same for all levels,
   // so only one partition is stored
-  LMatrix VPart;
+  LMatrix V;
 };
 
 // Dense blocks only exist at the leaf level
 //  and are used for leaf solve task
-class KTree : public HTree {
+class KTree {
 public:
   
-  // constructor
-  KTree(int, const Matrix& U, const Matrix& V, const Matrix& D);
+  // init data
+  void init(int, const Matrix& U, const Matrix& V, const Vector& D);
 
   // create partition
   void partition
   (int level, Context ctx, HighLevelRuntime *runtime);
 
-  // wrapper for leaf solve task
-  void solve(LMatrix&, Context ctx, HighLevelRuntime *runtime);
+  // wrapper for legion matrix solve
+  // leaf solve task
+  void solve(const LMatrix&, Context ctx, HighLevelRuntime *runtime);
   
 private:
   int nProc;
-  int level;
-  Matrix  U, V, D;
-  LMatrix KPart;
+  int nlevel;
+  Matrix UMat, VMat;
+  Vector DVec;
+  LMatrix K;
 };
 
 #endif
