@@ -6,7 +6,7 @@
 #include <stdlib.h> // for srand48_r(), lrand48_r() and drand48_r()
 #include <time.h>
 
-Vector::Vector() {}
+Vector::Vector() : mRows(-1), data(NULL) {}
 
 Vector::Vector(int N) : mRows(N) {
   data = new double[mRows];
@@ -54,6 +54,17 @@ void Vector::rand(int nPart_) {
   }
 }
 
+void Vector::operator= (const Vector& other) {
+  if (data != NULL)
+    delete data;
+  mRows = other.rows();
+  nPart = other.num_partition();
+  data  = new double[mRows];
+  assert(data != NULL);
+  for (int i=0; i<mRows; i++)
+    data[i] = other[i];
+}
+
 double& Vector::operator[] (int i) {
   assert( 0 <= i && i < mRows );
   return data[i];
@@ -96,9 +107,29 @@ Vector operator + (const Vector& vec1, const Vector& vec2) {
 
 Vector operator - (const Vector& vec1, const Vector& vec2) {
   assert( vec1.rows() == vec2.rows() );
-  Vector temp;
+  Vector temp(vec1.rows());
   for (int i=0; i<vec1.rows(); i++)
     temp[i] = vec1[i] - vec2[i];
+  return temp;
+}
+
+bool operator== (const Vector& vec1, const Vector& vec2) {  
+  assert( vec1.rows() == vec2.rows() );
+  for (int i=0; i<vec1.rows(); i++) {
+    if ( fabs(vec1[i] - vec2[i]) > 1e-10 )
+      return false;
+  }
+  return true;
+}
+
+bool operator!= (const Vector& vec1, const Vector& vec2) {
+  return !(vec1 == vec2);
+}
+
+Vector operator * (const double alpha,  const Vector& vec) {
+  Vector temp(vec.rows());
+  for (int i=0; i<temp.rows(); i++)
+    temp[i] = alpha * vec[i];
   return temp;
 }
 

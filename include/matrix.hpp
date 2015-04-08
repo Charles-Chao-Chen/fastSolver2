@@ -25,6 +25,9 @@ public:
   // return the random seed
   long rand_seed(int) const;
   
+  // assignment operator
+  void operator= (const Vector&);
+
   // return the ith entry / reference  
   double  operator[] (int i) const;
   double& operator[] (int i);
@@ -33,9 +36,16 @@ public:
   Vector multiply(const Vector&);
   friend Vector operator + (const Vector&, const Vector&);
   friend Vector operator - (const Vector&, const Vector&);
-
+  friend bool   operator== (const Vector&, const Vector&);
+  friend bool   operator!= (const Vector&, const Vector&);
+  friend Vector operator * (const double,  const Vector&);
+  
   // for debugging purpose
   void display(const std::string&) const;
+
+  // static methods
+  template <int value>
+  static Vector constant(int);
   
 private:
   int nPart;
@@ -84,5 +94,13 @@ private:
   double *data;
   std::vector<long> seeds;
 };
+
+template <int value>
+Vector Vector::constant(int N) {
+  Vector temp;
+  for (int i=0; i<N; i++)
+    temp[i] = value;
+  return temp;
+}
 
 #endif
