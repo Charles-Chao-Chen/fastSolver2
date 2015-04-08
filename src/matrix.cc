@@ -22,6 +22,13 @@ Vector::~Vector() {
 
 int Vector::rows() const {return mRows;}
 
+int Vector::num_partition() const {return nPart;}
+
+long Vector::rand_seed(int i) const {
+  assert( 0<=i && i<nPart );
+  return seeds[i];
+}
+
 double Vector::norm() const {
   double sum = 0.0;
   for (int i=0; i<mRows; i++)
@@ -113,6 +120,8 @@ int Matrix::rows() const {return mRows;}
 
 int Matrix::cols() const {return mCols;}
 
+int Matrix::num_partition() const {return nPart;}
+
 void Matrix::rand(int nPart_) {
   this->nPart = nPart_;
   assert( mRows%nPart == 0 );
@@ -129,6 +138,11 @@ void Matrix::rand(int nPart_) {
       count++;
     }
   }  
+}
+
+long Matrix::rand_seed(int i) const {
+  assert( 0<=i && i<nPart );
+  return seeds[i];
 }
 
 double Matrix::operator() (int i, int j) const {

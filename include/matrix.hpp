@@ -13,15 +13,21 @@ public:
   // number of rows
   int rows() const;
 
+  // number of partitions
+  int num_partition() const;
+  
   // 2-norm
   double norm() const;
 
   // random entries
   void rand(int nPart);
 
-  // return the ith entry / reference
-  double& operator[] (int i);
+  // return the random seed
+  long rand_seed(int) const;
+  
+  // return the ith entry / reference  
   double  operator[] (int i) const;
+  double& operator[] (int i);
   
   // entry-wise operations
   Vector multiply(const Vector&);
@@ -48,10 +54,16 @@ public:
   int rows() const;
   int cols() const;
 
+  // number of partitions
+  int num_partition() const;
+  
   // random matrix with a random seed for each partition
   // the partition is horizontal
   void rand(int nPart);
 
+  // return the random seed
+  long rand_seed(int) const;
+  
   // return the entry / reference
   double operator() (int i, int j) const;
   double& operator() (int i, int j);

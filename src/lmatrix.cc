@@ -23,7 +23,7 @@ void LMatrix::init
   assert( this->num_partition() == vec.num_partition() );
   ArgumentMap argMap;
   for (int i = 0; i < nPart; i++) {
-    long s = vec.rand_seeds(i);
+    long s = vec.rand_seed(i);
     argMap.set_point(DomainPoint::from_point<1>(Point<1>(i)),
 		     TaskArgument(&s,sizeof(s)));
   }  
@@ -44,10 +44,10 @@ void LMatrix::create
   // create the region
   assert( this->rows() == mat.rows() );
   assert( this->cols() == mat.cols() );
-  assert( this->num_partition() == vec.num_partition() );
+  assert( this->num_partition() == mat.num_partition() );
   ArgumentMap argMap;
   for (int i = 0; i < nPart; i++) {
-    long s = mat.rand_seeds(i);
+    long s = mat.rand_seed(i);
     argMap.set_point(DomainPoint::from_point<1>(Point<1>(i)),
 		     TaskArgument(&s,sizeof(s)));
   }  
@@ -65,11 +65,12 @@ void LMatrix::create
 
 Vector LMatrix::to_vector() {
   // inline launcher
+  return Vector();
 }
 
 void LMatrix::create_dense_partition
 (int nPart, const Matrix& U, const Matrix& V, const Vector& D,
- Context ctx, HighLevelRuntime *runtime, bool wait=WAIT_DEFAULT) {
+ Context ctx, HighLevelRuntime *runtime, bool wait) {
 
   // create region and nProc partition
   // populate data

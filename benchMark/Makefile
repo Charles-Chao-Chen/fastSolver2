@@ -18,7 +18,8 @@ GEN_SRC	:= 	solver.cc \
 		../src/lmatrix.cc ../src/matrix.cc \
 		../src/tasks/leaf_solve.cc ../src/tasks/node_solve.cc \
 		../src/tasks/gemm_reduce.cc   ../src/tasks/gemm_broadcast.cc \
-		../src/tasks/projector.cc ../src/tasks/reduce_add.cc
+		../src/tasks/projector.cc ../src/tasks/reduce_add.cc \
+		../src/tasks/init_matrix.cc ../src/tasks/zero_matrix.cc
 
 GEN_GPU_SRC	:=				# .cu files
 
