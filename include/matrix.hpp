@@ -74,6 +74,9 @@ public:
   // return the random seed
   long rand_seed(int) const;
   
+  // assignment operator
+  void operator= (const Matrix&);
+
   // return the entry / reference
   double operator() (int i, int j) const;
   double& operator() (int i, int j);
@@ -83,9 +86,18 @@ public:
 
   // matrix vector product
   friend Vector operator * (const Matrix&, const Vector&);
-  
-  // print the values on screen
+  friend Matrix operator + (const Matrix&, const Matrix&);
+  friend Matrix operator - (const Matrix&, const Matrix&);
+  friend bool   operator== (const Matrix&, const Matrix&);
+  friend bool   operator!= (const Matrix&, const Matrix&);
+  friend Matrix operator * (const double,  const Matrix&);
+
+  // for debugging purpose
   void display(const std::string&) const;
+
+  // static methods
+  template <int value>
+  static Matrix constant(int m, int n);
   
 private:
   int nPart;
@@ -97,9 +109,18 @@ private:
 
 template <int value>
 Vector Vector::constant(int N) {
-  Vector temp;
+  Vector temp(N);
   for (int i=0; i<N; i++)
     temp[i] = value;
+  return temp;
+}
+
+template <int value>
+Matrix Matrix::constant(int m, int n) {
+  Matrix temp(m, n);
+  for (int i=0; i<m; i++)
+    for (int j=0; j<n; j++)
+      temp(i, j) = value;
   return temp;
 }
 

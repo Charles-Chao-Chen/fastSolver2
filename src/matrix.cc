@@ -9,6 +9,7 @@
 Vector::Vector() : mRows(-1), data(NULL) {}
 
 Vector::Vector(int N) : mRows(N) {
+  assert(N>0);
   data = new double[mRows];
   assert( data != NULL );
 }
@@ -77,7 +78,7 @@ double Vector::operator[] (int i) const {
 
 Vector Vector::multiply(const Vector& other) {
   assert( this->rows() == other.rows() );
-  Vector temp;
+  Vector temp(this->rows());
   for (int i=0; i<mRows; i++)
     temp[i] = data[i] * other[i];
   return temp;
@@ -85,21 +86,22 @@ Vector Vector::multiply(const Vector& other) {
 
 void Vector::display(const std::string& name) const {
   std::cout << name << ":" << std::endl;
-  int count = 0;
-  int colorSize = mRows / nPart;
-  for (int i=0; i<nPart; i++) {
-    std::cout << "seed=" << seeds[i] << std::endl;
-    for (int j=0; j<colorSize; j++) {
-      std::cout << data[count] << "\t";
-      count++;
-    }
-    std::cout << std::endl;
+  if (nPart > 0) {
+    std::cout << "seeds:" << std::endl;
+    for (int i=0; i<nPart; i++)
+      std::cout << seeds[i] << "\t";
+    std::cout << std::endl
+	      << "values:"
+	      << std::endl;
   }
+  for (int j=0; j<mRows; j++)
+    std::cout << data[j] << "\t";
+  std::cout << std::endl;
 }
 
 Vector operator + (const Vector& vec1, const Vector& vec2) {
   assert( vec1.rows() == vec2.rows() );
-  Vector temp;
+  Vector temp(vec1.rows());
   for (int i=0; i<vec1.rows(); i++)
     temp[i] = vec1[i] + vec2[i];
   return temp;
@@ -133,9 +135,12 @@ Vector operator * (const double alpha,  const Vector& vec) {
   return temp;
 }
 
-Matrix::Matrix() {}
+Matrix::Matrix() : mRows(-1), mCols(-1), data(NULL) {}
 
-Matrix::Matrix(int row, int col) : mRows(row), mCols(col) {
+Matrix::Matrix(int row, int col)
+  : mRows(row), mCols(col), data(NULL) {
+
+  assert( mRows>0 && mCols>0 );
   data = new double[mRows*mCols];
   assert( data != NULL );
 }
@@ -176,6 +181,19 @@ long Matrix::rand_seed(int i) const {
   return seeds[i];
 }
 
+void Matrix::operator= (const Matrix& other) {
+  if (data != NULL)
+    delete[] data;
+  this->mRows = other.mRows;
+  this->mCols = other.mCols;
+  this->nPart = other.nPart;
+  this->seeds = other.seeds;
+  data = new double[mRows*mCols];
+  for (int i=0; i<mRows; i++)
+    for(int j=0; j<mCols; j++)
+      (*this)(i, j) = other(i, j);
+}
+
 double Matrix::operator() (int i, int j) const {
   return data[i+j*mRows];
 }
@@ -185,7 +203,7 @@ double& Matrix::operator() (int i, int j) {
 }
 
 Matrix Matrix::T() {
-  Matrix temp;
+  Matrix temp(mCols, mRows);
   for (int i=0; i<mRows; i++)
     for (int j=0; j<mCols; j++)
       temp(j, i) = (*this)(i, j);
@@ -195,25 +213,71 @@ Matrix Matrix::T() {
 Vector operator * (const Matrix& A, const Vector& b) {
   assert( A.cols() == b.rows() );
   Vector temp(A.rows());
-  for (int  j=0; j<A.rows(); j++) {
-    temp[j] = 0.0;
-    for (int i=0; i<A.cols(); i++)
-      temp[j] += A(i,j) * b[i];
+  for (int i=0; i<temp.rows(); i++) {
+    temp[i] = 0.0;
+    for (int j=0; j<A.cols(); j++)
+      temp[i] += A(i,j) * b[j];
   }
+  return temp;
+}
+
+Matrix operator + (const Matrix& mat1, const Matrix& mat2) {
+  assert(mat1.rows() == mat2.rows());
+  assert(mat1.cols() == mat2.cols());
+  Matrix temp(mat1.rows(), mat1.cols());
+  for (int i=0; i<temp.rows(); i++)
+    for (int j=0; j<temp.cols(); j++)
+      temp(i, j) = mat1(i, j) + mat2(i, j);
+  return temp;
+}
+
+Matrix operator - (const Matrix& mat1, const Matrix& mat2) {
+  assert(mat1.rows() == mat2.rows());
+  assert(mat1.cols() == mat2.cols());
+  Matrix temp(mat1.rows(), mat1.cols());
+  for (int i=0; i<temp.rows(); i++)
+    for (int j=0; j<temp.cols(); j++)
+      temp(i, j) = mat1(i, j) - mat2(i, j);
+  return temp;
+}
+
+bool operator== (const Matrix& mat1, const Matrix& mat2) {
+  assert(mat1.rows() == mat2.rows());
+  assert(mat1.cols() == mat2.cols());
+  for (int i=0; i<mat1.rows(); i++)
+    for (int j=0; j<mat1.cols(); j++)
+      if ( fabs( mat1(i, j) - mat2(i, j) ) > 1.0e-10 )
+	return false;
+  return true;
+}
+
+bool operator!= (const Matrix& mat1, const Matrix& mat2) {
+  return !(mat1 == mat2);
+}
+
+Matrix operator * (const double alpha,  const Matrix& mat) {
+  Matrix temp(mat.rows(), mat.cols());
+  for (int i=0; i<temp.rows(); i++)
+    for (int j=0; j<temp.cols(); j++)
+      temp(i, j) = alpha * mat(i, j);
   return temp;
 }
 
 // the fastest increasing dimension is displayed first
 void Matrix::display(const std::string& name) const {
   std::cout << name << ":" << std::endl;
+  if (nPart > 0) {
+    std::cout << "seeds:" << std::endl;
+    for (int i=0; i<nPart; i++)
+      std::cout << seeds[i] << "\t";
+    std::cout << std::endl
+	      << "values:"
+	      << std::endl;
+  }
   int count = 0;
-  int colorSize = mRows / nPart;
-  for (int i=0; i<nPart; i++) {
-    std::cout << "seed=" << seeds[i] << std::endl;
-    for (int j=0; j<colorSize*mCols; j++) {
-      std::cout << data[count] << "\t";
-      count++;
-    }
+  for (int i=0; i<mRows; i++) {
+    for (int j=0; j<mCols; j++)
+      std::cout << data[count++] << "\t";
     std::cout << std::endl;
   }
 }

@@ -13,7 +13,8 @@ using namespace LegionRuntime::HighLevel;
 class LMatrix {
 public:
   LMatrix();
-
+  ~LMatrix();
+  
   int rows() const;
   int cols() const;
   int num_partition() const;
