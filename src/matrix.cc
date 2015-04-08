@@ -6,19 +6,11 @@
 #include <stdlib.h> // for srand48_r(), lrand48_r() and drand48_r()
 #include <time.h>
 
-Vector::Vector() : mRows(-1), data(NULL) {}
+Vector::Vector() : nPart(-1), mRows(-1) {}
 
-Vector::Vector(int N) : mRows(N) {
+Vector::Vector(int N) : nPart(-1), mRows(N) {
   assert(N>0);
-  data = new double[mRows];
-  assert( data != NULL );
-}
-
-Vector::~Vector() {
-  if (data != NULL) {
-    delete[] data;
-    data = NULL;
-  }
+  data.resize(mRows);
 }
 
 int Vector::rows() const {return mRows;}
@@ -55,16 +47,17 @@ void Vector::rand(int nPart_) {
   }
 }
 
+/*
 void Vector::operator= (const Vector& other) {
-  if (data != NULL)
-    delete data;
-  mRows = other.rows();
   nPart = other.num_partition();
-  data  = new double[mRows];
+  mRows = other.rows();
+  seeds = other.seeds;
+  data  = other.data;
   assert(data != NULL);
   for (int i=0; i<mRows; i++)
     data[i] = other[i];
 }
+*/
 
 double& Vector::operator[] (int i) {
   assert( 0 <= i && i < mRows );
@@ -77,9 +70,10 @@ double Vector::operator[] (int i) const {
 }
 
 Vector Vector::multiply(const Vector& other) {
-  assert( this->rows() == other.rows() );
-  Vector temp(this->rows());
-  for (int i=0; i<mRows; i++)
+  int N = this->rows();
+  assert( N == other.rows() );
+  Vector temp(N);
+  for (int i=0; i<N; i++)
     temp[i] = data[i] * other[i];
   return temp;
 }
@@ -130,28 +124,27 @@ bool operator!= (const Vector& vec1, const Vector& vec2) {
 
 Vector operator * (const double alpha,  const Vector& vec) {
   Vector temp(vec.rows());
-  for (int i=0; i<temp.rows(); i++)
+  for (int i=0; i<vec.rows(); i++)
     temp[i] = alpha * vec[i];
   return temp;
 }
 
-Matrix::Matrix() : mRows(-1), mCols(-1), data(NULL) {}
+Matrix::Matrix() : nPart(-1), mRows(-1), mCols(-1) {}
 
 Matrix::Matrix(int row, int col)
-  : mRows(row), mCols(col), data(NULL) {
+  : nPart(-1), mRows(row), mCols(col) {
 
   assert( mRows>0 && mCols>0 );
-  data = new double[mRows*mCols];
-  assert( data != NULL );
+  data.resize(mRows*mCols);
 }
-
+/*
 Matrix::~Matrix() {
   if (data != NULL) {
     delete[] data;
     data = NULL;
   }
 }
-
+*/
 int Matrix::rows() const {return mRows;}
 
 int Matrix::cols() const {return mCols;}
@@ -180,7 +173,7 @@ long Matrix::rand_seed(int i) const {
   assert( 0<=i && i<nPart );
   return seeds[i];
 }
-
+/*
 void Matrix::operator= (const Matrix& other) {
   if (data != NULL)
     delete[] data;
@@ -193,7 +186,7 @@ void Matrix::operator= (const Matrix& other) {
     for(int j=0; j<mCols; j++)
       (*this)(i, j) = other(i, j);
 }
-
+*/
 double Matrix::operator() (int i, int j) const {
   return data[i+j*mRows];
 }

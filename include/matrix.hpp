@@ -8,7 +8,6 @@ class Vector {
 public:
   Vector();
   Vector(int N);
-  ~Vector();
   
   // number of rows
   int rows() const;
@@ -26,7 +25,7 @@ public:
   long rand_seed(int) const;
   
   // assignment operator
-  void operator= (const Vector&);
+  //  void operator= (const Vector&);
 
   // return the ith entry / reference  
   double  operator[] (int i) const;
@@ -50,15 +49,15 @@ public:
 private:
   int nPart;
   int mRows;
-  double *data;
-  std::vector<long> seeds;
+  std::vector<long>   seeds;
+  std::vector<double> data;
 };
 
 class Matrix {
 public:
   Matrix();
   Matrix(int nRow, int nCol);
-  ~Matrix();
+  //  ~Matrix();
 
   // consistant with eigen routines
   int rows() const;
@@ -75,7 +74,7 @@ public:
   long rand_seed(int) const;
   
   // assignment operator
-  void operator= (const Matrix&);
+  //  void operator= (const Matrix&);
 
   // return the entry / reference
   double operator() (int i, int j) const;
@@ -103,8 +102,8 @@ private:
   int nPart;
   int mRows;
   int mCols;
-  double *data;
-  std::vector<long> seeds;
+  std::vector<long>   seeds;
+  std::vector<double> data;
 };
 
 template <int value>
