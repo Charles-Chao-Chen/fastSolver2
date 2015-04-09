@@ -30,8 +30,11 @@ public:
   // for UTree::rhs()
   Vector to_vector();
 
-  // for VTree::copy()
-  void create
+  // for VTree::partition()
+  void create(int, int, Context, HighLevelRuntime*,
+	      bool wait=WAIT_DEFAULT);
+  
+  void init_data
   (const Matrix& VMat, Context, HighLevelRuntime*,
    bool wait=WAIT_DEFAULT);
 

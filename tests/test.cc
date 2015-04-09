@@ -98,7 +98,7 @@ void test_vector() {
   vec2.rand(nPart); // random entries
   if (vec2.num_partition() != nPart)
     Error("wrong paritition number");
-  //vec2.display("random vector");
+  vec2.display("random vector");
 
   if (vec2+vec2 != 2*vec2)
     Error("+ or * wrong");
@@ -126,7 +126,7 @@ void test_matrix() {
   mat1.rand(nPart);
   if (mat1.num_partition() != nPart)
     Error("wrong partition number");
-  //mat1.display("random matrix");
+  mat1.display("random matrix");
 
   if (mat1+mat1 != 2*mat1)
     Error("+ or * wrong");
@@ -149,5 +149,10 @@ void test_matrix() {
 }
 
 void test_legion_matrix() {
+  
+  LMatrix mat;
+
+  //int m = 16, n = 1;
+  //  Vector vec = Vector::constant<1>(m);
   
 }

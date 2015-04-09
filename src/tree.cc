@@ -6,8 +6,11 @@ void UTree::init(int nProc_, const Matrix& UMat_) {
 }
 
 void UTree::init_rhs
-(const Vector& Rhs, Context ctx, HighLevelRuntime *runtime) {
-  this->Rhs.init(Rhs, ctx, runtime);
+(const Vector& b, Context ctx, HighLevelRuntime *runtime) {
+  assert(Rhs.rows() == b.rows());
+  assert(Rhs.cols() == 1);
+  assert(Rhs.num_partition() == b.num_partition());
+  Rhs.init(b, ctx, runtime);
 }
 
 Vector UTree::rhs() {
@@ -16,8 +19,7 @@ Vector UTree::rhs() {
 
 void UTree::partition
 (int level, Context ctx, HighLevelRuntime *runtime) {
-  // no implemented
-  assert( false );
+  
 
 }
 
@@ -34,6 +36,7 @@ UTree::UDMat& UTree::level(int i) {
 void VTree::init(int nProc_, const Matrix& VMat_) {
   this->nProc = nProc_;
   this->VMat  = VMat_;
+  
 }
 
 void VTree::partition
@@ -41,13 +44,14 @@ void VTree::partition
   // make sure VMat is initialized
   assert( VMat.rows() > 0 );
   assert( VMat.cols() > 0 );
-  V.create(VMat, ctx, runtime);
+  V.create(VMat.rows(), VMat.cols(), ctx, runtime);
+  V.init_data(VMat, ctx, runtime);
   V.partition(nlevel, ctx, runtime);
 }
 
 LMatrix& VTree::level(int i) {
-  assert( i > 0 );
-  assert( i < nlevel );
+  assert( i >= 0 );
+  assert( i <  nlevel );
   return V;
 }
 

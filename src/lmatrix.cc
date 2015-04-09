@@ -4,6 +4,8 @@
 
 LMatrix::LMatrix() {}
 
+LMatrix::~LMatrix() {}
+
 int LMatrix::rows() const {return mRows;}
 
 int LMatrix::cols() const {return mCols;}
@@ -40,6 +42,11 @@ void LMatrix::init
 }
 
 void LMatrix::create
+(int rows, int cols, Context ctx, HighLevelRuntime *runtime, bool wait) {
+
+}
+
+void LMatrix::init_data
 (const Matrix& mat, Context ctx, HighLevelRuntime *runtime, bool wait) {
   // create the region
   assert( this->rows() == mat.rows() );
