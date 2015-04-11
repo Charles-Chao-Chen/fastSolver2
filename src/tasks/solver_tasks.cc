@@ -10,4 +10,5 @@ void register_solver_tasks() {
 
   InitMatrixTask::register_tasks();
   ZeroMatrixTask::register_tasks();
+  DisplayMatrixTask::register_tasks();
 }

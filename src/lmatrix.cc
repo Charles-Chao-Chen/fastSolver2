@@ -77,8 +77,9 @@ void LMatrix::init_data
   IndexPartition ip = UniformRowPartition(nProc, ctx, runtime);
   LogicalPartition lp = runtime->get_logical_partition(ctx, region, ip);
   Domain dom = runtime->get_index_partition_color_space(ctx, ip);
-  
-  InitMatrixTask launcher(dom, TaskArgument(), seeds);
+
+  InitMatrixTask::TaskArgs args = {mRows / nProc, mCols};
+  InitMatrixTask launcher(dom, TaskArgument(&args, sizeof(args)), seeds);
   RegionRequirement req(lp, 0, WRITE_DISCARD, EXCLUSIVE, region);
   req.add_field(FIELDID_V);
   launcher.add_region_requirement(req);
@@ -295,7 +296,17 @@ void LMatrix::gemmBro // static method
 }
   
 void LMatrix::display
-(const std::string& name, Context ctx, HighLevelRuntime *runtime) {
+(const std::string& name,
+ Context ctx, HighLevelRuntime *runtime, bool wait) {
+  DisplayMatrixTask::TaskArgs args(name, mRows, mCols);
+  DisplayMatrixTask launcher(TaskArgument(&args, sizeof(args)));
+  RegionRequirement req(region, READ_ONLY, EXCLUSIVE, region);
+  req.add_field(FIELDID_V);
+  launcher.add_region_requirement(req);
+  Future f = runtime->execute_task(ctx, launcher);
 
-
+  if (wait) {
+    std::cout << "Waiting for displaying matrix ..." << std::endl;
+    f.get_void_result();
+  }
 }

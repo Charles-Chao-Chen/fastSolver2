@@ -3,10 +3,14 @@
 
 #include "legion.h"
 using namespace LegionRuntime::HighLevel;
+using namespace LegionRuntime::Accessor;
 
 class InitMatrixTask : public IndexLauncher {
 public:
-
+  struct TaskArgs {
+    int rows;
+    int cols;
+  };
   InitMatrixTask(Domain domain,
 		 TaskArgument global_arg,
 		 ArgumentMap arg_map,

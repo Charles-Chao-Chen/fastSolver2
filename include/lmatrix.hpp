@@ -62,7 +62,8 @@ public:
 
   // print the values on screen
   // for debugging
-  void display(const std::string&, Context, HighLevelRuntime*);
+  void display(const std::string&,
+	       Context, HighLevelRuntime*, bool wait=WAIT_DEFAULT);
 
   // gemm reduction
   static void gemmRed

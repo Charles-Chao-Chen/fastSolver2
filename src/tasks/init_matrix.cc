@@ -1,5 +1,6 @@
 #include "init_matrix.hpp"
 
+#include "macros.hpp" // for FIELDID_V
 #include <assert.h>
 
 int InitMatrixTask::TASKID;
@@ -36,6 +37,7 @@ void InitMatrixTask::cpu_task(const Task *task,
 			      Context ctx, HighLevelRuntime *runtime) {
   assert(regions.size() == 1);
   assert(task->regions.size() == 1);
+  assert(task->arglen == sizeof(TaskArgs));
   assert(task->local_arglen == sizeof(long));
 
   Point<1> p = task->index_point.get_point<1>();
@@ -44,26 +46,32 @@ void InitMatrixTask::cpu_task(const Task *task,
   const long seed = *((const long*)task->local_args);
   printf("random seed = %lu \n", seed);
 
-  /*
-  int rb = args->matrix.rblock;
-  int cb = args->matrix.cblock;
   
+  const TaskArgs blockSize = *((const TaskArgs*)task->args);
+  int rows = blockSize.rows;
+  int cols = blockSize.cols;
+  printf("block row size = %i\n", rows);
+  printf("block col size = %i\n", cols);
+ 
   Rect<2> bounds, subrect;
-  bounds.lo.x[0] = p[0] * rb;
-  bounds.lo.x[1] = p[1] * cb;
-  bounds.hi.x[0] = (p[0] + 1) * rb - 1;
-  bounds.hi.x[1] = (p[1] + 1) * cb - 1;
+  bounds.lo.x[0] = p[0] * rows;
+  bounds.hi.x[0] = (p[0] + 1) * rows - 1;
+  bounds.lo.x[1] = 0;
+  bounds.hi.x[1] = cols - 1;
   ByteOffset offsets[2];
-  T *base = regions[0].get_field_accessor(FIELDID_V).template typeify<T>().template raw_rect_ptr<2>(bounds, subrect, offsets);
+  double *base = regions[0].get_field_accessor(FIELDID_V).template typeify<double>().template raw_rect_ptr<2>(bounds, subrect, offsets);
   assert(subrect == bounds);
 #ifdef DEBUG_POINTERS
   printf("ptr = %p (%d, %d)\n", base, offsets[0].offset, offsets[1].offset);
 #endif
 
-  for(int ri = 0; ri < args->matrix.rblock; ri++)
-    for(int ci = 0; ci < args->matrix.cblock; ci++)
-      *(base + ri * offsets[0] + ci * offsets[1]) = args->clear_val;
-*/
+  struct drand48_data buffer;
+  assert( srand48_r( seed, &buffer ) == 0 );
+  for(int ri = 0; ri < rows; ri++)
+    for(int ci = 0; ci < cols; ci++) {
+      double *value = base + ri * offsets[0] + ci * offsets[1];
+      assert( drand48_r(&buffer, value) == 0 );
+    }
 }
 
 
