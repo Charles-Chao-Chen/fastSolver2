@@ -81,7 +81,15 @@ private:
   // ******************
   // helper functions
   // ******************
+
+  // for init_matrix task
+  ArgumentMap MapSeed(int nPart, const Matrix& matrix);
+
+  // partition the matrix along rows
+  IndexPartition UniformRowPartition
+  (int num_subregions, Context ctx, HighLevelRuntime *runtime);
   
+  // for node_solve
   void coarse_partition();
   void fine_partition();
 
@@ -112,8 +120,8 @@ private:
   // partition
   int              nPart;
   Domain           colDom;
-  Blockify<1>      blkify;
-  IndexPartition   ipart;
+  //Blockify<1>      blkify;
+  //IndexPartition   ipart;
   LogicalPartition lpart;
 };
 

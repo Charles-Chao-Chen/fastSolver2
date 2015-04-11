@@ -69,46 +69,16 @@ void LMatrix::init_data
   // assuming the region has been created
   assert( this->rows() == mat.rows() );
   assert( this->cols() == mat.cols() );
-  assert( nProc_ == mat.num_partition() );
   this->nProc = nProc_;
-  ArgumentMap argMap;
-  for (int i = 0; i < nProc; i++) {
-    long s = mat.rand_seed(i);
-    argMap.set_point(DomainPoint::from_point<1>(Point<1>(i)),
-		     TaskArgument(&s,sizeof(s)));
-  }
+  ArgumentMap seeds = MapSeed(nProc, mat);
 
-  
+  // assume uniform partition
   assert(mRows%nProc == 0);
-
-  /*
-  Point<2> blk = make_point(mRows/nProc,1);
-  Blockify<2> coloring(blk);
-    //IndexPartition ip
-  //= runtime->create_index_partition(ctx, ispace, coloring);
-*/
-
-  Rect<1> color_bounds(Point<1>(0),Point<1>(nProc-1));
-  Domain color_domain = Domain::from_rect<1>(color_bounds);
- 
-
-  int size = mRows/nProc;
-  DomainColoring coloring;
-  for (int color = 0; color < nProc; color++) {
-    Point<2> lo = make_point(  color   *size,   0);
-    Point<2> hi = make_point( (color+1)*size-1, mCols-1);
-    Rect<2> subrect(lo, hi);
-    coloring[color] = Domain::from_rect<2>(subrect);
-  }
-  IndexPartition ip = runtime->create_index_partition(ctx, ispace, color_domain, 
-						      coloring, true);
-
-
-  LogicalPartition lp
-    = runtime->get_logical_partition(ctx, region, ip);
-
+  IndexPartition ip = UniformRowPartition(nProc, ctx, runtime);
+  LogicalPartition lp = runtime->get_logical_partition(ctx, region, ip);
   Domain dom = runtime->get_index_partition_color_space(ctx, ip);
-  InitMatrixTask launcher(dom, TaskArgument(), argMap);
+  
+  InitMatrixTask launcher(dom, TaskArgument(), seeds);
   RegionRequirement req(lp, 0, WRITE_DISCARD, EXCLUSIVE, region);
   req.add_field(FIELDID_V);
   launcher.add_region_requirement(req);
@@ -118,6 +88,34 @@ void LMatrix::init_data
     std::cout << "Wait for init..." << std::endl;
     fm.wait_all_results();
   }
+}
+
+ArgumentMap LMatrix::MapSeed(int nPart, const Matrix& matrix) {
+  assert(nPart == matrix.num_partition());
+  ArgumentMap argMap;
+  for (int i = 0; i < nPart; i++) {
+    long s = matrix.rand_seed(i);
+    argMap.set_point(DomainPoint::from_point<1>(Point<1>(i)),
+		     TaskArgument(&s,sizeof(s)));
+  }
+  return argMap;
+}
+
+IndexPartition LMatrix::UniformRowPartition
+(int num_subregions, Context ctx, HighLevelRuntime *runtime) {
+
+  Rect<1> bounds(Point<1>(0),Point<1>(num_subregions-1));
+  Domain  domain = Domain::from_rect<1>(bounds);
+
+  int size = mRows / num_subregions;
+  DomainColoring coloring;
+  for (int i = 0; i < num_subregions; i++) {
+    Point<2> lo = make_point(  i   *size,   0);
+    Point<2> hi = make_point( (i+1)*size-1, mCols-1);
+    Rect<2> subrect(lo, hi);
+    coloring[i] = Domain::from_rect<2>(subrect);
+  }
+  return runtime->create_index_partition(ctx, ispace, domain, coloring, true);
 }
 
 Vector LMatrix::to_vector() {

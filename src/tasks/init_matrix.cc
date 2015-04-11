@@ -34,17 +34,17 @@ void InitMatrixTask::register_tasks(void)
 void InitMatrixTask::cpu_task(const Task *task,
 			      const std::vector<PhysicalRegion> &regions,
 			      Context ctx, HighLevelRuntime *runtime) {
-  /*
   assert(regions.size() == 1);
   assert(task->regions.size() == 1);
   assert(task->local_arglen == sizeof(long));
-  
+
+  Point<1> p = task->index_point.get_point<1>();
+  printf("point = %d\n", p[0]);
+
   const long seed = *((const long*)task->local_args);
-  printf("random seed = %l\n", seed);
+  printf("random seed = %lu \n", seed);
 
-  Point<2> p = task->index_point.get_point<2>();
-  printf("point = (%d, %d)\n", p[0], p[1]);
-
+  /*
   int rb = args->matrix.rblock;
   int cb = args->matrix.cblock;
   
@@ -63,7 +63,7 @@ void InitMatrixTask::cpu_task(const Task *task,
   for(int ri = 0; ri < args->matrix.rblock; ri++)
     for(int ci = 0; ci < args->matrix.cblock; ci++)
       *(base + ri * offsets[0] + ci * offsets[1]) = args->clear_val;
-  */
+*/
 }
 
 
