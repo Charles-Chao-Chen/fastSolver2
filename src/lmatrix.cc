@@ -1,6 +1,5 @@
 #include "lmatrix.hpp"
 #include "macros.hpp" // for FIELDID_V
-#include "solver_tasks.hpp"
 
 LMatrix::LMatrix() {}
 
@@ -12,14 +11,36 @@ int LMatrix::cols() const {return mCols;}
 
 int LMatrix::num_partition() const {return nPart;}
 
-Domain LMatrix::color_domain() const {return domain;}
+Domain LMatrix::color_domain() const {return colDom;}
 
 LogicalRegion LMatrix::logical_region() const {return region;}
 
 LogicalPartition LMatrix::logical_partition() const {return lpart;}
 
-void LMatrix::init
-(const Vector& vec, Context ctx, HighLevelRuntime *runtime, bool wait) {
+void LMatrix::create
+(int rows, int cols, Context ctx, HighLevelRuntime *runtime, bool wait) {
+  assert(rows>0 && cols>0);
+  this->mRows = rows;
+  this->mCols = cols;
+  Point<2> lo = make_point(0, 0);
+  Point<2> hi = make_point(mRows-1, mCols-1);
+  Rect<2> rect(lo, hi);
+  this->fspace = runtime->create_field_space(ctx);
+  this->ispace = runtime->
+    create_index_space(ctx, Domain::from_rect<2>(rect));
+  {
+    FieldAllocator allocator = runtime->
+      create_field_allocator(ctx, fspace);
+    allocator.allocate_field(sizeof(double), FIELDID_V);
+  }
+  region = runtime->create_logical_region(ctx, ispace, fspace);
+  assert(region != LogicalRegion::NO_REGION);
+}
+
+void LMatrix::init_data
+(int nPart, const Vector& vec,
+ Context ctx, HighLevelRuntime *runtime, bool wait) {
+  /*
   assert( this->rows() == vec.rows() );
   assert( this->cols() == 1 );
   assert( this->num_partition() == vec.num_partition() );
@@ -39,27 +60,56 @@ void LMatrix::init
     std::cout << "Wait for init..." << std::endl;
     fm.wait_all_results();
   }
-}
-
-void LMatrix::create
-(int rows, int cols, Context ctx, HighLevelRuntime *runtime, bool wait) {
-
+  */
 }
 
 void LMatrix::init_data
-(const Matrix& mat, Context ctx, HighLevelRuntime *runtime, bool wait) {
-  // create the region
+(int nProc_, const Matrix& mat,
+ Context ctx, HighLevelRuntime *runtime, bool wait) {
+  // assuming the region has been created
   assert( this->rows() == mat.rows() );
   assert( this->cols() == mat.cols() );
-  assert( this->num_partition() == mat.num_partition() );
+  assert( nProc_ == mat.num_partition() );
+  this->nProc = nProc_;
   ArgumentMap argMap;
-  for (int i = 0; i < nPart; i++) {
+  for (int i = 0; i < nProc; i++) {
     long s = mat.rand_seed(i);
     argMap.set_point(DomainPoint::from_point<1>(Point<1>(i)),
 		     TaskArgument(&s,sizeof(s)));
-  }  
-  InitMatrixTask launcher(domain, TaskArgument(), argMap);
-  RegionRequirement req(lpart, 0, WRITE_DISCARD, EXCLUSIVE, region);
+  }
+
+  
+  assert(mRows%nProc == 0);
+
+  /*
+  Point<2> blk = make_point(mRows/nProc,1);
+  Blockify<2> coloring(blk);
+    //IndexPartition ip
+  //= runtime->create_index_partition(ctx, ispace, coloring);
+*/
+
+  Rect<1> color_bounds(Point<1>(0),Point<1>(nProc-1));
+  Domain color_domain = Domain::from_rect<1>(color_bounds);
+ 
+
+  int size = mRows/nProc;
+  DomainColoring coloring;
+  for (int color = 0; color < nProc; color++) {
+    Point<2> lo = make_point(  color   *size,   0);
+    Point<2> hi = make_point( (color+1)*size-1, mCols-1);
+    Rect<2> subrect(lo, hi);
+    coloring[color] = Domain::from_rect<2>(subrect);
+  }
+  IndexPartition ip = runtime->create_index_partition(ctx, ispace, color_domain, 
+						      coloring, true);
+
+
+  LogicalPartition lp
+    = runtime->get_logical_partition(ctx, region, ip);
+
+  Domain dom = runtime->get_index_partition_color_space(ctx, ip);
+  InitMatrixTask launcher(dom, TaskArgument(), argMap);
+  RegionRequirement req(lp, 0, WRITE_DISCARD, EXCLUSIVE, region);
   req.add_field(FIELDID_V);
   launcher.add_region_requirement(req);
   FutureMap fm = runtime->execute_index_space(ctx, launcher);

@@ -11,16 +11,6 @@
 #include "init_matrix.hpp"
 #include "zero_matrix.hpp"
 
-void register_solver_tasks() {
-  LeafSolveTask::register_tasks();
-  NodeSolveTask::register_tasks();
-  GemmRedTask::register_tasks();
-  GemmBroTask::register_tasks();
-  Add::register_operator();
-  HighLevelRuntime::set_registration_callback(register_projector);
-
-  InitMatrixTask::register_tasks();
-  ZeroMatrixTask::register_tasks();
-}
+void register_solver_tasks();
 
 #endif

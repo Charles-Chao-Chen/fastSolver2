@@ -8,6 +8,7 @@ using namespace LegionRuntime::HighLevel;
 
 #include "macros.hpp" // for WAIT_DEFAULT
 #include "matrix.hpp"
+#include "solver_tasks.hpp" // for solver tasks
 
 // legion matrix
 class LMatrix {
@@ -21,32 +22,33 @@ public:
   Domain color_domain() const;
   LogicalRegion logical_region() const;
   LogicalPartition logical_partition() const;
-  
-  // for UTree::init_rhs()
-  void init
-  (const Vector& Rhs, Context, HighLevelRuntime*,
-   bool wait=WAIT_DEFAULT);
 
-  // for UTree::rhs()
-  Vector to_vector();
-
-  // for VTree::partition()
+  // create logical region
   void create(int, int, Context, HighLevelRuntime*,
 	      bool wait=WAIT_DEFAULT);
-  
+
+  // initialize region, assuming it exists
   void init_data
-  (const Matrix& VMat, Context, HighLevelRuntime*,
+  (int, const Vector& Rhs, Context, HighLevelRuntime*,
    bool wait=WAIT_DEFAULT);
 
-  // for KTree::partition()
-  void create_dense_partition
-  (int, const Matrix& U, const Matrix& V, const Vector& D,
-   Context, HighLevelRuntime*, bool wait=WAIT_DEFAULT);
+  void init_data
+  (int, const Matrix& VMat, Context, HighLevelRuntime*,
+   bool wait=WAIT_DEFAULT);
 
   // uniform partition
   // for VTree::partition() and
   // for this->create_dense_blocks()
   void partition(int level, Context, HighLevelRuntime*);
+
+  // output the right hand side
+  // for UTree::rhs()
+  Vector to_vector();
+
+  // for KTree::partition()
+  void create_dense_partition
+  (int, const Matrix& U, const Matrix& V, const Vector& D,
+   Context, HighLevelRuntime*, bool wait=WAIT_DEFAULT);
 
   // solve linear system
   // for KTree::solve()
@@ -76,7 +78,10 @@ public:
   
 private:
 
+  // ******************
   // helper functions
+  // ******************
+  
   void coarse_partition();
   void fine_partition();
 
@@ -85,17 +90,29 @@ private:
   (LMatrix& b, Context ctx, HighLevelRuntime *runtime,
    bool wait=WAIT_DEFAULT);
 
+  // ******************
   // private variables
-  int mRows, mCols;
+  // ******************
+  
+  // matrix and block size
+  int mRows;
+  int mCols;
+  int rblock;
+  int cblock;
 
-  int nProc;
-  int nPart;
-    
+  // number of ranks
+  // used to init data
+  int              nProc;  
+  
+  // region
   IndexSpace       ispace;
   FieldSpace       fspace;
-  Blockify<2>      blkify;
-  Domain           domain;
   LogicalRegion    region;
+
+  // partition
+  int              nPart;
+  Domain           colDom;
+  Blockify<1>      blkify;
   IndexPartition   ipart;
   LogicalPartition lpart;
 };

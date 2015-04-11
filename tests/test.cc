@@ -14,7 +14,7 @@ enum {
 
 void test_vector();
 void test_matrix();
-void test_legion_matrix();
+void test_legion_matrix(Context, HighLevelRuntime*);
 
 void top_level_task(const Task *task,
 		    const std::vector<PhysicalRegion> &regions,
@@ -22,7 +22,7 @@ void top_level_task(const Task *task,
 
   test_vector();
   test_matrix();
-  test_legion_matrix();
+  test_legion_matrix(ctx, runtime);
   
   /*
   // ======= Problem configuration =======
@@ -66,16 +66,29 @@ void top_level_task(const Task *task,
 int main(int argc, char *argv[]) {
   // register top level task
   HighLevelRuntime::set_top_level_task_id(TOP_LEVEL_TASK_ID);
-  HighLevelRuntime::register_legion_task<top_level_task>(
-    TOP_LEVEL_TASK_ID,   /* task id */
-    Processor::LOC_PROC, /* cpu */
-    true,  /* single */
-    false, /* index  */
-    AUTO_GENERATE_ID,
-    TaskConfigOptions(false /*leaf task*/),
-    "master-task"
-  );
 
+  HighLevelRuntime::register_legion_task<top_level_task>(TOP_LEVEL_TASK_ID,
+							 Processor::LOC_PROC, true/*single*/, false/*index*/);
+
+
+  register_solver_tasks();
+  
+    
+  /*
+  HighLevelRuntime::register_single_task<top_level_task>(TOP_LEVEL_TASK_ID, Processor::LOC_PROC, false, "top_level_task");
+
+
+  HighLevelRuntime::register_legion_task<top_level_task>(
+    TOP_LEVEL_TASK_ID,
+    Processor::LOC_PROC,
+    true,
+    false,
+    AUTO_GENERATE_ID,
+    TaskConfigOptions(false),
+    "master-task
+  );
+*/
+    
   // start legion master task
   return HighLevelRuntime::start(argc, argv);
 }
@@ -98,7 +111,7 @@ void test_vector() {
   vec2.rand(nPart); // random entries
   if (vec2.num_partition() != nPart)
     Error("wrong paritition number");
-  vec2.display("random vector");
+  //vec2.display("random vector");
 
   if (vec2+vec2 != 2*vec2)
     Error("+ or * wrong");
@@ -126,7 +139,7 @@ void test_matrix() {
   mat1.rand(nPart);
   if (mat1.num_partition() != nPart)
     Error("wrong partition number");
-  mat1.display("random matrix");
+  //mat1.display("random matrix");
 
   if (mat1+mat1 != 2*mat1)
     Error("+ or * wrong");
@@ -148,11 +161,16 @@ void test_matrix() {
   std::cout << "Test for Matrix passed!" << std::endl;
 }
 
-void test_legion_matrix() {
+void test_legion_matrix(Context ctx, HighLevelRuntime *runtime) {
   
-  LMatrix mat;
-
-  //int m = 16, n = 1;
-  //  Vector vec = Vector::constant<1>(m);
+  int m = 16, n = 2;
+  int nPart = 4;
+  Matrix  mat0(m, n);
+  mat0.rand(nPart);
+  mat0.display("mat0");
   
+  LMatrix lmat0;
+  lmat0.create(m, n, ctx, runtime);
+  lmat0.init_data(nPart, mat0, ctx, runtime);
+  lmat0.display("lmat0", ctx, runtime);
 }

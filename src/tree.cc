@@ -9,8 +9,7 @@ void UTree::init_rhs
 (const Vector& b, Context ctx, HighLevelRuntime *runtime) {
   assert(Rhs.rows() == b.rows());
   assert(Rhs.cols() == 1);
-  assert(Rhs.num_partition() == b.num_partition());
-  Rhs.init(b, ctx, runtime);
+  Rhs.init_data(nProc, b, ctx, runtime);
 }
 
 Vector UTree::rhs() {
@@ -35,8 +34,7 @@ UTree::UDMat& UTree::level(int i) {
 
 void VTree::init(int nProc_, const Matrix& VMat_) {
   this->nProc = nProc_;
-  this->VMat  = VMat_;
-  
+  this->VMat  = VMat_;  
 }
 
 void VTree::partition
@@ -45,7 +43,7 @@ void VTree::partition
   assert( VMat.rows() > 0 );
   assert( VMat.cols() > 0 );
   V.create(VMat.rows(), VMat.cols(), ctx, runtime);
-  V.init_data(VMat, ctx, runtime);
+  V.init_data(nProc, VMat, ctx, runtime);
   V.partition(nlevel, ctx, runtime);
 }
 
