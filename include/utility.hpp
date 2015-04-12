@@ -1,9 +1,17 @@
-#ifndef _macros_hpp
-#define _macros_hpp
+#ifndef _utility_hpp
+#define _utility_hpp
+
+#include "legion.h"
+using namespace LegionRuntime::HighLevel;
+using namespace LegionRuntime::Accessor;
 
 enum {
   FIELDID_V,
 };
+
+const bool WAIT_DEFAULT = true; // waiting for tasks
+
+double* region_pointer(const PhysicalRegion &region, int, int, int, int);
 
 // error message
 #include <cstdlib> // for EXIT_FAILURE
@@ -17,7 +25,5 @@ enum {
     assert(false);				\
   }
   //exit(EXIT_FAILURE)
-
-const bool WAIT_DEFAULT = true; // waiting for tasks
 
 #endif
