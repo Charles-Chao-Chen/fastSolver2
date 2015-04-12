@@ -162,6 +162,8 @@ void Matrix::rand(int nPart_) {
     long seed;
     assert( lrand48_r(&buffer, &seed) == 0 );
     seeds.push_back( seed );
+    // set the seed for generating double floating numbers
+    assert( srand48_r( seed, &buffer ) == 0 );
     for (int j=0; j<colorSize*mCols; j++) {
       assert( drand48_r(&buffer, &data[count]) == 0 );
       count++;
