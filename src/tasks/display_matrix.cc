@@ -46,18 +46,7 @@ void DisplayMatrixTask::cpu_task
   const int   rows = args.rows;
   const int   cols = args.cols;
  
-  Rect<2> bounds, subrect;
-  bounds.lo.x[0] = 0;
-  bounds.hi.x[0] = rows - 1;
-  bounds.lo.x[1] = 0;
-  bounds.hi.x[1] = cols - 1;
-  ByteOffset offsets[2];
-  double *base = regions[0].get_field_accessor(FIELDID_V).template typeify<double>().template raw_rect_ptr<2>(bounds, subrect, offsets);
-  assert(subrect == bounds);
-#ifdef DEBUG_POINTERS
-  printf("ptr = %p (%d, %d)\n", base, offsets[0].offset, offsets[1].offset);
-#endif
-
+  double *base = region_pointer(regions[0], 0, rows, 0, cols);    
   PtrMatrix pMat(rows, cols, rows, base);
   pMat.display(name);
 }

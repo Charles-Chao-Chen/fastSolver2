@@ -71,6 +71,8 @@ void DenseBlockTask::cpu_task(const Task *task,
   double *base = regions[0].get_field_accessor(FIELDID_V).template typeify<double>().template raw_rect_ptr<2>(bounds, subrect, offsets);
   assert(subrect == bounds);
   printf("ptr = %p (%d, %d)\n", base, offsets[0].offset, offsets[1].offset);
+
+  
   /*
   // recover U
   struct drand48_data buffer;

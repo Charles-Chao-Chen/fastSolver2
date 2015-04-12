@@ -46,24 +46,16 @@ void InitMatrixTask::cpu_task(const Task *task,
 
   const long seed = *((const long*)task->local_args);
   printf("random seed = %lu \n", seed);
-
   
   const TaskArgs blockSize = *((const TaskArgs*)task->args);
   int rows = blockSize.rows;
   int cols = blockSize.cols;
   //printf("block row size = %i\n", rows);
   //printf("block col size = %i\n", cols);
- 
-  Rect<2> bounds, subrect;
-  bounds.lo.x[0] = p[0] * rows;
-  bounds.hi.x[0] = (p[0] + 1) * rows - 1;
-  bounds.lo.x[1] = 0;
-  bounds.hi.x[1] = cols - 1;
-  ByteOffset offsets[2];
-  double *base = regions[0].get_field_accessor(FIELDID_V).template typeify<double>().template raw_rect_ptr<2>(bounds, subrect, offsets);
-  assert(subrect == bounds);
-  //printf("ptr = %p (%d, %d)\n", base, offsets[0].offset, offsets[1].offset);
 
+  int rlo = p[0]*rows;
+  int rhi = (p[0] + 1) * rows;
+  double *base = region_pointer(regions[0], rlo, rhi, 0, cols);
   PtrMatrix pMat(rows, cols, rows, base);
   pMat.rand(seed);
 }
