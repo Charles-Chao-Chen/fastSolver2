@@ -1,4 +1,5 @@
 #include "dense_block.hpp"
+#include "ptr_matrix.hpp"
 
 #include "utility.hpp" // for FIELDID_V
 #include <assert.h>
@@ -48,7 +49,6 @@ void DenseBlockTask::cpu_task(const Task *task,
   long uSeed = seeds.uSeed;
   long vSeed = seeds.vSeed;
   long dSeed = seeds.dSeed;
-
   printf("random seeds = (%lu, %lu, %lu) \n", uSeed, vSeed, dSeed);
   
   const TaskArgs matrix = *((const TaskArgs*)task->args);
@@ -61,7 +61,8 @@ void DenseBlockTask::cpu_task(const Task *task,
   printf("matrix col size = %i\n", cols);
   printf("rank = %i\n", rank);
   printf("block size = %i\n", blks);
- 
+
+  /*
   Rect<2> bounds, subrect;
   bounds.lo.x[0] = p[0] * rows;
   bounds.hi.x[0] = (p[0] + 1) * rows - 1;
@@ -71,20 +72,28 @@ void DenseBlockTask::cpu_task(const Task *task,
   double *base = regions[0].get_field_accessor(FIELDID_V).template typeify<double>().template raw_rect_ptr<2>(bounds, subrect, offsets);
   assert(subrect == bounds);
   printf("ptr = %p (%d, %d)\n", base, offsets[0].offset, offsets[1].offset);
-
+*/
   
-  /*
-  // recover U
-  struct drand48_data buffer;
-  assert( srand48_r( uSeed, &buffer ) == 0 );
-  for(int ri = 0; ri < rows; ri++)
-    for(int ci = 0; ci < cols; ci++) {
+  int rlo = p[0] * rows;
+  int rhi = (p[0] + 1) * rows;
+  double *base = region_pointer(regions[0], rlo, rhi, 0, cols);
 
-      assert( drand48_r(&buffer, value) == 0 );
-    }
+  // recover U, V and D
+  PtrMatrix U(rows, rank), V(rows, rank), D(rows, 1);
+  U.rand(uSeed);
+  V.rand(vSeed);
+  D.rand(dSeed);
 
-  double *value = base + ri * offsets[0] + ci * offsets[1];
-  */
+  int bSize = rows / blks;
+  assert( bSize == cols );
+  for (int i=0; i<blks; i++) {
+    char trans = 't';
+    PtrMatrix Ublk(bSize, rank, rows, U.pointer()+i*bSize);
+    PtrMatrix Vblk(bSize, rank, rows, V.pointer()+i*bSize, trans);
+    PtrMatrix Dblk(bSize, 1,    rows, D.pointer()+i*bSize);
+    PtrMatrix pMat(bSize, cols, rows, base       +i*bSize);
+    PtrMatrix::gemm(U, V, D, pMat);
+  }
 }
 
 
