@@ -7,7 +7,7 @@
 class Vector {
 public:
   Vector();
-  Vector(int N);
+  Vector(int N, bool generate_entry=true);
   
   // number of rows
   int rows() const;
@@ -19,6 +19,7 @@ public:
   double norm() const;
 
   // random entries
+  //void rand(int nPart, bool generate_entry=true);
   void rand(int nPart);
 
   // return the random seed
@@ -51,12 +52,16 @@ private:
   int mRows;
   std::vector<long>   seeds;
   std::vector<double> data;
+
+  // for large matrices, we can avoid generating the entries,
+  //  but only store the seeds
+  bool generate_entry;
 };
 
 class Matrix {
 public:
   Matrix();
-  Matrix(int nRow, int nCol);
+  Matrix(int nRow, int nCol, bool generate_entry=true);
   //  ~Matrix();
 
   // consistant with eigen routines
@@ -99,11 +104,15 @@ public:
   static Matrix constant(int m, int n);
   
 private:
-  int nPart;
-  int mRows;
-  int mCols;
+  int  nPart;
+  int  mRows;
+  int  mCols;
   std::vector<long>   seeds;
   std::vector<double> data;
+
+  // for large matrices, we can avoid generating the entries,
+  //  but only store the seeds
+  bool generate_entry;
 };
 
 template <int value>
