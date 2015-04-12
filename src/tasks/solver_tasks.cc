@@ -9,6 +9,7 @@ void register_solver_tasks() {
   HighLevelRuntime::set_registration_callback(register_projector);
 
   InitMatrixTask::register_tasks();
+  DenseBlockTask::register_tasks();
   ZeroMatrixTask::register_tasks();
   DisplayMatrixTask::register_tasks();
 }

@@ -1,4 +1,5 @@
 #include "matrix.hpp"
+#include "ptr_matrix.hpp"
 
 #include <iostream>
 #include <assert.h>
@@ -176,17 +177,13 @@ void Matrix::rand(int nPart_) {
     assert( lrand48_r(&buffer, &seed) == 0 );
     seeds.push_back( seed );
   }
-
+    
   // generating random numbers
   if (generate_entry) {
-    int count = 0;
-    int colorSize = mRows / nPart;
-    for (int i=0; i<nPart; i++) {
-      assert( srand48_r( seeds[i], &buffer ) == 0 );
-      for (int j=0; j<colorSize*mCols; j++) {
-	assert( drand48_r(&buffer, &data[count]) == 0 );
-	count++;
-      }
+    int nrow = mRows / nPart;
+    for (int k=0; k<nPart; k++) {
+      PtrMatrix pMat(nrow, mCols, mRows, &data[k*nrow]);
+      pMat.rand( seeds[k] );
     }
   }
 }
@@ -301,10 +298,9 @@ void Matrix::display(const std::string& name) const {
 	      << std::endl;
   }
   if (generate_entry) {
-    int count = 0;
     for (int i=0; i<mRows; i++) {
       for (int j=0; j<mCols; j++)
-	std::cout << data[count++] << "\t";
+	std::cout << (*this)(i, j) << "\t";
       std::cout << std::endl;
     }
   }

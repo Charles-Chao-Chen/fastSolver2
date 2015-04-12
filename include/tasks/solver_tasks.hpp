@@ -9,6 +9,7 @@
 #include "reduce_add.hpp"
 
 #include "init_matrix.hpp"
+#include "dense_block.hpp"
 #include "zero_matrix.hpp"
 #include "display_matrix.hpp"
 

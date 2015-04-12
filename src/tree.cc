@@ -1,5 +1,7 @@
 #include "tree.hpp"
 
+#include <math.h> // for pow()
+
 void UTree::init(int nProc_, const Matrix& UMat_) {
   this->nProc = nProc_;
   this->UMat  = UMat_;
@@ -39,11 +41,14 @@ void VTree::init(int nProc_, const Matrix& VMat_) {
 
 void VTree::partition
 (int level, Context ctx, HighLevelRuntime *runtime) {
-  // make sure VMat is initialized
+  // make sure VMat is valid
   assert( VMat.rows() > 0 );
   assert( VMat.cols() > 0 );
+  // create region
   V.create(VMat.rows(), VMat.cols(), ctx, runtime);
+  // initialize region
   V.init_data(nProc, VMat, ctx, runtime);
+  // create partition
   V.partition(nlevel, ctx, runtime);
 }
 
@@ -60,11 +65,27 @@ void KTree::init
   this->UMat  = UMat_;
   this->VMat  = VMat_;
   this->DVec  = DVec_;
+  assert(nProc == UMat.num_partition());
+  assert(nProc == VMat.num_partition());
+  assert(nProc == DVec.num_partition());
+  assert(UMat.rows() == VMat.rows());
+  assert(UMat.cols() == VMat.cols());
+  assert(UMat.rows() == DVec.rows());
 }
 
 void KTree::partition
 (int level, Context ctx, HighLevelRuntime *runtime) {
-  K.create_dense_partition(nlevel, UMat, VMat, DVec, ctx, runtime);
+  // create region
+  int nrow = DVec.rows();
+  int nblk = pow(2, level-1);
+  int ncol = DVec.rows() / nblk;
+  assert(nblk >= nProc);
+  assert(ncol >  UMat.cols());
+  K.create( nrow, ncol, ctx, runtime );
+  // initialize region
+  K.init_dense_blocks(nProc, nblk, UMat, VMat, DVec, ctx, runtime);
+  // partition region
+  K.partition(nlevel, ctx, runtime);
 }
 
 void KTree::solve

@@ -6,9 +6,9 @@
 #include "legion.h"
 using namespace LegionRuntime::HighLevel;
 
-#include "macros.hpp" // for WAIT_DEFAULT
+#include "utility.hpp" // for WAIT_DEFAULT and FIELDID_V
 #include "matrix.hpp"
-#include "solver_tasks.hpp" // for solver tasks
+#include "solver_tasks.hpp"
 
 // legion matrix
 class LMatrix {
@@ -36,9 +36,12 @@ public:
   (int, const Matrix& VMat, Context, HighLevelRuntime*,
    bool wait=WAIT_DEFAULT);
 
+  // for KTree::partition
+  void init_dense_blocks
+  (int, int, const Matrix& UMat, const Matrix& VMat, const Vector& DVec,
+   Context, HighLevelRuntime*, bool wait=WAIT_DEFAULT);
+
   // uniform partition
-  // for VTree::partition() and
-  // for this->create_dense_blocks()
   void partition(int level, Context, HighLevelRuntime*);
 
   // output the right hand side
@@ -46,9 +49,9 @@ public:
   Vector to_vector();
 
   // for KTree::partition()
-  void create_dense_partition
-  (int, const Matrix& U, const Matrix& V, const Vector& D,
-   Context, HighLevelRuntime*, bool wait=WAIT_DEFAULT);
+  //void create_dense_partition
+  //(int, const Matrix& U, const Matrix& V, const Vector& D,
+  //Context, HighLevelRuntime*, bool wait=WAIT_DEFAULT);
 
   // solve linear system
   // for KTree::solve()
@@ -85,6 +88,7 @@ private:
 
   // for init_matrix task
   ArgumentMap MapSeed(int nPart, const Matrix& matrix);
+  ArgumentMap MapSeed(int nPart, const Matrix& U, const Matrix& V, const Vector& D);
 
   // partition the matrix along rows
   IndexPartition UniformRowPartition

@@ -1,6 +1,7 @@
 #include "init_matrix.hpp"
+#include "ptr_matrix.hpp"
 
-#include "macros.hpp" // for FIELDID_V
+#include "utility.hpp" // for FIELDID_V
 #include <assert.h>
 
 int InitMatrixTask::TASKID;
@@ -63,13 +64,8 @@ void InitMatrixTask::cpu_task(const Task *task,
   assert(subrect == bounds);
   //printf("ptr = %p (%d, %d)\n", base, offsets[0].offset, offsets[1].offset);
 
-  struct drand48_data buffer;
-  assert( srand48_r( seed, &buffer ) == 0 );
-  for(int ri = 0; ri < rows; ri++)
-    for(int ci = 0; ci < cols; ci++) {
-      double *value = base + ri * offsets[0] + ci * offsets[1];
-      assert( drand48_r(&buffer, value) == 0 );
-    }
+  PtrMatrix pMat(rows, cols, rows, base);
+  pMat.rand(seed);
 }
 
 

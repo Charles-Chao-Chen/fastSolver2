@@ -1,5 +1,4 @@
 #include "lmatrix.hpp"
-#include "macros.hpp" // for FIELDID_V
 
 LMatrix::LMatrix() {}
 
@@ -91,6 +90,32 @@ void LMatrix::init_data
   }
 }
 
+void LMatrix::init_dense_blocks
+(int nProc_, int nblk, const Matrix& U, const Matrix& V, const Vector& D,
+ Context ctx, HighLevelRuntime *runtime, bool wait) {
+  
+  this->nProc = nProc_;
+  ArgumentMap seeds = MapSeed(nProc, U, V, D);
+
+  // assume uniform partition
+  assert(mRows%nProc == 0);
+  IndexPartition ip = UniformRowPartition(nProc, ctx, runtime);
+  LogicalPartition lp = runtime->get_logical_partition(ctx, region, ip);
+  Domain dom = runtime->get_index_partition_color_space(ctx, ip);
+
+  DenseBlockTask::TaskArgs args = {mRows/nProc, mCols, U.cols(), nblk/nProc};
+  DenseBlockTask launcher(dom, TaskArgument(&args, sizeof(args)), seeds);
+  RegionRequirement req(lp, 0, WRITE_DISCARD, EXCLUSIVE, region);
+  req.add_field(FIELDID_V);
+  launcher.add_region_requirement(req);
+  FutureMap fm = runtime->execute_index_space(ctx, launcher);
+    
+  if(wait) {
+    std::cout << "Wait for init..." << std::endl;
+    fm.wait_all_results();
+  }
+}
+
 ArgumentMap LMatrix::MapSeed(int nPart, const Matrix& matrix) {
   assert(nPart == matrix.num_partition());
   ArgumentMap argMap;
@@ -98,6 +123,16 @@ ArgumentMap LMatrix::MapSeed(int nPart, const Matrix& matrix) {
     long s = matrix.rand_seed(i);
     argMap.set_point(DomainPoint::from_point<1>(Point<1>(i)),
 		     TaskArgument(&s,sizeof(s)));
+  }
+  return argMap;
+}
+
+ArgumentMap LMatrix::MapSeed(int nPart, const Matrix& U, const Matrix& V, const Vector& D) {
+  ArgumentMap argMap;
+  for (int i = 0; i < nPart; i++) {
+    ThreeSeeds  threeSeeds = {U.rand_seed(i), V.rand_seed(i), D.rand_seed(i)};
+    argMap.set_point(DomainPoint::from_point<1>(Point<1>(i)),
+		     TaskArgument(&threeSeeds,sizeof(threeSeeds)));
   }
   return argMap;
 }
@@ -124,6 +159,7 @@ Vector LMatrix::to_vector() {
   return Vector();
 }
 
+/*
 void LMatrix::create_dense_partition
 (int nPart, const Matrix& U, const Matrix& V, const Vector& D,
  Context ctx, HighLevelRuntime *runtime, bool wait) {
@@ -132,6 +168,7 @@ void LMatrix::create_dense_partition
   // populate data
   // create nPart partition
 }
+*/
 
 void LMatrix::partition
 (int level, Context ctx, HighLevelRuntime *runtime) {

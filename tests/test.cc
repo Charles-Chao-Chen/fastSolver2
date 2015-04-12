@@ -123,6 +123,10 @@ void test_vector() {
       != Vector::constant<15>(N))
     Error("entry-wise muliply");
 
+  Vector no_entry(N, false);
+  no_entry.rand(nPart);
+  no_entry.display("no_entry");
+  
   std::cout << "Test for Vector passed!" << std::endl;
 }
 
@@ -157,6 +161,18 @@ void test_matrix() {
   if (Matrix::constant<1>(m,n).T() * Vector::constant<1>(m)
       != Vector::constant<m>(n))
     Error("transpose multiply wrong");
+
+  if (Matrix::constant<1>(n,n) * Matrix::constant<1>(n,n)
+      != Matrix::constant<n>(n,n))
+    Error("matrix multiply wrong");
+
+  if (Matrix::constant<10>(n,n) * Vector::constant<1>(n).to_diag_matrix()
+      != Matrix::constant<10>(n,n))
+    Error("vector to diagonal matrix wrong");
+    
+  Matrix no_entry(m, n, false);
+  no_entry.rand(nPart);
+  no_entry.display("no_entry");
   
   std::cout << "Test for Matrix passed!" << std::endl;
 }
@@ -164,7 +180,7 @@ void test_matrix() {
 void test_legion_matrix(Context ctx, HighLevelRuntime *runtime) {
   
   int m = 16, n = 2;
-  int nPart = 4;
+  int nPart = 2;
   Matrix  mat0(m, n);
   mat0.rand(nPart);
   mat0.display("mat0");
@@ -173,4 +189,30 @@ void test_legion_matrix(Context ctx, HighLevelRuntime *runtime) {
   lmat0.create(m, n, ctx, runtime);
   lmat0.init_data(nPart, mat0, ctx, runtime);
   lmat0.display("lmat0", ctx, runtime);
+
+  Matrix U(m, n), V(m, n);
+  Vector D(m);
+  U.rand(nPart);
+  V.rand(nPart);
+  D.rand(nPart);
+  
+  Matrix A = (U * V.T()) + D.to_diag_matrix();
+  
+  int level = 3;
+  int nrow = D.rows();
+  int nblk = pow(2, level-1);
+  int ncol = D.rows() / nblk;
+  LMatrix lmat;
+  lmat.create(nrow, ncol, ctx, runtime);
+  lmat.init_dense_blocks(nPart, nblk, U, V, D, ctx, runtime);
+
+  /*
+  U.display("U");
+  V.display("V");
+  D.display("D");
+  //A.display("full matrix");
+  //lmat.display("diagonal blocks", ctx, runtime);
+  */
+    
+  std::cout << "Test for legion matrix passed!" << std::endl;
 }

@@ -1,6 +1,7 @@
 #include "display_matrix.hpp"
+#include "ptr_matrix.hpp"
 
-#include "macros.hpp" // for FIELDID_V
+#include "utility.hpp" // for FIELDID_V
 #include <assert.h>
 
 DisplayMatrixTask::TaskArgs::TaskArgs
@@ -57,14 +58,8 @@ void DisplayMatrixTask::cpu_task
   printf("ptr = %p (%d, %d)\n", base, offsets[0].offset, offsets[1].offset);
 #endif
 
-  std::cout << name << ":"<< std::endl;
-  for(int ri = 0; ri < rows; ri++) {
-    for(int ci = 0; ci < cols; ci++) {
-      double *value = base + ri * offsets[0] + ci * offsets[1];
-      std::cout << *value << "\t";
-    }
-    std::cout << std::endl;
-  }
+  PtrMatrix pMat(rows, cols, rows, base);
+  pMat.display(name);
 }
 
 
