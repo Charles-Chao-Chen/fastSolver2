@@ -70,6 +70,13 @@ double Vector::operator[] (int i) const {
   return data[i];
 }
 
+Matrix Vector::to_diag_matrix() const {
+  Matrix temp = Matrix::constant<0>( mRows, mRows );
+  for (int i=0; i<mRows; i++)
+    temp(i, i) = data[i];
+  return temp;
+}
+
 Vector Vector::multiply(const Vector& other) {
   assert( this->generate_entry == true );
   assert( other.generate_entry == true );
@@ -266,6 +273,19 @@ Matrix operator * (const double alpha,  const Matrix& mat) {
   for (int i=0; i<temp.rows(); i++)
     for (int j=0; j<temp.cols(); j++)
       temp(i, j) = alpha * mat(i, j);
+  return temp;
+}
+
+Matrix operator * (const Matrix& mat1, const Matrix& mat2) {
+  assert(mat1.cols() == mat2.rows());
+  Matrix temp( mat1.rows(), mat2.cols());
+  for (int i=0; i<temp.rows(); i++) {
+    for (int j=0; j<temp.cols(); j++) {
+      temp(i, j) = 0.0;
+      for (int k=0; k<mat1.cols(); k++)
+	temp(i, j) += mat1(i, k) * mat2(k, j);
+    }
+  }
   return temp;
 }
 

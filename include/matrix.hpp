@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 
+class Matrix;
 class Vector {
 public:
   Vector();
@@ -25,9 +26,9 @@ public:
   // return the random seed
   long rand_seed(int) const;
   
-  // assignment operator
-  //  void operator= (const Vector&);
-
+  // form a diagonal matrix
+  Matrix to_diag_matrix() const;
+  
   // return the ith entry / reference  
   double  operator[] (int i) const;
   double& operator[] (int i);
@@ -90,6 +91,7 @@ public:
 
   // matrix vector product
   friend Vector operator * (const Matrix&, const Vector&);
+  friend Matrix operator * (const Matrix&, const Matrix&);
   friend Matrix operator + (const Matrix&, const Matrix&);
   friend Matrix operator - (const Matrix&, const Matrix&);
   friend bool   operator== (const Matrix&, const Matrix&);
