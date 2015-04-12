@@ -171,7 +171,7 @@ void Matrix::rand(int nPart_) {
   this->nPart = nPart_;
   assert( mRows%nPart == 0 );
   struct drand48_data buffer;
-  assert( srand48_r( time(NULL)+1, &buffer ) == 0 );
+  assert( srand48_r( time(NULL) + lrand48(), &buffer ) == 0 );
   for (int i=0; i<nPart; i++) {
     long seed;
     assert( lrand48_r(&buffer, &seed) == 0 );

@@ -1,4 +1,5 @@
 #include "ptr_matrix.hpp"
+#include "utility.hpp"
 
 #include <assert.h>
 #include <stdlib.h> // for srand48_r(), lrand48_r() and drand48_r()
@@ -25,7 +26,17 @@ PtrMatrix::PtrMatrix(int r, int c, int l, double *p, char trans_)
 
 // assume row major storage,
 //  which is consistant with blas and lapack layout
-double* PtrMatrix::operator()(int r, int c) {
+double PtrMatrix::operator()(int r, int c) const {
+  return ptr[r+c*leadD];
+}
+
+double& PtrMatrix::operator()(int r, int c) {
+  return ptr[r+c*leadD];
+}
+
+double* PtrMatrix::pointer() const {return ptr;}
+
+double* PtrMatrix::pointer(int r, int c) {
   return &ptr[r+c*leadD];
 }
 
@@ -34,7 +45,7 @@ void PtrMatrix::rand(long seed) {
   assert( srand48_r( seed, &buffer ) == 0 );
   for (int i=0; i<mRows; i++) {
     for (int j=0; j<mCols; j++) {
-      assert( drand48_r(&buffer, (*this)(i,j) ) == 0 );
+      assert( drand48_r(&buffer, this->pointer(i,j) ) == 0 );
     }
   }
 }
@@ -43,14 +54,11 @@ void PtrMatrix::display(const std::string& name) {
   std::cout << name << ":" << std::endl;
   for(int ri = 0; ri < mRows; ri++) {
     for(int ci = 0; ci < mCols; ci++) {
-      double *value = (*this)(ri, ci);
-      std::cout << *value << "\t";
+      std::cout << (*this)(ri, ci) << "\t";
     }
     std::cout << std::endl;
   }
 }
-
-double* PtrMatrix::pointer() const {return ptr;}
 
 int PtrMatrix::LD() const {return leadD;}
 
@@ -71,13 +79,26 @@ int PtrMatrix::cols() const {
 }
 
 void PtrMatrix::gemm
-(const PtrMatrix& U, const PtrMatrix& V,
- const PtrMatrix& D, const PtrMatrix& res) {
+(const PtrMatrix& U, const PtrMatrix& V, const PtrMatrix& D,
+ PtrMatrix& res) {
   assert(U.cols() == V.rows());
+  char transa = U.trans;
+  char transb = V.trans;
+  int  M = U.rows();
+  int  N = V.cols();
+  int  K = U.cols();
+  int  LDA = U.LD();
+  int  LDB = V.LD();
+  int  LDC = res.LD();
   double alpha = 1.0, beta = 0.0;
-  blas::gemm(U.trans, V.trans, U.rows(), V.cols(), U.cols(),
-	     &alpha, U.pointer(), U.LD(),
-	     V.pointer(), V.LD(),
-	     &beta, res.pointer(), res.LD());
+  blas::dgemm_(&transa, &transb, &M, &N, &K,
+	       &alpha, U.pointer(), &LDA,
+	       V.pointer(), &LDB,
+	       &beta, res.pointer(), &LDC);
+
+  // add the diagonal
+  assert(res.rows() == res.cols());
+  for (int i=0; i<res.rows(); i++)
+    res(i, i) += D(i, 0);
 }
   

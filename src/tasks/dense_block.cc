@@ -92,7 +92,7 @@ void DenseBlockTask::cpu_task(const Task *task,
     PtrMatrix Vblk(bSize, rank, rows, V.pointer()+i*bSize, trans);
     PtrMatrix Dblk(bSize, 1,    rows, D.pointer()+i*bSize);
     PtrMatrix pMat(bSize, cols, rows, base       +i*bSize);
-    PtrMatrix::gemm(U, V, D, pMat);
+    PtrMatrix::gemm(Ublk, Vblk, Dblk, pMat);
   }
 }
 

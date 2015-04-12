@@ -1,6 +1,8 @@
 #ifndef _utility_hpp
 #define _utility_hpp
 
+#include "lapack_blas.hpp"
+
 #include "legion.h"
 using namespace LegionRuntime::HighLevel;
 using namespace LegionRuntime::Accessor;

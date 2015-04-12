@@ -195,8 +195,9 @@ void test_legion_matrix(Context ctx, HighLevelRuntime *runtime) {
   U.rand(nPart);
   V.rand(nPart);
   D.rand(nPart);
-  
-  Matrix A = (U * V.T()) + D.to_diag_matrix();
+  //U.display("U");
+  //V.display("V");
+  //D.display("D");
   
   int level = 3;
   int nrow = D.rows();
@@ -207,12 +208,12 @@ void test_legion_matrix(Context ctx, HighLevelRuntime *runtime) {
   lmat.init_dense_blocks(nPart, nblk, U, V, D, ctx, runtime);
 
   /*
-  U.display("U");
-  V.display("V");
-  D.display("D");
-  //A.display("full matrix");
-  //lmat.display("diagonal blocks", ctx, runtime);
-  */
-    
+  Matrix A = (U * V.T()) + D.to_diag_matrix();    
+  A.display("full matrix");
+  lmat.display("diagonal blocks", ctx, runtime);
+*/
+
+
+  
   std::cout << "Test for legion matrix passed!" << std::endl;
 }

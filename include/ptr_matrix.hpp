@@ -22,16 +22,18 @@ public:
   int cols() const;
   int LD() const;
   double* pointer() const;
+  double* pointer(int, int);
 
   static void gemm
-  (const PtrMatrix&, const PtrMatrix&, const PtrMatrix&, const PtrMatrix&);
+  (const PtrMatrix&, const PtrMatrix&, const PtrMatrix&, PtrMatrix&);
   
   //friend std::ostream& operator<< (std::ostream& stream, const PtrMatrix&);
 
 private:
   // helper function
-  // return the pointer to the matrix entry
-  double* operator()(int, int);
+  // return entry/reference to the matrix entry
+  double  operator()(int, int) const;
+  double& operator()(int, int);
 
   // private variables  
   int mRows;
