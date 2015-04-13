@@ -39,7 +39,8 @@ private:
   int nRhs;
   Matrix  UMat;
   LMatrix Rhs;
-  std::vector<UDMat> U;  
+  LMatrix U;
+  std::vector<UDMat> Ulevel;
 };
 
 class VTree {

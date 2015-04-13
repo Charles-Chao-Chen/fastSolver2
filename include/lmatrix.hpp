@@ -32,8 +32,15 @@ public:
   (int, const Vector& Rhs, Context, HighLevelRuntime*,
    bool wait=WAIT_DEFAULT);
 
-  void init_data
+  /*
+    void init_data
   (int, const Matrix& VMat, Context, HighLevelRuntime*,
+   bool wait=WAIT_DEFAULT);
+  */
+  
+  // for UTree init and VTree init
+  void init_data
+  (int, int, int, const Matrix& VMat, Context, HighLevelRuntime*,
    bool wait=WAIT_DEFAULT);
 
   // for KTree::partition

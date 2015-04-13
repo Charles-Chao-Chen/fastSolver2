@@ -14,7 +14,8 @@ enum {
 
 void test_vector();
 void test_matrix();
-void test_legion_matrix(Context, HighLevelRuntime*);
+void test_lmatrix_init(Context, HighLevelRuntime*);
+void test_lmatrix_partition(Context, HighLevelRuntime*);
 
 void top_level_task(const Task *task,
 		    const std::vector<PhysicalRegion> &regions,
@@ -22,7 +23,8 @@ void top_level_task(const Task *task,
 
   test_vector();
   test_matrix();
-  test_legion_matrix(ctx, runtime);
+  test_lmatrix_init(ctx, runtime);
+  test_lmatrix_partition(ctx, runtime);
   
   /*
   // ======= Problem configuration =======
@@ -177,7 +179,7 @@ void test_matrix() {
   std::cout << "Test for Matrix passed!" << std::endl;
 }
 
-void test_legion_matrix(Context ctx, HighLevelRuntime *runtime) {
+void test_lmatrix_init(Context ctx, HighLevelRuntime *runtime) {
   
   int m = 16, n = 2;
   int nPart = 2;
@@ -187,7 +189,7 @@ void test_legion_matrix(Context ctx, HighLevelRuntime *runtime) {
   
   LMatrix lmat0;
   lmat0.create(m, n, ctx, runtime);
-  lmat0.init_data(nPart, mat0, ctx, runtime);
+  lmat0.init_data(nPart, 0, 1, mat0, ctx, runtime);
   lmat0.display("lmat0", ctx, runtime);
 
   Matrix U(m, n), V(m, n);
@@ -212,8 +214,56 @@ void test_legion_matrix(Context ctx, HighLevelRuntime *runtime) {
   A.display("full matrix");
   lmat.display("diagonal blocks", ctx, runtime);
 */
-
-
-  
-  std::cout << "Test for legion matrix passed!" << std::endl;
+  LMatrix lgUmat;
+  lgUmat.create(U.rows(), 1+level*U.cols(), ctx, runtime);
+  lgUmat.init_data(nPart, 1, level, U, ctx, runtime);
+  lgUmat.display("UTree", ctx, runtime);
+  U.display("U");
+    
+  std::cout << "Test for legion matrix initialization passed!" << std::endl;
 }
+
+void test_lmatrix_partition(Context ctx, HighLevelRuntime *runtime) {
+  /*  
+  int m = 16, n = 2;
+  int nPart = 2;
+  Matrix  mat0(m, n);
+  mat0.rand(nPart);
+  mat0.display("mat0");
+  
+  LMatrix lmat0;
+  lmat0.create(m, n, ctx, runtime);
+  lmat0.init_data(nPart, 0, 1, mat0, ctx, runtime);
+  lmat0.display("lmat0", ctx, runtime);
+
+  Matrix U(m, n), V(m, n);
+  Vector D(m);
+  U.rand(nPart);
+  V.rand(nPart);
+  D.rand(nPart);
+  //U.display("U");
+  //V.display("V");
+  //D.display("D");
+  
+  int level = 3;
+  int nrow = D.rows();
+  int nblk = pow(2, level-1);
+  int ncol = D.rows() / nblk;
+  LMatrix lmat;
+  lmat.create(nrow, ncol, ctx, runtime);
+  lmat.init_dense_blocks(nPart, nblk, U, V, D, ctx, runtime);
+
+
+  Matrix A = (U * V.T()) + D.to_diag_matrix();    
+  A.display("full matrix");
+  lmat.display("diagonal blocks", ctx, runtime);
+
+  LMatrix lgUmat;
+  lgUmat.create(U.rows(), 1+level*U.cols(), ctx, runtime);
+  lgUmat.init_data(nPart, 1, level, U, ctx, runtime);
+  lgUmat.display("UTree", ctx, runtime);
+  U.display("U");
+*/    
+  std::cout << "Test for legion matrix parition passed!" << std::endl;
+}
+

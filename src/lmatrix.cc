@@ -61,7 +61,7 @@ void LMatrix::init_data
   }
   */
 }
-
+/*
 void LMatrix::init_data
 (int nProc_, const Matrix& mat,
  Context ctx, HighLevelRuntime *runtime, bool wait) {
@@ -77,7 +77,7 @@ void LMatrix::init_data
   LogicalPartition lp = runtime->get_logical_partition(ctx, region, ip);
   Domain dom = runtime->get_index_partition_color_space(ctx, ip);
 
-  InitMatrixTask::TaskArgs args = {mRows / nProc, mCols};
+  InitMatrixTask::TaskArgs args = {mRows / nProc, mCols, 0, 1};
   InitMatrixTask launcher(dom, TaskArgument(&args, sizeof(args)), seeds);
   RegionRequirement req(lp, 0, WRITE_DISCARD, EXCLUSIVE, region);
   req.add_field(FIELDID_V);
@@ -86,6 +86,32 @@ void LMatrix::init_data
     
   if(wait) {
     std::cout << "Wait for init..." << std::endl;
+    fm.wait_all_results();
+  }
+}
+*/
+void LMatrix::init_data
+(int nProc_, int nRhs, int level, const Matrix& mat,
+ Context ctx, HighLevelRuntime *runtime, bool wait) {
+  // assuming the region has been created
+  this->nProc = nProc_;  
+  ArgumentMap seeds = MapSeed(nProc, mat);
+
+  // assume uniform partition
+  assert(mRows%nProc == 0);
+  IndexPartition ip = UniformRowPartition(nProc, ctx, runtime);
+  LogicalPartition lp = runtime->get_logical_partition(ctx, region, ip);
+  Domain dom = runtime->get_index_partition_color_space(ctx, ip);
+  
+  InitMatrixTask::TaskArgs args = {mRows/nProc, mat.cols(), nRhs, level};
+  InitMatrixTask launcher(dom, TaskArgument(&args, sizeof(args)), seeds);
+  RegionRequirement req(lp, 0, WRITE_DISCARD, EXCLUSIVE, region);
+  req.add_field(FIELDID_V);
+  launcher.add_region_requirement(req);
+  FutureMap fm = runtime->execute_index_space(ctx, launcher);
+    
+  if(wait) {
+    std::cout << "Wait for init tree..." << std::endl;
     fm.wait_all_results();
   }
 }

@@ -23,6 +23,9 @@ public:
   void destroy(Context, HighLevelRuntime*);
   
 private:
+
+  // level=0 is a dense matrix
+  // level=1 means the two off-diagonal blocks are low-rank
   int   nProc;
   int   level;
   UTree uTree;

@@ -10,6 +10,8 @@ public:
   struct TaskArgs {
     int rows;
     int cols;
+    int nRhs;
+    int level;
   };
   InitMatrixTask(Domain domain,
 		 TaskArgument global_arg,

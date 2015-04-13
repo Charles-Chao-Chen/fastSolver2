@@ -5,6 +5,7 @@
 void UTree::init(int nProc_, const Matrix& UMat_) {
   this->nProc = nProc_;
   this->UMat  = UMat_;
+  this->nRhs  = 1; // hard code the number of rhs
 }
 
 void UTree::init_rhs
@@ -20,8 +21,16 @@ Vector UTree::rhs() {
 
 void UTree::partition
 (int level, Context ctx, HighLevelRuntime *runtime) {
-  
-
+  // make sure UMat is valid
+  assert( UMat.rows() > 0 );
+  assert( UMat.cols() > 0 );
+  // create region
+  int cols = nRhs + level*UMat.cols();
+  U.create(UMat.rows(), cols, ctx, runtime);
+  // initialize region
+  U.init_data(nProc, nRhs, level, UMat, ctx, runtime);
+  // create partition
+  U.partition(nlevel, ctx, runtime);
 }
 
 LMatrix& UTree::leaf() {
@@ -31,7 +40,7 @@ LMatrix& UTree::leaf() {
 UTree::UDMat& UTree::level(int i) {
   assert( i > 0 );
   assert( i < nlevel );
-  return U[i];
+  return Ulevel[i];
 }
 
 void VTree::init(int nProc_, const Matrix& VMat_) {
@@ -47,7 +56,7 @@ void VTree::partition
   // create region
   V.create(VMat.rows(), VMat.cols(), ctx, runtime);
   // initialize region
-  V.init_data(nProc, VMat, ctx, runtime);
+  V.init_data(nProc, 1, 0, VMat, ctx, runtime);
   // create partition
   V.partition(nlevel, ctx, runtime);
 }
