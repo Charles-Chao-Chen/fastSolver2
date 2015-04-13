@@ -32,12 +32,6 @@ public:
   (int, const Vector& Rhs, Context, HighLevelRuntime*,
    bool wait=WAIT_DEFAULT);
 
-  /*
-    void init_data
-  (int, const Matrix& VMat, Context, HighLevelRuntime*,
-   bool wait=WAIT_DEFAULT);
-  */
-  
   // for UTree init and VTree init
   void init_data
   (int, int, int, const Matrix& VMat, Context, HighLevelRuntime*,
@@ -99,7 +93,7 @@ private:
 
   // partition the matrix along rows
   IndexPartition UniformRowPartition
-  (int num_subregions, Context ctx, HighLevelRuntime *runtime);
+  (int num_subregions, int, int, Context ctx, HighLevelRuntime *runtime);
   
   // for node_solve
   void coarse_partition();
@@ -132,8 +126,7 @@ private:
   // partition
   int              nPart;
   Domain           colDom;
-  //Blockify<1>      blkify;
-  //IndexPartition   ipart;
+  IndexPartition   ipart;
   LogicalPartition lpart;
 };
 

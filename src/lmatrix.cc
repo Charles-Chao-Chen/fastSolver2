@@ -1,4 +1,5 @@
 #include "lmatrix.hpp"
+#include <math.h> // for pow()
 
 LMatrix::LMatrix() {}
 
@@ -61,49 +62,21 @@ void LMatrix::init_data
   }
   */
 }
-/*
-void LMatrix::init_data
-(int nProc_, const Matrix& mat,
- Context ctx, HighLevelRuntime *runtime, bool wait) {
-  // assuming the region has been created
-  assert( this->rows() == mat.rows() );
-  assert( this->cols() == mat.cols() );
-  this->nProc = nProc_;
-  ArgumentMap seeds = MapSeed(nProc, mat);
 
-  // assume uniform partition
-  assert(mRows%nProc == 0);
-  IndexPartition ip = UniformRowPartition(nProc, ctx, runtime);
-  LogicalPartition lp = runtime->get_logical_partition(ctx, region, ip);
-  Domain dom = runtime->get_index_partition_color_space(ctx, ip);
-
-  InitMatrixTask::TaskArgs args = {mRows / nProc, mCols, 0, 1};
-  InitMatrixTask launcher(dom, TaskArgument(&args, sizeof(args)), seeds);
-  RegionRequirement req(lp, 0, WRITE_DISCARD, EXCLUSIVE, region);
-  req.add_field(FIELDID_V);
-  launcher.add_region_requirement(req);
-  FutureMap fm = runtime->execute_index_space(ctx, launcher);
-    
-  if(wait) {
-    std::cout << "Wait for init..." << std::endl;
-    fm.wait_all_results();
-  }
-}
-*/
 void LMatrix::init_data
-(int nProc_, int nRhs, int level, const Matrix& mat,
+(int nProc_, int col0, int col1, const Matrix& mat,
  Context ctx, HighLevelRuntime *runtime, bool wait) {
   // assuming the region has been created
   this->nProc = nProc_;  
   ArgumentMap seeds = MapSeed(nProc, mat);
-
+  
   // assume uniform partition
   assert(mRows%nProc == 0);
-  IndexPartition ip = UniformRowPartition(nProc, ctx, runtime);
+  IndexPartition ip = UniformRowPartition(nProc, col0, col1, ctx, runtime);
   LogicalPartition lp = runtime->get_logical_partition(ctx, region, ip);
   Domain dom = runtime->get_index_partition_color_space(ctx, ip);
   
-  InitMatrixTask::TaskArgs args = {mRows/nProc, mat.cols(), nRhs, level};
+  InitMatrixTask::TaskArgs args = {mRows/nProc, mat.cols(), col0, col1};
   InitMatrixTask launcher(dom, TaskArgument(&args, sizeof(args)), seeds);
   RegionRequirement req(lp, 0, WRITE_DISCARD, EXCLUSIVE, region);
   req.add_field(FIELDID_V);
@@ -125,7 +98,7 @@ void LMatrix::init_dense_blocks
 
   // assume uniform partition
   assert(mRows%nProc == 0);
-  IndexPartition ip = UniformRowPartition(nProc, ctx, runtime);
+  IndexPartition ip = UniformRowPartition(nProc, 0, mCols, ctx, runtime);
   LogicalPartition lp = runtime->get_logical_partition(ctx, region, ip);
   Domain dom = runtime->get_index_partition_color_space(ctx, ip);
 
@@ -164,7 +137,8 @@ ArgumentMap LMatrix::MapSeed(int nPart, const Matrix& U, const Matrix& V, const 
 }
 
 IndexPartition LMatrix::UniformRowPartition
-(int num_subregions, Context ctx, HighLevelRuntime *runtime) {
+(int num_subregions, int col0, int col1,
+ Context ctx, HighLevelRuntime *runtime) {
 
   Rect<1> bounds(Point<1>(0),Point<1>(num_subregions-1));
   Domain  domain = Domain::from_rect<1>(bounds);
@@ -172,8 +146,8 @@ IndexPartition LMatrix::UniformRowPartition
   int size = mRows / num_subregions;
   DomainColoring coloring;
   for (int i = 0; i < num_subregions; i++) {
-    Point<2> lo = make_point(  i   *size,   0);
-    Point<2> hi = make_point( (i+1)*size-1, mCols-1);
+    Point<2> lo = make_point(  i   *size,   col0);
+    Point<2> hi = make_point( (i+1)*size-1, col1-1);
     Rect<2> subrect(lo, hi);
     coloring[i] = Domain::from_rect<2>(subrect);
   }
@@ -185,20 +159,13 @@ Vector LMatrix::to_vector() {
   return Vector();
 }
 
-/*
-void LMatrix::create_dense_partition
-(int nPart, const Matrix& U, const Matrix& V, const Vector& D,
- Context ctx, HighLevelRuntime *runtime, bool wait) {
-
-  // create region and nProc partition
-  // populate data
-  // create nPart partition
-}
-*/
-
 void LMatrix::partition
 (int level, Context ctx, HighLevelRuntime *runtime) {
-  
+  // if level=1, the number of partition is 2 for V0 and V1
+  int num_subregions = pow(2, level);
+  this->ipart  = UniformRowPartition(num_subregions, 0, mCols, ctx, runtime);
+  this->lpart  = runtime->get_logical_partition(ctx, region, ipart);
+  this->colDom = runtime->get_index_partition_color_space(ctx, ipart);
 }
 
 void LMatrix::coarse_partition() {

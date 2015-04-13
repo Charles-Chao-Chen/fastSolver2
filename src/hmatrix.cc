@@ -12,6 +12,7 @@ HMatrix::HMatrix(int nProc_, int level_)
   //  partitions as the number of leaves.
   // ================================================
   // number of partitions
+  // if level=1, the number of partition is 2 for V0 and V1
   int nPart = pow(2, level);
   
   // assume evenly distributed across machines

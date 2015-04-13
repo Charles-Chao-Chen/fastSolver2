@@ -35,7 +35,7 @@ public:
   
 private:
   int nProc;
-  int nlevel;
+  int mLevel;
   int nRhs;
   Matrix  UMat;
   LMatrix Rhs;
@@ -58,7 +58,7 @@ public:
   
 private:
   int nProc;
-  int nlevel;
+  int mLevel;
   Matrix VMat;
 
   // for the simple case of U * V' + D,
@@ -85,7 +85,7 @@ public:
   
 private:
   int nProc;
-  int nlevel;
+  int mLevel;
   Matrix UMat, VMat;
   Vector DVec;
   LMatrix K;

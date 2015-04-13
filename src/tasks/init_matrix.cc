@@ -48,21 +48,22 @@ void InitMatrixTask::cpu_task(const Task *task,
   printf("random seed = %lu \n", seed);
   
   const TaskArgs blockSize = *((const TaskArgs*)task->args);
-  int rows  = blockSize.rows;
-  int cols  = blockSize.cols;
-  int nRhs  = blockSize.nRhs;
-  int level = blockSize.level;
+  int rblk  = blockSize.rblk;
+  int cblk  = blockSize.cblk;
+  int clo   = blockSize.clo;
+  int chi   = blockSize.chi;
   //printf("block row size = %i\n", rows);
   //printf("block col size = %i\n", cols);
 
-  int rlo = p[0]*rows;
-  int rhi = (p[0] + 1) * rows;
-  double *base = region_pointer(regions[0], rlo, rhi, 0, cols);
-  double *ptr = base + nRhs*rows;
-  for (int i=0; i<level; i++) {
-    PtrMatrix pMat(rows, cols, rows, ptr);
+  int rlo = p[0]*rblk;
+  int rhi = (p[0] + 1) * rblk;
+  double *base = region_pointer(regions[0], rlo, rhi, clo, chi);
+  int colIdx = 0;
+  while (colIdx < chi-clo) {
+    double *ptr = base + colIdx*rblk;
+    PtrMatrix pMat(rblk, cblk, rblk, ptr);
     pMat.rand(seed);
-    ptr += rows*cols;
+    colIdx += cblk;
   }
 }
 

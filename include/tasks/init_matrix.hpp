@@ -8,10 +8,10 @@ using namespace LegionRuntime::Accessor;
 class InitMatrixTask : public IndexLauncher {
 public:
   struct TaskArgs {
-    int rows;
-    int cols;
-    int nRhs;
-    int level;
+    int rblk;
+    int cblk;
+    int clo;
+    int chi;
   };
   InitMatrixTask(Domain domain,
 		 TaskArgument global_arg,

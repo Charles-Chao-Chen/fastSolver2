@@ -189,7 +189,7 @@ void test_lmatrix_init(Context ctx, HighLevelRuntime *runtime) {
   
   LMatrix lmat0;
   lmat0.create(m, n, ctx, runtime);
-  lmat0.init_data(nPart, 0, 1, mat0, ctx, runtime);
+  lmat0.init_data(nPart, 0, mat0.cols(), mat0, ctx, runtime);
   lmat0.display("lmat0", ctx, runtime);
 
   Matrix U(m, n), V(m, n);
@@ -215,8 +215,9 @@ void test_lmatrix_init(Context ctx, HighLevelRuntime *runtime) {
   lmat.display("diagonal blocks", ctx, runtime);
 */
   LMatrix lgUmat;
-  lgUmat.create(U.rows(), 1+level*U.cols(), ctx, runtime);
-  lgUmat.init_data(nPart, 1, level, U, ctx, runtime);
+  int cols = 1+level*U.cols();
+  lgUmat.create(U.rows(), cols, ctx, runtime);
+  lgUmat.init_data(nPart, 1, cols, U, ctx, runtime);
   lgUmat.display("UTree", ctx, runtime);
   U.display("U");
     
@@ -224,13 +225,34 @@ void test_lmatrix_init(Context ctx, HighLevelRuntime *runtime) {
 }
 
 void test_lmatrix_partition(Context ctx, HighLevelRuntime *runtime) {
-  /*  
+
   int m = 16, n = 2;
-  int nPart = 2;
-  Matrix  mat0(m, n);
-  mat0.rand(nPart);
-  mat0.display("mat0");
+  int nProc = 4;
+  int level = 3;
+  Matrix VMat(m, n), UMat(m, n), Rhs(m, 1);
+  VMat.rand(nProc);
+  UMat.rand(nProc);
+  Rhs.rand(nProc);
+
+
+  LMatrix V, U;
+  V.create(m, n, ctx, runtime);
+  V.init_data(nProc, 0, VMat.cols(), VMat, ctx, runtime);
+  V.partition(level, ctx, runtime);
+
+  int nRhs = 1;
+  int cols = nRhs + level*UMat.cols();
+  U.create(UMat.rows(), cols, ctx, runtime);
+  U.init_data(nProc, 1, cols, UMat, ctx, runtime);
+  U.partition(level, ctx, runtime);
+
+  // right hand side
+  U.init_data(nProc, 0, 1, Rhs, ctx, runtime);
+  U.display("U", ctx, runtime);
+  UMat.display("UMat");
+  Rhs.display("Rhs");
   
+  /*
   LMatrix lmat0;
   lmat0.create(m, n, ctx, runtime);
   lmat0.init_data(nPart, 0, 1, mat0, ctx, runtime);
