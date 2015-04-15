@@ -10,6 +10,7 @@ void register_solver_tasks() {
 
   InitMatrixTask::register_tasks();
   DenseBlockTask::register_tasks();
+  AddMatrixTask::register_tasks();
   ZeroMatrixTask::register_tasks();
   DisplayMatrixTask::register_tasks();
 }

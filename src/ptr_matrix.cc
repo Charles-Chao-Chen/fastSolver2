@@ -90,6 +90,17 @@ void PtrMatrix::solve(PtrMatrix& B) {
   assert(INFO==0);
 }
 
+void PtrMatrix::add
+  (double alpha, const PtrMatrix& A,
+   double beta,  const PtrMatrix& B, PtrMatrix& C) {
+
+  assert(A.rows() == B.rows() && A.rows() == C.rows());
+  assert(A.cols() == B.cols() && A.cols() == C.cols());
+  for (int j=0; j<C.cols(); j++)
+    for (int i=0; i<C.rows(); i++)
+      C(i, j) = alpha*A(i,j) + beta*B(i,j);
+}
+
 void PtrMatrix::gemm
 (const PtrMatrix& U, const PtrMatrix& V, const PtrMatrix& D,
  PtrMatrix& res) {

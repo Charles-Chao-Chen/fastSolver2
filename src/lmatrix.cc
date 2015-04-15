@@ -281,6 +281,48 @@ void LMatrix::solve
   }
 }
 
+void LMatrix::add
+(double alpha, const LMatrix& A,
+ double beta, const LMatrix& B, LMatrix& C,
+ Context ctx, HighLevelRuntime *runtime, bool wait) {
+
+  // A, B and C have the same size
+  assert( A.rows() == B.rows() && A.rows() == C.rows() );
+  assert( A.cols() == B.cols() && A.cols() == C.cols() );
+  assert( A.num_partition() == B.num_partition() );
+
+  LogicalPartition APart = A.logical_partition();
+  LogicalPartition BPart = B.logical_partition();
+  LogicalPartition CPart = C.logical_partition();
+
+  LogicalRegion AReg = A.logical_region();
+  LogicalRegion BReg = B.logical_region();
+  LogicalRegion CReg = C.logical_region();
+
+  int rblock = A.rows() / A.num_partition();
+  int cols   = A.cols();
+  AddMatrixTask::TaskArgs args = {alpha, beta, rblock, cols};
+  TaskArgument tArgs(&args, sizeof(args));
+  Domain domain = A.color_domain();
+  AddMatrixTask launcher(domain, tArgs, ArgumentMap());  
+  RegionRequirement AReq(APart, 0, READ_ONLY, EXCLUSIVE, AReg);
+  RegionRequirement BReq(BPart, 0, READ_ONLY, EXCLUSIVE, BReg);
+  RegionRequirement CReq(CPart, 0, WRITE_DISCARD, EXCLUSIVE, CReg);
+  AReq.add_field(FIELDID_V);
+  BReq.add_field(FIELDID_V);
+  CReq.add_field(FIELDID_V);
+  launcher.add_region_requirement(AReq);
+  launcher.add_region_requirement(BReq);
+  launcher.add_region_requirement(CReq);
+  
+  FutureMap fm = runtime->execute_index_space(ctx, launcher);
+
+  if(wait) {
+    std::cout << "Wait for adding matrix..." << std::endl;
+    fm.wait_all_results();
+  }  
+}
+
 // compute A.transpose() * B and reduce to C
 void LMatrix::gemmRed // static method
 (double alpha, const LMatrix& A, const LMatrix& B,
@@ -318,7 +360,7 @@ void LMatrix::gemmRed // static method
   FutureMap fm = runtime->execute_index_space(ctx, launcher);
 
   if(wait) {
-    std::cout << "Wait for solve..." << std::endl;
+    std::cout << "Wait for gemm reduce..." << std::endl;
     fm.wait_all_results();
   }  
 }
@@ -360,7 +402,7 @@ void LMatrix::gemmBro // static method
   FutureMap fm = runtime->execute_index_space(ctx, launcher);
 
   if(wait) {
-    std::cout << "Wait for solve..." << std::endl;
+    std::cout << "Wait for gemm broadcast..." << std::endl;
     fm.wait_all_results();
   }  
 }

@@ -21,7 +21,7 @@ GEN_SRC	:= 	test.cc \
 		../src/tasks/projector.cc ../src/tasks/reduce_add.cc \
 		../src/tasks/init_matrix.cc ../src/tasks/zero_matrix.cc \
 		../src/tasks/solver_tasks.cc ../src/tasks/display_matrix.cc \
-		../src/tasks/dense_block.cc \
+		../src/tasks/dense_block.cc ../src/tasks/add_matrix.cc \
 		../src/ptr_matrix.cc ../src/utility.cc \
 
 GEN_GPU_SRC	:=				# .cu files

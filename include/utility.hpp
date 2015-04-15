@@ -2,6 +2,7 @@
 #define _utility_hpp
 
 #include "lapack_blas.hpp"
+#include "ptr_matrix.hpp"
 
 #include "legion.h"
 using namespace LegionRuntime::HighLevel;
@@ -14,6 +15,9 @@ enum {
 const bool WAIT_DEFAULT = true; // waiting for tasks
 
 double* region_pointer(const PhysicalRegion &region, int, int, int, int);
+
+PtrMatrix get_raw_pointer
+(const PhysicalRegion &region, int rlo, int rhi, int clo, int chi);
 
 // error message
 #include <cstdlib> // for EXIT_FAILURE

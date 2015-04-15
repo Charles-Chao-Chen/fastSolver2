@@ -25,6 +25,11 @@ public:
   double* pointer(int, int);
 
   void solve(PtrMatrix&);
+
+  static void add
+  (double alpha, const PtrMatrix&,
+   double beta,  const PtrMatrix&,
+   PtrMatrix&);
   
   static void gemm
   (const PtrMatrix&, const PtrMatrix&, const PtrMatrix&, PtrMatrix&);

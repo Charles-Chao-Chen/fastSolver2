@@ -58,7 +58,7 @@ public:
   //void create_dense_partition
   //(int, const Matrix& U, const Matrix& V, const Vector& D,
   //Context, HighLevelRuntime*, bool wait=WAIT_DEFAULT);
-
+  
   // solve linear system
   // for KTree::solve()
   void solve
@@ -74,6 +74,13 @@ public:
   void display(const std::string&,
 	       Context, HighLevelRuntime*, bool wait=WAIT_DEFAULT);
 
+  // static methods
+  // matrix subtraction
+  static void add
+  (double alpha, const LMatrix&,
+   double beta,  const LMatrix&, LMatrix&,
+   Context, HighLevelRuntime*, bool wait=WAIT_DEFAULT);
+  
   // gemm reduction
   static void gemmRed
   (double, const LMatrix&, const LMatrix&,

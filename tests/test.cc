@@ -241,21 +241,6 @@ void test_leaf_solve(Context ctx, HighLevelRuntime *runtime) {
   UMat.rand(nProc);
   Rhs.rand(nProc);
 
-  /*
-  LMatrix V, U;
-  V.create(m, n, ctx, runtime);
-  V.init_data(nProc, 0, VMat.cols(), VMat, ctx, runtime);
-  V.partition(level, ctx, runtime);
-*/
-  
-  LMatrix U;
-  int nRhs = 1;
-  int cols = nRhs + level*UMat.cols();
-  U.create(UMat.rows(), cols, ctx, runtime);
-  U.init_data(nProc, 0, 1,    Rhs, ctx, runtime);
-  U.init_data(nProc, 1, cols, UMat, ctx, runtime);
-  U.partition(level, ctx, runtime);
-
   Vector DVec(m);
   DVec.rand(nProc);
   int nrow = DVec.rows();
@@ -268,14 +253,42 @@ void test_leaf_solve(Context ctx, HighLevelRuntime *runtime) {
   K.init_dense_blocks(nProc, nblk, UMat, VMat, DVec, ctx, runtime);
   K.partition(level, ctx, runtime);
 
-  K.solve( U, ctx, runtime );
-  
+  LMatrix b;
+  b.create(Rhs.rows(), 1, ctx, runtime);
+  b.init_data(nProc, 0, 1, Rhs, ctx, runtime);
+  b.partition(level, ctx, runtime);
+  K.solve( b, ctx, runtime );
+
   /*
-  U.display("U", ctx, runtime);
-  UMat.display("UMat");
-  Rhs.display("Rhs");
+  LMatrix Ax;
+  Ax.create(Rhs.rows(), 1, ctx, runtime);
+  Ax.partition(level, ctx, runtime);
+  LMatrix::gemmRed(1.0, K, b, 0.0, Ax, ctx, runtime);
+  
+  LMatrix r;
+  r.create(Rhs.rows(), 1, ctx, runtime);
+  r.partition(level, ctx, runtime);
+  LMatrix::minus(b, Ax, r, ctx, runtime);
+  r.display("residule", ctx, runtime);
   */
-    
-  std::cout << "Test for legion matrix parition passed!" << std::endl;
+
+  LMatrix U0, U1;
+  U0.create(UMat.rows(), UMat.cols(), ctx, runtime);
+  U0.init_data(nProc, 0, UMat.cols(), UMat, ctx, runtime);
+  U0.partition(level, ctx, runtime);
+  U1.create(UMat.rows(), UMat.cols(), ctx, runtime);
+  U1.init_data(nProc, 0, UMat.cols(), UMat, ctx, runtime);
+  U1.partition(level, ctx, runtime);
+  LMatrix res;
+  res.create(UMat.rows(), UMat.cols(), ctx, runtime);
+  res.partition(level, ctx, runtime);
+  LMatrix::add(1.0, U0, -1.0, U1, res, ctx, runtime);
+  res.display("result", ctx, runtime);
+  LMatrix::add(1.0, U0,  0.0, U1, res, ctx, runtime);
+  res.display("result", ctx, runtime);
+  LMatrix::add(1.0, U0,  1.0, U1, res, ctx, runtime);
+  res.display("result", ctx, runtime);
+  
+  std::cout << "Test for leave solve passed!" << std::endl;
 }
 
