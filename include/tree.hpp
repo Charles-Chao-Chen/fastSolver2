@@ -21,14 +21,18 @@ public:
   void partition
   (int level, Context ctx, HighLevelRuntime *runtime);
 
+  /*
   // return type for level()
   struct UDMat {
     LMatrix uMat;
     LMatrix dMat;
   };
-
+  */
   // return the legion matrix for one level
-  UDMat& level(int);
+  LMatrix& uMat_level(int);
+  LMatrix& dMat_level(int);
+  
+  // UDMat& level(int);
 
   // legion matrices at leaf level
   LMatrix& leaf();
@@ -36,11 +40,19 @@ public:
 private:
   int nProc;
   int mLevel;
+  int rank;
   int nRhs;
   Matrix  UMat;
+
+  // legion matrices
+  LMatrix U; // original data
+
+  // partitions at different levels
   LMatrix Rhs;
-  LMatrix U;
-  std::vector<UDMat> Ulevel;
+  std::vector<LMatrix> uMat_vec;
+  std::vector<LMatrix> dMat_vec;
+  
+  //std::vector<UDMat> Ulevel;
 };
 
 class VTree {

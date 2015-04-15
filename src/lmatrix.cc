@@ -3,6 +3,13 @@
 
 LMatrix::LMatrix() {}
 
+LMatrix::LMatrix
+(IndexPartition ip, LogicalRegion lr, Context ctx, HighLevelRuntime *runtime)
+  : ipart(ip), region(lr) {
+  this-> lpart  = runtime->get_logical_partition(ctx, region, ipart);
+  this-> colDom = runtime->get_index_partition_color_space(ctx, ipart);
+}
+
 LMatrix::~LMatrix() {}
 
 int LMatrix::rows() const {return mRows;}
@@ -37,10 +44,10 @@ void LMatrix::create
   assert(region != LogicalRegion::NO_REGION);
 }
 
+/*
 void LMatrix::init_data
 (int nPart, const Vector& vec,
  Context ctx, HighLevelRuntime *runtime, bool wait) {
-  /*
   assert( this->rows() == vec.rows() );
   assert( this->cols() == 1 );
   assert( this->num_partition() == vec.num_partition() );
@@ -60,9 +67,8 @@ void LMatrix::init_data
     std::cout << "Wait for init..." << std::endl;
     fm.wait_all_results();
   }
-  */
 }
-
+  */
 void LMatrix::init_data
 (int nProc_, int col0, int col1, const Matrix& mat,
  Context ctx, HighLevelRuntime *runtime, bool wait) {
@@ -162,10 +168,19 @@ Vector LMatrix::to_vector() {
 void LMatrix::partition
 (int level, Context ctx, HighLevelRuntime *runtime) {
   // if level=1, the number of partition is 2 for V0 and V1
-  int num_subregions = pow(2, level);
-  this->ipart  = UniformRowPartition(num_subregions, 0, mCols, ctx, runtime);
+  this->nPart  = pow(2, level);
+  this->rblock = mRows/nPart;
+  this->ipart  = UniformRowPartition(nPart, 0, mCols, ctx, runtime);
   this->lpart  = runtime->get_logical_partition(ctx, region, ipart);
   this->colDom = runtime->get_index_partition_color_space(ctx, ipart);
+}
+
+LMatrix LMatrix::partition
+(int level, int col0, int col1, Context ctx, HighLevelRuntime *runtime) {
+  // if level=1, the number of partition is 2 for V0 and V1
+  int num_subregions = pow(2, level);
+  IndexPartition ip = UniformRowPartition(num_subregions, col0, col1, ctx, runtime);
+  return LMatrix(ip, region, ctx, runtime); // interface to be modified
 }
 
 void LMatrix::coarse_partition() {
@@ -182,13 +197,38 @@ void LMatrix::solve
 (LMatrix& b, Context ctx, HighLevelRuntime* runtime, bool wait) {
 
   // check if the matrix is square
-  assert( this->rows() == this->cols() );
+  assert( this->rblock == this->cols() );
 
   // check if the dimensions match
   assert( this->rows() == b.rows() );
   assert( b.cols() > 0 );
 
-  solve<LeafSolveTask>(b, ctx, runtime, wait);
+  //solve<LeafSolveTask>(b, ctx, runtime, wait);
+  // A and b have the same number of partition
+  assert( this->num_partition() == b.num_partition() );
+
+  LogicalPartition APart = this->logical_partition();
+  LogicalPartition bPart = b.logical_partition();
+
+  LogicalRegion ARegion = this->logical_region();
+  LogicalRegion bRegion = b.logical_region();
+
+  Domain domain = this->color_domain();
+  LeafSolveTask::TaskArgs args = {this->rblock, b.cols()};
+  LeafSolveTask launcher(domain, TaskArgument(&args, sizeof(args)), ArgumentMap());
+  RegionRequirement AReq(APart, 0, READ_ONLY,  EXCLUSIVE, ARegion);
+  RegionRequirement bReq(bPart, 0, READ_WRITE, EXCLUSIVE, bRegion);
+  AReq.add_field(FIELDID_V);
+  bReq.add_field(FIELDID_V);
+  launcher.add_region_requirement(AReq);
+  launcher.add_region_requirement(bReq);
+  
+  FutureMap fm = runtime->execute_index_space(ctx, launcher);
+
+  if(wait) {
+    std::cout << "Wait for solve..." << std::endl;
+    fm.wait_all_results();
+  }
 }
 
 // solve the following system for every partition

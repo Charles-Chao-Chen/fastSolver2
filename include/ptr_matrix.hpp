@@ -24,6 +24,8 @@ public:
   double* pointer() const;
   double* pointer(int, int);
 
+  void solve(PtrMatrix&);
+  
   static void gemm
   (const PtrMatrix&, const PtrMatrix&, const PtrMatrix&, PtrMatrix&);
   

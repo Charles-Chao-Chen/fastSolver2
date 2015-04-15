@@ -14,6 +14,7 @@ using namespace LegionRuntime::HighLevel;
 class LMatrix {
 public:
   LMatrix();
+  LMatrix(IndexPartition ip, LogicalRegion lr, Context, HighLevelRuntime*);
   ~LMatrix();
   
   int rows() const;
@@ -28,10 +29,12 @@ public:
 	      bool wait=WAIT_DEFAULT);
 
   // initialize region, assuming it exists
+  /*
   void init_data
   (int, const Vector& Rhs, Context, HighLevelRuntime*,
    bool wait=WAIT_DEFAULT);
-
+*/
+  
   // for UTree init and VTree init
   void init_data
   (int, int, int, const Matrix& VMat, Context, HighLevelRuntime*,
@@ -44,7 +47,9 @@ public:
 
   // uniform partition
   void partition(int level, Context, HighLevelRuntime*);
-
+  LMatrix partition
+  (int level, int col0, int col1, Context ctx, HighLevelRuntime *runtime);
+  
   // output the right hand side
   // for UTree::rhs()
   Vector to_vector();
@@ -112,22 +117,22 @@ private:
   int mRows;
   int mCols;
   int rblock;
-  int cblock;
+  //int cblock;
 
   // number of ranks
   // used to init data
   int              nProc;  
-  
-  // region
-  IndexSpace       ispace;
-  FieldSpace       fspace;
-  LogicalRegion    region;
 
   // partition
   int              nPart;
   Domain           colDom;
   IndexPartition   ipart;
   LogicalPartition lpart;
+
+  // region
+  IndexSpace       ispace;
+  FieldSpace       fspace;
+  LogicalRegion    region;
 };
 
 #endif

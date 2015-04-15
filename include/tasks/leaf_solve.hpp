@@ -6,7 +6,10 @@ using namespace LegionRuntime::HighLevel;
 
 class LeafSolveTask : public IndexLauncher {
 public:
-
+  struct TaskArgs {
+    int nrow;
+    int nRhs;
+  };
   LeafSolveTask(Domain domain,
 		TaskArgument global_arg,
 		ArgumentMap arg_map,

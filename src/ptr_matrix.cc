@@ -78,6 +78,18 @@ int PtrMatrix::cols() const {
   }
 }
 
+void PtrMatrix::solve(PtrMatrix& B) {
+  int N = this->mRows;
+  int NRHS = B.cols();
+  int LDA = leadD;
+  int LDB = B.LD();
+  int IPIV[N];
+  int INFO;
+  lapack::dgesv_(&N, &NRHS, ptr, &LDA, IPIV,
+		 B.pointer(), &LDB, &INFO);
+  assert(INFO==0);
+}
+
 void PtrMatrix::gemm
 (const PtrMatrix& U, const PtrMatrix& V, const PtrMatrix& D,
  PtrMatrix& res) {

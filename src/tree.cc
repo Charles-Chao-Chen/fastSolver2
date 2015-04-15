@@ -3,8 +3,10 @@
 #include <math.h> // for pow()
 
 void UTree::init(int nProc_, const Matrix& UMat_) {
+  assert(UMat_.rows()>0 && UMat_.cols()>0);
   this->nProc = nProc_;
   this->UMat  = UMat_;
+  this->rank  = UMat.cols();
   this->nRhs  = 1; // hard code the number of rhs
 }
 
@@ -32,9 +34,36 @@ void UTree::partition
   U.init_data(nProc, 1, cols, UMat, ctx, runtime);
   // create partition
   this->mLevel = level;
-  U.partition(mLevel, ctx, runtime);
+  // right hand side partition
+  Rhs = U.partition(nProc, 0, nRhs, ctx, runtime);
+  for (int i=0; i<mLevel; i++) {
+    int ncol = nRhs + i*rank;
+    LMatrix dMat = U.partition(mLevel, 0, ncol, ctx, runtime);
+    dMat_vec.push_back(dMat);
+    LMatrix uMat = U.partition(mLevel, ncol+1, ncol+1+rank, ctx, runtime);
+    uMat_vec.push_back(uMat);
+  }
+  LMatrix leaf = U.partition(mLevel, 0, U.cols(), ctx, runtime);
+  dMat_vec.push_back(leaf);
+  assert(uMat_vec.size() == size_t(mLevel));
+  assert(dMat_vec.size() == size_t(mLevel+1));
 }
 
+LMatrix& UTree::uMat_level(int i) {
+  assert(0<=i && i<mLevel);
+  return uMat_vec[i];
+}
+
+LMatrix& UTree::dMat_level(int i) {
+  assert(0<=i && i<=mLevel);
+  return dMat_vec[i];
+}
+
+LMatrix& UTree::leaf() {
+  return dMat_vec[mLevel];
+}
+
+/*
 LMatrix& UTree::leaf() {
   return level(mLevel-1).uMat;
 }
@@ -44,6 +73,7 @@ UTree::UDMat& UTree::level(int i) {
   assert( i < mLevel );
   return Ulevel[i];
 }
+*/
 
 void VTree::init(int nProc_, const Matrix& VMat_) {
   this->nProc = nProc_;
