@@ -15,7 +15,7 @@ enum {
 void test_vector();
 void test_matrix();
 void test_lmatrix_init(Context, HighLevelRuntime*);
-void test_lmatrix_partition(Context, HighLevelRuntime*);
+void test_leaf_solve(Context, HighLevelRuntime*);
 
 void top_level_task(const Task *task,
 		    const std::vector<PhysicalRegion> &regions,
@@ -24,7 +24,7 @@ void top_level_task(const Task *task,
   test_vector();
   test_matrix();
   test_lmatrix_init(ctx, runtime);
-  test_lmatrix_partition(ctx, runtime);
+  test_leaf_solve(ctx, runtime);
   
   /*
   // ======= Problem configuration =======
@@ -218,13 +218,20 @@ void test_lmatrix_init(Context ctx, HighLevelRuntime *runtime) {
   int cols = 1+level*U.cols();
   lgUmat.create(U.rows(), cols, ctx, runtime);
   lgUmat.init_data(nPart, 1, cols, U, ctx, runtime);
-  lgUmat.display("UTree", ctx, runtime);
+
+  // right hand side
+  Matrix Rhs(m, 1);
+  Rhs.rand(nPart);
+  lgUmat.init_data(nPart, 0, 1, Rhs, ctx, runtime);
+
+  Rhs.display("rhs");
   U.display("U");
-    
+  lgUmat.display("UTree", ctx, runtime);
+  
   std::cout << "Test for legion matrix initialization passed!" << std::endl;
 }
 
-void test_lmatrix_partition(Context ctx, HighLevelRuntime *runtime) {
+void test_leaf_solve(Context ctx, HighLevelRuntime *runtime) {
 
   int m = 16, n = 2;
   int nProc = 4;
@@ -234,58 +241,41 @@ void test_lmatrix_partition(Context ctx, HighLevelRuntime *runtime) {
   UMat.rand(nProc);
   Rhs.rand(nProc);
 
-
+  /*
   LMatrix V, U;
   V.create(m, n, ctx, runtime);
   V.init_data(nProc, 0, VMat.cols(), VMat, ctx, runtime);
   V.partition(level, ctx, runtime);
-
+*/
+  
+  LMatrix U;
   int nRhs = 1;
   int cols = nRhs + level*UMat.cols();
   U.create(UMat.rows(), cols, ctx, runtime);
+  U.init_data(nProc, 0, 1,    Rhs, ctx, runtime);
   U.init_data(nProc, 1, cols, UMat, ctx, runtime);
   U.partition(level, ctx, runtime);
 
-  // right hand side
-  U.init_data(nProc, 0, 1, Rhs, ctx, runtime);
+  Vector DVec(m);
+  DVec.rand(nProc);
+  int nrow = DVec.rows();
+  int nblk = pow(2, level);
+  int ncol = DVec.rows() / nblk;
+  assert(nblk >= nProc);
+  assert(ncol >= UMat.cols());
+  LMatrix K;
+  K.create( nrow, ncol, ctx, runtime );
+  K.init_dense_blocks(nProc, nblk, UMat, VMat, DVec, ctx, runtime);
+  K.partition(level, ctx, runtime);
+
+  K.solve( U, ctx, runtime );
+  
+  /*
   U.display("U", ctx, runtime);
   UMat.display("UMat");
   Rhs.display("Rhs");
-  
-  /*
-  LMatrix lmat0;
-  lmat0.create(m, n, ctx, runtime);
-  lmat0.init_data(nPart, 0, 1, mat0, ctx, runtime);
-  lmat0.display("lmat0", ctx, runtime);
-
-  Matrix U(m, n), V(m, n);
-  Vector D(m);
-  U.rand(nPart);
-  V.rand(nPart);
-  D.rand(nPart);
-  //U.display("U");
-  //V.display("V");
-  //D.display("D");
-  
-  int level = 3;
-  int nrow = D.rows();
-  int nblk = pow(2, level-1);
-  int ncol = D.rows() / nblk;
-  LMatrix lmat;
-  lmat.create(nrow, ncol, ctx, runtime);
-  lmat.init_dense_blocks(nPart, nblk, U, V, D, ctx, runtime);
-
-
-  Matrix A = (U * V.T()) + D.to_diag_matrix();    
-  A.display("full matrix");
-  lmat.display("diagonal blocks", ctx, runtime);
-
-  LMatrix lgUmat;
-  lgUmat.create(U.rows(), 1+level*U.cols(), ctx, runtime);
-  lgUmat.init_data(nPart, 1, level, U, ctx, runtime);
-  lgUmat.display("UTree", ctx, runtime);
-  U.display("U");
-*/    
+  */
+    
   std::cout << "Test for legion matrix parition passed!" << std::endl;
 }
 

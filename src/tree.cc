@@ -92,7 +92,7 @@ void KTree::partition
   int nblk = pow(2, level);
   int ncol = DVec.rows() / nblk;
   assert(nblk >= nProc);
-  assert(ncol >  UMat.cols());
+  assert(ncol >= UMat.cols());
   K.create( nrow, ncol, ctx, runtime );
   // initialize region
   K.init_dense_blocks(nProc, nblk, UMat, VMat, DVec, ctx, runtime);
