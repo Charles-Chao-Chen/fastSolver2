@@ -80,10 +80,8 @@ Vector HMatrix::solve
     // reduction operation
     LMatrix VTu(V.cols(), u.cols(), i, ctx, runtime);
     LMatrix VTd(V.cols(), d.cols(), i, ctx, runtime);
-    VTu.clear(0, ctx, runtime);
-    VTd.clear(0, ctx, runtime);
-    LMatrix::gemmRed( V, u, VTu, ctx, runtime );
-    LMatrix::gemmRed( V, d, VTd, ctx, runtime );
+    LMatrix::gemmRed('t', 'n', 1.0, V, u, 0.0, VTu, ctx, runtime );
+    LMatrix::gemmRed('t', 'n', 1.0, V, d, 0.0, VTd, ctx, runtime );
     
     // form and solve the small linear system
     VTu.node_solve( VTd, ctx, runtime );

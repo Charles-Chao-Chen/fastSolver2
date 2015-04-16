@@ -40,10 +40,16 @@ double* PtrMatrix::pointer(int r, int c) {
   return &ptr[r+c*leadD];
 }
 
-void PtrMatrix::clear(int value) {
+void PtrMatrix::clear(double value) {
   for (int j=0; j<mCols; j++)
     for (int i=0; i<mRows; i++)
       (*this)(i, j) = value;
+}
+
+void PtrMatrix::scale(double alpha) {
+  for (int j=0; j<mCols; j++)
+    for (int i=0; i<mRows; i++)
+      (*this)(i, j) *= alpha;
 }
 
 void PtrMatrix::rand(long seed) {

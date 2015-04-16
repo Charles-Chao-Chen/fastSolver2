@@ -12,5 +12,6 @@ void register_solver_tasks() {
   DenseBlockTask::register_tasks();
   AddMatrixTask::register_tasks();
   ClearMatrixTask::register_tasks();
+  ScaleMatrixTask::register_tasks();
   DisplayMatrixTask::register_tasks();
 }

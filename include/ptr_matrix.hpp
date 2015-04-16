@@ -27,7 +27,10 @@ public:
   void solve(PtrMatrix&);
 
   // set all entries to value
-  void clear(int value);
+  void clear(double value);
+
+  // scale all entries
+  void scale(double value);
   
   static void add
   (double alpha, const PtrMatrix&,

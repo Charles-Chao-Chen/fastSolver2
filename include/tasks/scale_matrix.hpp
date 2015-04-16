@@ -1,17 +1,17 @@
-#ifndef _clear_matrix_hpp
-#define _clear_matrix_hpp
+#ifndef _scale_matrix_hpp
+#define _scale_matrix_hpp
 
 #include "legion.h"
 using namespace LegionRuntime::HighLevel;
 
-class ClearMatrixTask : public IndexLauncher {
+class ScaleMatrixTask : public IndexLauncher {
 public:
   struct TaskArgs {
     int rblock;
     int cols;
-    double value;
+    double alpha;
   };
-  ClearMatrixTask(Domain domain,
+  ScaleMatrixTask(Domain domain,
 		 TaskArgument global_arg,
 		 ArgumentMap arg_map,
 		 Predicate pred = Predicate::TRUE_PRED,

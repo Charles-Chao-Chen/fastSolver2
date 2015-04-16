@@ -36,8 +36,11 @@ public:
    bool wait=WAIT_DEFAULT);
 */
 
-  // set the matrix to 0
-  void clear(int, Context, HighLevelRuntime*, bool wait=WAIT_DEFAULT);
+  // set the matrix to value
+  void clear(double, Context, HighLevelRuntime*, bool wait=WAIT_DEFAULT);
+
+  // scale all the entries
+  void scale(double, Context, HighLevelRuntime*, bool wait=WAIT_DEFAULT);
   
   // for UTree init and VTree init
   void init_data
@@ -91,16 +94,10 @@ public:
    Context, HighLevelRuntime*, bool wait=WAIT_DEFAULT);
 
   // gemm reduction
-  // compute A.transpose() * B and reduce to C
+  // C = alpha*op(A) * op(B) + beta*C
   static void gemmRed
-  (double, const LMatrix&, const LMatrix&,
-   double, const LMatrix&, Context, HighLevelRuntime*,
-   bool wait=WAIT_DEFAULT);
-
-  // C += A^T * B using reduction
-  static void gemmRed
-  (const LMatrix&, const LMatrix&,
-   const LMatrix&, Context, HighLevelRuntime*,
+  (char, char, double, const LMatrix&, const LMatrix&,
+   double, LMatrix&, Context, HighLevelRuntime*,
    bool wait=WAIT_DEFAULT);
 
   // gemm broadcast

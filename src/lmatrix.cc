@@ -78,7 +78,7 @@ void LMatrix::init_data
 */
 
 void LMatrix::clear
-(int value, Context ctx, HighLevelRuntime *runtime, bool wait) {
+(double value, Context ctx, HighLevelRuntime *runtime, bool wait) {
   
   // assuming partition is done
   assert(nPart > 0);
@@ -91,6 +91,24 @@ void LMatrix::clear
     
   if(wait) {
     std::cout << "Wait for clearing matrix..." << std::endl;
+    fm.wait_all_results();
+  }
+}
+
+void LMatrix::scale
+(double alpha, Context ctx, HighLevelRuntime *runtime, bool wait) {
+  
+  // assuming partition is done
+  assert(nPart > 0);
+  ScaleMatrixTask::TaskArgs args = {rblock, mCols, alpha};
+  ScaleMatrixTask launcher(colDom, TaskArgument(&args, sizeof(args)), ArgumentMap());
+  RegionRequirement req(lpart, 0, WRITE_DISCARD, EXCLUSIVE, region);
+  req.add_field(FIELDID_V);
+  launcher.add_region_requirement(req);
+  FutureMap fm = runtime->execute_index_space(ctx, launcher);
+    
+  if(wait) {
+    std::cout << "Wait for scaling matrix..." << std::endl;
     fm.wait_all_results();
   }
 }
@@ -348,7 +366,7 @@ void LMatrix::add
     fm.wait_all_results();
   }  
 }
-
+/*
 // compute A.transpose() * B and reduce to C
 void LMatrix::gemmRed // static method
 (double alpha, const LMatrix& A, const LMatrix& B,
@@ -396,6 +414,50 @@ void LMatrix::gemmRed // static method
  const LMatrix& C,
  Context ctx, HighLevelRuntime *runtime, bool wait) {
 
+}
+*/
+void LMatrix::gemmRed // static method
+(char transa, char transb, double alpha,
+ const LMatrix& A, const LMatrix& B,
+ double beta, LMatrix& C,
+ Context ctx, HighLevelRuntime *runtime, bool wait) {
+
+  C.scale(beta, ctx, runtime);
+  
+  // A and B have the same number of partition
+  assert( A.rows() == B.rows() );
+  assert( A.num_partition() == B.num_partition() );
+
+  LogicalPartition APart = A.logical_partition();
+  LogicalPartition BPart = B.logical_partition();
+  LogicalPartition CPart = C.logical_partition();
+
+  LogicalRegion AReg = A.logical_region();
+  LogicalRegion BReg = B.logical_region();
+  LogicalRegion CReg = C.logical_region();
+
+  int colorSize = A.nPart / B.nPart;
+  GemmRedTask::TaskArgs args = {colorSize, alpha, beta};
+  TaskArgument tArgs(&args, sizeof(args));
+  Domain domain = A.color_domain();
+  GemmRedTask launcher(domain, tArgs, ArgumentMap());
+  
+  RegionRequirement AReq(APart, 0,           READ_ONLY, EXCLUSIVE, AReg);
+  RegionRequirement BReq(BPart, 0,           READ_ONLY, EXCLUSIVE, BReg);
+  RegionRequirement CReq(CPart, CONTRACTION, REDOP_ADD, EXCLUSIVE, CReg);
+  AReq.add_field(FIELDID_V);
+  BReq.add_field(FIELDID_V);
+  CReq.add_field(FIELDID_V);
+  launcher.add_region_requirement(AReq);
+  launcher.add_region_requirement(BReq);
+  launcher.add_region_requirement(CReq);
+  
+  FutureMap fm = runtime->execute_index_space(ctx, launcher);
+
+  if(wait) {
+    std::cout << "Wait for gemm reduce..." << std::endl;
+    fm.wait_all_results();
+  }  
 }
 
 // compute A * B; broadcast B
