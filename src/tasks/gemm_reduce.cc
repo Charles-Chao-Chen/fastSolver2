@@ -1,4 +1,6 @@
 #include "gemm_reduce.hpp"
+#include "ptr_matrix.hpp"
+#include "utility.hpp"
 
 int GemmRedTask::TASKID;
 
@@ -36,32 +38,31 @@ void GemmRedTask::cpu_task(const Task *task,
   assert(regions.size() == 3);
   assert(task->regions.size() == 3);
   assert(task->arglen == sizeof(TaskArgs));
-  /*
+
   Point<1> p = task->index_point.get_point<1>();
   printf("point = %d\n", p[0]);
 
   const TaskArgs args = *((const TaskArgs*)task->args);
-  int rblk  = args.nrow;
-  int nRhs  = args.nRhs;
+  int Arblk = args.Arblk;
+  int Brblk = args.Brblk;
+  int Crblk = args.Crblk;
+  int Acols = args.Acols;
+  int Bcols = args.Bcols;
+  int Ccols = args.Ccols;
 
-  int rlo = p[0]*rblk;
-  int rhi = (p[0] + 1) * rblk;
-  double *Aptr = region_pointer(regions[0], rlo, rhi, 0, A.cols);
-  double *Bptr = region_pointer(regions[1], rlo, rhi, 0, B.cols);
-  double *Cptr = region_pointer(regions[2], C.rlo, C.rhi, 0, nRhs);
-  
-  PtrMatrix AMat(rblk, rblk, rblk, Aptr);
-  PtrMatrix BMat(rblk, nRhs, rblk, Bptr);
-  PtrMatrix CMat(rblk, nRhs, rblk, Cptr);
-  //AMat.solve( BMat );
-  PtrMatrix::gemm(AMat, BMat, CMat);
+  int Arlo = p[0]*Arblk;
+  int Arhi = (p[0] + 1) * Arblk;
+  int Brlo = p[0]*Brblk;
+  int Brhi = (p[0] + 1) * Brblk;
+  int Crlo = p[0]*Crblk;
+  int Crhi = (p[0] + 1) * Crblk;
 
-
-  PtrMatrix AMat = get_raw_pointer(regions[0], rlo, rhi, 0, A.cols);
-  PtrMatrix BMat = get_raw_pointer(regions[1], rlo, rhi, 0, B.cols);
-  PtrMatrix CMat = get_raw_pointer(regions[2], C.rlo, C.rhi, 0, C.cols);
-  AMat.set_trans('t');
-  PtrMatrix::gemm(alpha, AMat, BMat, beta, CMat);
-  */
+  PtrMatrix AMat = get_raw_pointer(regions[0], Arlo, Arhi, 0, Acols);
+  PtrMatrix BMat = get_raw_pointer(regions[1], Brlo, Brhi, 0, Bcols);
+  PtrMatrix CMat = reduction_pointer(regions[2], Crlo, Crhi, 0, Ccols);
+  AMat.set_trans(args.transa);
+  BMat.set_trans(args.transb);
+  double alpha = args.alpha;
+  PtrMatrix::gemm(alpha, AMat, BMat, CMat);
 }
 

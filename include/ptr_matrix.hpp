@@ -24,6 +24,8 @@ public:
   double* pointer() const;
   double* pointer(int, int);
 
+  void set_trans(char);
+  
   void solve(PtrMatrix&);
 
   // set all entries to value
@@ -40,6 +42,9 @@ public:
   static void gemm
   (const PtrMatrix&, const PtrMatrix&, const PtrMatrix&, PtrMatrix&);
   
+  static void gemm
+  (double, const PtrMatrix&, const PtrMatrix&, PtrMatrix&);
+
   //friend std::ostream& operator<< (std::ostream& stream, const PtrMatrix&);
 
 private:
@@ -57,7 +62,7 @@ private:
   
 public:
   // 't' for transpose, 'n' for no transpose
-  // only be used in gemm
+  // used in gemm
   char trans; 
 };
 

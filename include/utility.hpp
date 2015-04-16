@@ -19,6 +19,9 @@ double* region_pointer(const PhysicalRegion &region, int, int, int, int);
 PtrMatrix get_raw_pointer
 (const PhysicalRegion &region, int rlo, int rhi, int clo, int chi);
 
+PtrMatrix reduction_pointer
+(const PhysicalRegion &region, int rlo, int rhi, int clo, int chi);
+
 // error message
 #include <cstdlib> // for EXIT_FAILURE
 #include <cassert>

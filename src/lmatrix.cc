@@ -23,6 +23,8 @@ int LMatrix::rows() const {return mRows;}
 
 int LMatrix::cols() const {return mCols;}
 
+int LMatrix::rowBlk() const {return rblock;}
+
 int LMatrix::num_partition() const {return nPart;}
 
 Domain LMatrix::color_domain() const {return colDom;}
@@ -408,13 +410,6 @@ void LMatrix::gemmRed // static method
     fm.wait_all_results();
   }  
 }
-
-void LMatrix::gemmRed // static method
-(const LMatrix& A, const LMatrix& B,
- const LMatrix& C,
- Context ctx, HighLevelRuntime *runtime, bool wait) {
-
-}
 */
 void LMatrix::gemmRed // static method
 (char transa, char transb, double alpha,
@@ -425,7 +420,6 @@ void LMatrix::gemmRed // static method
   C.scale(beta, ctx, runtime);
   
   // A and B have the same number of partition
-  assert( A.rows() == B.rows() );
   assert( A.num_partition() == B.num_partition() );
 
   LogicalPartition APart = A.logical_partition();
@@ -436,8 +430,10 @@ void LMatrix::gemmRed // static method
   LogicalRegion BReg = B.logical_region();
   LogicalRegion CReg = C.logical_region();
 
-  int colorSize = A.nPart / B.nPart;
-  GemmRedTask::TaskArgs args = {colorSize, alpha, beta};
+  int colorSize = A.nPart / C.nPart;
+  GemmRedTask::TaskArgs args={colorSize, alpha, transa, transb,
+			      A.rowBlk(), B.rowBlk(), C.rowBlk(),
+			      A.cols(), B.cols(), C.cols()};
   TaskArgument tArgs(&args, sizeof(args));
   Domain domain = A.color_domain();
   GemmRedTask launcher(domain, tArgs, ArgumentMap());

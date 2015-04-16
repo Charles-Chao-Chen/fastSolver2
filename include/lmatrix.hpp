@@ -20,6 +20,7 @@ public:
   
   int rows() const;
   int cols() const;
+  int rowBlk() const;
   int num_partition() const;
   Domain color_domain() const;
   LogicalRegion logical_region() const;
@@ -137,7 +138,6 @@ private:
   int mRows;
   int mCols;
   int rblock;
-  //int cblock;
 
   // number of ranks
   // used to init data

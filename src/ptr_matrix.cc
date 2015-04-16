@@ -40,6 +40,8 @@ double* PtrMatrix::pointer(int r, int c) {
   return &ptr[r+c*leadD];
 }
 
+void PtrMatrix::set_trans(char trans_) {this->trans=trans_;}
+
 void PtrMatrix::clear(double value) {
   for (int j=0; j<mCols; j++)
     for (int i=0; i<mRows; i++)
@@ -135,5 +137,26 @@ void PtrMatrix::gemm
   assert(res.rows() == res.cols());
   for (int i=0; i<res.rows(); i++)
     res(i, i) += D(i, 0);
+}
+  
+void PtrMatrix::gemm
+(double alpha, const PtrMatrix& U, const PtrMatrix& V,
+ PtrMatrix& W) {
+  assert(U.cols() == V.rows());
+  assert(U.rows() == W.rows());
+  assert(V.cols() == W.cols());
+  char transa = U.trans;
+  char transb = V.trans;
+  int  M = U.rows();
+  int  N = V.cols();
+  int  K = U.cols();
+  int  LDA = U.LD();
+  int  LDB = V.LD();
+  int  LDC = W.LD();
+  double beta = 1.0;
+  blas::dgemm_(&transa, &transb, &M, &N, &K,
+	       &alpha, U.pointer(), &LDA,
+	       V.pointer(), &LDB,
+	       &beta, W.pointer(), &LDC);
 }
   
