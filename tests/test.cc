@@ -259,19 +259,25 @@ void test_leaf_solve(Context ctx, HighLevelRuntime *runtime) {
   b.partition(level, ctx, runtime);
   K.solve( b, ctx, runtime );
 
+  b.display("b", ctx, runtime);
+  b.clear(7, ctx, runtime);
+  b.display("b", ctx, runtime);
+  
   /*
   LMatrix Ax;
   Ax.create(Rhs.rows(), 1, ctx, runtime);
   Ax.partition(level, ctx, runtime);
-  LMatrix::gemmRed(1.0, K, b, 0.0, Ax, ctx, runtime);
+  //LMatrix::gemmRed(1.0, K, b, 0.0, Ax, ctx, runtime);
   
   LMatrix r;
   r.create(Rhs.rows(), 1, ctx, runtime);
   r.partition(level, ctx, runtime);
-  LMatrix::minus(b, Ax, r, ctx, runtime);
+  LMatrix::add(1.0, b, -1.0, Ax, r, ctx, runtime);
   r.display("residule", ctx, runtime);
-  */
 
+
+
+    // test LMatrix::add
   LMatrix U0, U1;
   U0.create(UMat.rows(), UMat.cols(), ctx, runtime);
   U0.init_data(nProc, 0, UMat.cols(), UMat, ctx, runtime);
@@ -288,7 +294,8 @@ void test_leaf_solve(Context ctx, HighLevelRuntime *runtime) {
   res.display("result", ctx, runtime);
   LMatrix::add(1.0, U0,  1.0, U1, res, ctx, runtime);
   res.display("result", ctx, runtime);
-  
+*/
+    
   std::cout << "Test for leave solve passed!" << std::endl;
 }
 

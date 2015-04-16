@@ -1,7 +1,14 @@
 #include "lmatrix.hpp"
 #include <math.h> // for pow()
 
-LMatrix::LMatrix() {}
+LMatrix::LMatrix() : nPart(-1) {}
+
+LMatrix::LMatrix
+(int rows, int cols, int level, Context ctx, HighLevelRuntime *runtime) {
+  
+  create(rows, cols, ctx, runtime);
+  partition(level, ctx, runtime);
+}
 
 LMatrix::LMatrix
 (IndexPartition ip, LogicalRegion lr, Context ctx, HighLevelRuntime *runtime)
@@ -68,7 +75,26 @@ void LMatrix::init_data
     fm.wait_all_results();
   }
 }
-  */
+*/
+
+void LMatrix::clear
+(int value, Context ctx, HighLevelRuntime *runtime, bool wait) {
+  
+  // assuming partition is done
+  assert(nPart > 0);
+  ClearMatrixTask::TaskArgs args = {rblock, mCols, value};
+  ClearMatrixTask launcher(colDom, TaskArgument(&args, sizeof(args)), ArgumentMap());
+  RegionRequirement req(lpart, 0, WRITE_DISCARD, EXCLUSIVE, region);
+  req.add_field(FIELDID_V);
+  launcher.add_region_requirement(req);
+  FutureMap fm = runtime->execute_index_space(ctx, launcher);
+    
+  if(wait) {
+    std::cout << "Wait for clearing matrix..." << std::endl;
+    fm.wait_all_results();
+  }
+}
+
 void LMatrix::init_data
 (int nProc_, int col0, int col1, const Matrix& mat,
  Context ctx, HighLevelRuntime *runtime, bool wait) {
@@ -330,6 +356,7 @@ void LMatrix::gemmRed // static method
  Context ctx, HighLevelRuntime *runtime, bool wait) {
 
   // A and B have the same number of partition
+  assert( A.rows() == B.rows() );
   assert( A.num_partition() == B.num_partition() );
 
   LogicalPartition APart = A.logical_partition();
@@ -340,11 +367,10 @@ void LMatrix::gemmRed // static method
   LogicalRegion BReg = B.logical_region();
   LogicalRegion CReg = C.logical_region();
 
-  assert( A.nPart % B.nPart == 0 );
-  Domain domain = A.color_domain();
   int colorSize = A.nPart / B.nPart;
   GemmRedTask::TaskArgs args = {colorSize, alpha, beta};
   TaskArgument tArgs(&args, sizeof(args));
+  Domain domain = A.color_domain();
   GemmRedTask launcher(domain, tArgs, ArgumentMap());
   
   RegionRequirement AReq(APart, 0,           READ_ONLY, EXCLUSIVE, AReg);
@@ -364,7 +390,14 @@ void LMatrix::gemmRed // static method
     fm.wait_all_results();
   }  
 }
-  
+
+void LMatrix::gemmRed // static method
+(const LMatrix& A, const LMatrix& B,
+ const LMatrix& C,
+ Context ctx, HighLevelRuntime *runtime, bool wait) {
+
+}
+
 // compute A * B; broadcast B
 void LMatrix::gemmBro // static method
 (double alpha, const LMatrix& A, const LMatrix& B,

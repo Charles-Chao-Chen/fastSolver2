@@ -40,6 +40,12 @@ double* PtrMatrix::pointer(int r, int c) {
   return &ptr[r+c*leadD];
 }
 
+void PtrMatrix::clear(int value) {
+  for (int j=0; j<mCols; j++)
+    for (int i=0; i<mRows; i++)
+      (*this)(i, j) = value;
+}
+
 void PtrMatrix::rand(long seed) {
   struct drand48_data buffer;
   assert( srand48_r( seed, &buffer ) == 0 );

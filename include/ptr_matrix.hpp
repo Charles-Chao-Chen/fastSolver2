@@ -26,6 +26,9 @@ public:
 
   void solve(PtrMatrix&);
 
+  // set all entries to value
+  void clear(int value);
+  
   static void add
   (double alpha, const PtrMatrix&,
    double beta,  const PtrMatrix&,

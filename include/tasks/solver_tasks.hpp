@@ -11,7 +11,7 @@
 #include "init_matrix.hpp"
 #include "dense_block.hpp"
 #include "add_matrix.hpp"
-#include "zero_matrix.hpp"
+#include "clear_matrix.hpp"
 #include "display_matrix.hpp"
 
 void register_solver_tasks();

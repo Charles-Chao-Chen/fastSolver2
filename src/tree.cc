@@ -12,14 +12,15 @@ void UTree::init(int nProc_, const Matrix& UMat_) {
 
 void UTree::init_rhs
 (const Vector& b, Context ctx, HighLevelRuntime *runtime) {
-  assert(Rhs.rows() == b.rows());
-  assert(Rhs.cols() == 1);
+  //assert(Rhs.rows() == b.rows());
+  //assert(Rhs.cols() == 1);
   // Matrix Rhs = b;
   //Rhs.init_data(nProc, 0, 1, b, ctx, runtime);
 }
 
 Vector UTree::rhs() {
-  return Rhs.to_vector();
+  //return Rhs.to_vector();
+  return Vector();
 }
 
 void UTree::partition
@@ -35,7 +36,7 @@ void UTree::partition
   // create partition
   this->mLevel = level;
   // right hand side partition
-  Rhs = U.partition(nProc, 0, nRhs, ctx, runtime);
+  //Rhs = U.partition(/* !LEVEL, NOT NPART*/, 0, nRhs, ctx, runtime);
   for (int i=0; i<mLevel; i++) {
     int ncol = nRhs + i*rank;
     LMatrix dMat = U.partition(mLevel, 0, ncol, ctx, runtime);

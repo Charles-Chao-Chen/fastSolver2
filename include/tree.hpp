@@ -48,7 +48,7 @@ private:
   LMatrix U; // original data
 
   // partitions at different levels
-  LMatrix Rhs;
+  //LMatrix Rhs;
   std::vector<LMatrix> uMat_vec;
   std::vector<LMatrix> dMat_vec;
   

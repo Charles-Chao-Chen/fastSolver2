@@ -14,6 +14,7 @@ using namespace LegionRuntime::HighLevel;
 class LMatrix {
 public:
   LMatrix();
+  LMatrix(int, int, int, Context, HighLevelRuntime*);
   LMatrix(IndexPartition ip, LogicalRegion lr, Context, HighLevelRuntime*);
   ~LMatrix();
   
@@ -34,6 +35,9 @@ public:
   (int, const Vector& Rhs, Context, HighLevelRuntime*,
    bool wait=WAIT_DEFAULT);
 */
+
+  // set the matrix to 0
+  void clear(int, Context, HighLevelRuntime*, bool wait=WAIT_DEFAULT);
   
   // for UTree init and VTree init
   void init_data
@@ -46,9 +50,14 @@ public:
    Context, HighLevelRuntime*, bool wait=WAIT_DEFAULT);
 
   // uniform partition
+  // Note: the first argument is level, NOT nPart
   void partition(int level, Context, HighLevelRuntime*);
+
+  // return a new matrix with created partition,
+  //  so no need to destroy region twice
   LMatrix partition
-  (int level, int col0, int col1, Context ctx, HighLevelRuntime *runtime);
+  (int level, int col0, int col1,
+   Context ctx, HighLevelRuntime *runtime);
   
   // output the right hand side
   // for UTree::rhs()
@@ -80,13 +89,20 @@ public:
   (double alpha, const LMatrix&,
    double beta,  const LMatrix&, LMatrix&,
    Context, HighLevelRuntime*, bool wait=WAIT_DEFAULT);
-  
+
   // gemm reduction
+  // compute A.transpose() * B and reduce to C
   static void gemmRed
   (double, const LMatrix&, const LMatrix&,
    double, const LMatrix&, Context, HighLevelRuntime*,
    bool wait=WAIT_DEFAULT);
-  
+
+  // C += A^T * B using reduction
+  static void gemmRed
+  (const LMatrix&, const LMatrix&,
+   const LMatrix&, Context, HighLevelRuntime*,
+   bool wait=WAIT_DEFAULT);
+
   // gemm broadcast
   static void gemmBro
   (double, const LMatrix&, const LMatrix&,

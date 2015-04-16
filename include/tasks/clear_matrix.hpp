@@ -1,13 +1,17 @@
-#ifndef _zero_matrix_hpp
-#define _zero_matrix_hpp
+#ifndef _clear_matrix_hpp
+#define _clear_matrix_hpp
 
 #include "legion.h"
 using namespace LegionRuntime::HighLevel;
 
-class ZeroMatrixTask : public IndexLauncher {
+class ClearMatrixTask : public IndexLauncher {
 public:
-
-  ZeroMatrixTask(Domain domain,
+  struct TaskArgs {
+    int rblock;
+    int cols;
+    int value;
+  };
+  ClearMatrixTask(Domain domain,
 		 TaskArgument global_arg,
 		 ArgumentMap arg_map,
 		 Predicate pred = Predicate::TRUE_PRED,
