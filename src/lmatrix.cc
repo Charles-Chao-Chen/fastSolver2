@@ -32,7 +32,12 @@ Domain LMatrix::color_domain() const {return colDom;}
 LogicalRegion LMatrix::logical_region() const {return region;}
 
 LogicalPartition LMatrix::logical_partition() const {return lpart;}
-
+/*
+LogicalPartition LMatrix::logical_partition
+(Context ctx, HighLevelRuntime *runtime) const {
+  return runtime->get_logical_partition(ctx, region, ipart);
+}
+*/
 void LMatrix::create
 (int rows, int cols, Context ctx, HighLevelRuntime *runtime, bool wait) {
   assert(rows>0 && cols>0);
@@ -335,7 +340,8 @@ void LMatrix::add
   // A, B and C have the same size
   assert( A.rows() == B.rows() && A.rows() == C.rows() );
   assert( A.cols() == B.cols() && A.cols() == C.cols() );
-  assert( A.num_partition() == B.num_partition() );
+  assert( A.num_partition() == B.num_partition() &&
+	  A.num_partition() == C.num_partition() );
 
   LogicalPartition APart = A.logical_partition();
   LogicalPartition BPart = B.logical_partition();
@@ -345,7 +351,7 @@ void LMatrix::add
   LogicalRegion BReg = B.logical_region();
   LogicalRegion CReg = C.logical_region();
 
-  int rblock = A.rows() / A.num_partition();
+  int rblock = A.rowBlk();
   int cols   = A.cols();
   AddMatrixTask::TaskArgs args = {alpha, beta, rblock, cols};
   TaskArgument tArgs(&args, sizeof(args));
@@ -421,6 +427,7 @@ void LMatrix::gemmRed // static method
   
   // A and B have the same number of partition
   assert( A.num_partition() == B.num_partition() );
+  assert( A.num_partition() %  C.num_partition() == 0 );
 
   LogicalPartition APart = A.logical_partition();
   LogicalPartition BPart = B.logical_partition();
@@ -430,7 +437,7 @@ void LMatrix::gemmRed // static method
   LogicalRegion BReg = B.logical_region();
   LogicalRegion CReg = C.logical_region();
 
-  int colorSize = A.nPart / C.nPart;
+  int colorSize = A.num_partition() / C.num_partition();
   GemmRedTask::TaskArgs args={colorSize, alpha, transa, transb,
 			      A.rowBlk(), B.rowBlk(), C.rowBlk(),
 			      A.cols(), B.cols(), C.cols()};
@@ -444,7 +451,7 @@ void LMatrix::gemmRed // static method
   AReq.add_field(FIELDID_V);
   BReq.add_field(FIELDID_V);
   CReq.add_field(FIELDID_V);
-  launcher.add_region_requirement(AReq);
+  launcher.add_region_requirement(AReq); 
   launcher.add_region_requirement(BReq);
   launcher.add_region_requirement(CReq);
   

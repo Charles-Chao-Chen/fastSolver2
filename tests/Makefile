@@ -31,8 +31,8 @@ GEN_GPU_SRC	:=				# .cu files
 INC_FLAGS	:= -I ../include/ -I ../include/tasks/
 CC_FLAGS	:= -g \
 		-DBOUNDS_CHECKS -DPRIVILEGE_CHECKS \
-		-DLEGION_PROF -DLEGION_SPY
-#-DNODE_LOGGING
+		-DLEGION_PROF -DLEGION_SPY \
+		-DNODE_LOGGING
 #-DLEGION_SPY
 
 #-g  \
@@ -229,17 +229,9 @@ prof:
 # --- Sapling commands ---
 
 # check task execution (data movement)
-spy2:
-	mpirun -H n0001,n0002 \
-	-bind-to none \
-	-x GASNET_IB_SPAWNER -x GASNET_BACKTRACE=1 \
-	./main \
-	-np 2 -leaf 1 \
-	-cat legion_spy -level 2 \
-	-ll:cpu 11 -ll:util 1 \
-	-ll:csize 30000 \
-	-hl:sched 8192
-#	python ~/legion/tools/legion_spy.py -p node_0.log
+spy:
+	./test -level 2
+	python ~/legion/tools/legion_spy.py -p node_0.log
 
 prof2:
 	mpirun -H n0001,n0002 \

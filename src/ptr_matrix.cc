@@ -109,10 +109,13 @@ void PtrMatrix::add
    double beta,  const PtrMatrix& B, PtrMatrix& C) {
 
   assert(A.rows() == B.rows() && A.rows() == C.rows());
+  assert(A.rows() == B.rows() && A.rows() == C.rows());
   assert(A.cols() == B.cols() && A.cols() == C.cols());
   for (int j=0; j<C.cols(); j++)
-    for (int i=0; i<C.rows(); i++)
+    for (int i=0; i<C.rows(); i++) {
       C(i, j) = alpha*A(i,j) + beta*B(i,j);
+      printf("(%f, %f, %f)\n", A(i, j), B(i, j), C(i, j));
+    }
 }
 
 void PtrMatrix::gemm
@@ -127,7 +130,8 @@ void PtrMatrix::gemm
   int  LDA = U.LD();
   int  LDB = V.LD();
   int  LDC = res.LD();
-  double alpha = 1.0, beta = 0.0;
+  //double alpha = 1.0, beta = 0.0;
+  double alpha = 0.0, beta = 0.0;
   blas::dgemm_(&transa, &transb, &M, &N, &K,
 	       &alpha, U.pointer(), &LDA,
 	       V.pointer(), &LDB,
@@ -136,7 +140,8 @@ void PtrMatrix::gemm
   // add the diagonal
   assert(res.rows() == res.cols());
   for (int i=0; i<res.rows(); i++)
-    res(i, i) += D(i, 0);
+    //res(i, i) += D(i, 0);
+    res(i, i) += 1;
 }
   
 void PtrMatrix::gemm

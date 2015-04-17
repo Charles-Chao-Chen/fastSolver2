@@ -24,10 +24,10 @@ void AddMatrixTask::register_tasks(void)
 			    true,
 			    AUTO_GENERATE_ID,
 			    TaskConfigOptions(true/*leaf*/),
-			    "Leaf_Solve");
+			    "add_matrix");
 
 #ifdef SHOW_REGISTER_TASKS
-  printf("Register task %d : Leaf_Solve\n", TASKID);
+  printf("Register task %d : add_matrix\n", TASKID);
 #endif
 }
 
@@ -50,22 +50,9 @@ void AddMatrixTask::cpu_task(const Task *task,
 
   int rlo = p[0]*rblk;
   int rhi = (p[0] + 1) * rblk;
-
-  /*
-  double *Aptr = region_pointer(regions[0], rlo, rhi, 0, cols);
-  double *Bptr = region_pointer(regions[1], rlo, rhi, 0, cols);
-  double *Cptr = region_pointer(regions[2], rlo, rhi, 0, cols);
-  
-  PtrMatrix AMat(rblk, cols, rblk, Aptr);
-  PtrMatrix BMat(rblk, cols, rblk, Bptr);
-  PtrMatrix CMat(rblk, cols, rblk, Cptr);
-  */
   
   PtrMatrix AMat = get_raw_pointer(regions[0], rlo, rhi, 0, cols);
   PtrMatrix BMat = get_raw_pointer(regions[1], rlo, rhi, 0, cols);
   PtrMatrix CMat = get_raw_pointer(regions[2], rlo, rhi, 0, cols);
   PtrMatrix::add(alpha, AMat, beta, BMat, CMat);
 }
-
-
-

@@ -25,6 +25,7 @@ public:
   Domain color_domain() const;
   LogicalRegion logical_region() const;
   LogicalPartition logical_partition() const;
+  //LogicalPartition logical_partition(Context, HighLevelRuntime*) const;
 
   // create logical region
   void create(int, int, Context, HighLevelRuntime*,

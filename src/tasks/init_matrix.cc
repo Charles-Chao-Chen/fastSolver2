@@ -57,6 +57,8 @@ void InitMatrixTask::cpu_task(const Task *task,
 
   int rlo = p[0]*rblk;
   int rhi = (p[0] + 1) * rblk;
+
+  /*
   double *base = region_pointer(regions[0], rlo, rhi, clo, chi);
   int colIdx = 0;
   while (colIdx < chi-clo) {
@@ -65,6 +67,13 @@ void InitMatrixTask::cpu_task(const Task *task,
     pMat.rand(seed);
     colIdx += cblk;
   }
+  */
+
+  while (clo+cblk <= chi) {
+    PtrMatrix A = get_raw_pointer(regions[0], rlo, rhi, clo, clo+cblk);
+    A.rand(seed);
+    clo += cblk;
+  }  
 }
 
 

@@ -23,7 +23,7 @@ void top_level_task(const Task *task,
 
   test_vector();
   test_matrix();
-  test_lmatrix_init(ctx, runtime);
+  //test_lmatrix_init(ctx, runtime);
   test_leaf_solve(ctx, runtime);
   
   /*
@@ -252,13 +252,17 @@ void test_leaf_solve(Context ctx, HighLevelRuntime *runtime) {
   K.create( nrow, ncol, ctx, runtime );
   K.init_dense_blocks(nProc, nblk, UMat, VMat, DVec, ctx, runtime);
   K.partition(level, ctx, runtime);
-
+  //K.display("K", ctx, runtime);
+  
   LMatrix b;
   b.create(Rhs.rows(), 1, ctx, runtime);
   b.init_data(nProc, 0, 1, Rhs, ctx, runtime);
   b.partition(level, ctx, runtime);
-  K.solve( b, ctx, runtime );
 
+  //b.display("rhs", ctx, runtime);
+  K.solve( b, ctx, runtime );
+  //b.display("sln", ctx, runtime);
+  
   /*
   b.display("b", ctx, runtime);
   b.clear(1, ctx, runtime);
@@ -270,12 +274,19 @@ void test_leaf_solve(Context ctx, HighLevelRuntime *runtime) {
   LMatrix Ax;
   Ax.create(Rhs.rows(), 1, ctx, runtime);
   Ax.partition(level, ctx, runtime);
+  //Ax.clear(0.0, ctx, runtime);
   LMatrix::gemmRed('n', 'n', 1.0, K, b, 0.0, Ax, ctx, runtime);
+  //Ax.clear(1.0, ctx, runtime);
+  Ax.display("Ax", ctx, runtime);
   
   LMatrix r;
   r.create(Rhs.rows(), 1, ctx, runtime);
   r.partition(level, ctx, runtime);
+  
+  // !dependency BUG here
+  //Ax.partition(level, ctx, runtime);
   LMatrix::add(1.0, b, -1.0, Ax, r, ctx, runtime);
+  //LMatrix::add(1.0, Ax, -1.0, b, r, ctx, runtime);
   r.display("residule", ctx, runtime);
 
 

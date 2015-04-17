@@ -28,10 +28,8 @@ LogicalRegion Contraction::project(Context ctx, Task *task,
   int clrSize = *((int*)task->args);
   int color = point.point_data[0] / clrSize;
 
-#ifdef DEBUG
-  printf("domain size: %d\tpoint: %d\tblock: %d\n",
-	 size, point.point_data[0], color);
-#endif
+  printf("point: %d\tcolor: %d\n",
+	 point.point_data[0], color);
   
   return runtime->get_logical_subregion_by_color(ctx, partition, color);
 }

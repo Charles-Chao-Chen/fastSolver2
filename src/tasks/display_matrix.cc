@@ -46,9 +46,10 @@ void DisplayMatrixTask::cpu_task
   const int   rows = args.rows;
   const int   cols = args.cols;
  
-  double *base = region_pointer(regions[0], 0, rows, 0, cols);    
-  PtrMatrix pMat(rows, cols, rows, base);
-  pMat.display(name);
+  //double *base = region_pointer(regions[0], 0, rows, 0, cols);    
+  //PtrMatrix pMat(rows, cols, rows, base);
+  PtrMatrix A = get_raw_pointer(regions[0], 0, rows, 0, cols);    
+  A.display(name);
 }
 
 

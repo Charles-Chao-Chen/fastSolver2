@@ -24,10 +24,10 @@ void GemmRedTask::register_tasks(void)
 			    true,
 			    AUTO_GENERATE_ID,
 			    TaskConfigOptions(true/*leaf*/),
-			    "GemmRed_Solve");
+			    "GemmRed");
 
 #ifdef SHOW_REGISTER_TASKS
-  printf("Register task %d : GemmRed_Solve\n", TASKID);
+  printf("Register task %d : GemmRed\n", TASKID);
 #endif
 }
 
@@ -50,6 +50,9 @@ void GemmRedTask::cpu_task(const Task *task,
   int Bcols = args.Bcols;
   int Ccols = args.Ccols;
 
+  printf("A(%d, %d), B(%d, %d), C(%d, %d)\n",
+	 Arblk, Acols, Brblk, Bcols, Crblk, Ccols);
+  
   int Arlo = p[0]*Arblk;
   int Arhi = (p[0] + 1) * Arblk;
   int Brlo = p[0]*Brblk;
