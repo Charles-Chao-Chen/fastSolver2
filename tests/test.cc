@@ -248,48 +248,36 @@ void test_leaf_solve(Context ctx, HighLevelRuntime *runtime) {
   int ncol = DVec.rows() / nblk;
   assert(nblk >= nProc);
   assert(ncol >= UMat.cols());
-  LMatrix K;
-  K.create( nrow, ncol, ctx, runtime );
+  LMatrix K( nrow, ncol, level, ctx, runtime );;
+  LMatrix K_copy( nrow, ncol, level, ctx, runtime );;
   K.init_dense_blocks(nProc, nblk, UMat, VMat, DVec, ctx, runtime);
-  K.partition(level, ctx, runtime);
-  //K.display("K", ctx, runtime);
+  K_copy.init_dense_blocks(nProc, nblk, UMat, VMat, DVec, ctx, runtime);
   
-  LMatrix b;
-  b.create(Rhs.rows(), 1, ctx, runtime);
+  LMatrix b(Rhs.rows(), 1, level, ctx, runtime);
+  LMatrix b_copy(Rhs.rows(), 1, level, ctx, runtime);
   b.init_data(nProc, 0, 1, Rhs, ctx, runtime);
-  b.partition(level, ctx, runtime);
+  b_copy.init_data(nProc, 0, 1, Rhs, ctx, runtime);
 
-  //b.display("rhs", ctx, runtime);
+  // linear solve
   K.solve( b, ctx, runtime );
-  //b.display("sln", ctx, runtime);
   
-  /*
-  b.display("b", ctx, runtime);
-  b.clear(1, ctx, runtime);
-  b.display("b", ctx, runtime);
-  b.scale(7, ctx, runtime);
-  b.display("b", ctx, runtime);
-*/  
+  LMatrix Ax(Rhs.rows(), 1, level, ctx, runtime);
+  LMatrix::gemmRed('n', 'n', 1.0, K_copy, b, 0.0, Ax, ctx, runtime);
+  //Ax.display("Ax", ctx, runtime);
 
-  LMatrix Ax;
-  Ax.create(Rhs.rows(), 1, ctx, runtime);
-  Ax.partition(level, ctx, runtime);
-  //Ax.clear(0.0, ctx, runtime);
-  LMatrix::gemmRed('n', 'n', 1.0, K, b, 0.0, Ax, ctx, runtime);
-  //Ax.clear(1.0, ctx, runtime);
-  Ax.display("Ax", ctx, runtime);
+  LMatrix r(Rhs.rows(), 1, level, ctx, runtime);
   
-  LMatrix r;
-  r.create(Rhs.rows(), 1, ctx, runtime);
-  r.partition(level, ctx, runtime);
-  
-  // !dependency BUG here
-  //Ax.partition(level, ctx, runtime);
-  LMatrix::add(1.0, b, -1.0, Ax, r, ctx, runtime);
-  //LMatrix::add(1.0, Ax, -1.0, b, r, ctx, runtime);
+  // r = b - Ax
+  LMatrix::add(1.0, b_copy, -1.0, Ax, r, ctx, runtime);
   r.display("residule", ctx, runtime);
 
-
+  /*
+  b_copy.display("rhs", ctx, runtime);
+  K.display("K", ctx, runtime);
+  b.display("sln", ctx, runtime);
+  Ax.display("Ax", ctx, runtime);
+  */
+    
   /*
   // test LMatrix::add
   LMatrix U0, U1;

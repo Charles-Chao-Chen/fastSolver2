@@ -38,9 +38,8 @@ void GemmRedTask::cpu_task(const Task *task,
   assert(regions.size() == 3);
   assert(task->regions.size() == 3);
   assert(task->arglen == sizeof(TaskArgs));
-
   Point<1> p = task->index_point.get_point<1>();
-  printf("point = %d\n", p[0]);
+  //printf("point = %d\n", p[0]);
 
   const TaskArgs args = *((const TaskArgs*)task->args);
   int Arblk = args.Arblk;
@@ -50,8 +49,8 @@ void GemmRedTask::cpu_task(const Task *task,
   int Bcols = args.Bcols;
   int Ccols = args.Ccols;
 
-  printf("A(%d, %d), B(%d, %d), C(%d, %d)\n",
-	 Arblk, Acols, Brblk, Bcols, Crblk, Ccols);
+  //printf("A(%d, %d), B(%d, %d), C(%d, %d)\n",
+  //	 Arblk, Acols, Brblk, Bcols, Crblk, Ccols);
   
   int Arlo = p[0]*Arblk;
   int Arhi = (p[0] + 1) * Arblk;

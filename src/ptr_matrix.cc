@@ -102,6 +102,12 @@ void PtrMatrix::solve(PtrMatrix& B) {
   lapack::dgesv_(&N, &NRHS, ptr, &LDA, IPIV,
 		 B.pointer(), &LDB, &INFO);
   assert(INFO==0);
+  /*
+  std::cout << "Permutation:" << std::endl;
+  for (int i=0; i<N; i++)
+    std::cout << IPIV[i] << "\t";
+  std::cout << std::endl;
+  */
 }
 
 void PtrMatrix::add
@@ -114,7 +120,7 @@ void PtrMatrix::add
   for (int j=0; j<C.cols(); j++)
     for (int i=0; i<C.rows(); i++) {
       C(i, j) = alpha*A(i,j) + beta*B(i,j);
-      printf("(%f, %f, %f)\n", A(i, j), B(i, j), C(i, j));
+      //printf("(%f, %f, %f)\n", A(i, j), B(i, j), C(i, j));
     }
 }
 
@@ -130,8 +136,8 @@ void PtrMatrix::gemm
   int  LDA = U.LD();
   int  LDB = V.LD();
   int  LDC = res.LD();
-  //double alpha = 1.0, beta = 0.0;
-  double alpha = 0.0, beta = 0.0;
+  double alpha = 1.0, beta = 0.0;
+  //double alpha = 0.0, beta = 0.0;
   blas::dgemm_(&transa, &transb, &M, &N, &K,
 	       &alpha, U.pointer(), &LDA,
 	       V.pointer(), &LDB,
@@ -140,8 +146,7 @@ void PtrMatrix::gemm
   // add the diagonal
   assert(res.rows() == res.cols());
   for (int i=0; i<res.rows(); i++)
-    //res(i, i) += D(i, 0);
-    res(i, i) += 1;
+    res(i, i) += D(i, 0);
 }
   
 void PtrMatrix::gemm
