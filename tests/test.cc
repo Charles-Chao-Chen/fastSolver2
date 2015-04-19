@@ -341,9 +341,9 @@ void test_gemm_broadcast(Context ctx, HighLevelRuntime *runtime) {
 
   int level = 3;
   LMatrix U(m, n, level, ctx, runtime);
-  U.init_data(nProc, 0, n, UMat, ctx, runtime);
+  U.init_data(nProc, UMat, ctx, runtime);
   LMatrix V(n, n, 0, ctx, runtime);
-  V.init_data(1, 0, n, VMat, ctx, runtime);
+  V.init_data(1, VMat, ctx, runtime);
 
   Matrix WMat = UMat * VMat;
   //UMat.display("UMat");

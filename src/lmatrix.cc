@@ -124,6 +124,12 @@ void LMatrix::scale
 }
 
 void LMatrix::init_data
+(int nProc_, const Matrix& mat,
+ Context ctx, HighLevelRuntime *runtime, bool wait) {
+  init_data(nProc_, 0, mCols, mat, ctx, runtime, wait);
+}
+
+void LMatrix::init_data
 (int nProc_, int col0, int col1, const Matrix& mat,
  Context ctx, HighLevelRuntime *runtime, bool wait) {
   // assuming the region has been created

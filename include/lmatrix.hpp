@@ -43,12 +43,19 @@ public:
 
   // scale all the entries
   void scale(double, Context, HighLevelRuntime*, bool wait=WAIT_DEFAULT);
-  
-  // for UTree init and VTree init
+
+  // initialize data from Matrix object
+  // for VTree init
+  void init_data
+  (int, const Matrix& VMat, Context, HighLevelRuntime*,
+   bool wait=WAIT_DEFAULT);
+
+  // specifies column range
+  // for UTree init
   void init_data
   (int, int, int, const Matrix& VMat, Context, HighLevelRuntime*,
    bool wait=WAIT_DEFAULT);
-
+  
   // for KTree::partition
   void init_dense_blocks
   (int, int, const Matrix& UMat, const Matrix& VMat, const Vector& DVec,
