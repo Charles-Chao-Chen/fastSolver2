@@ -88,7 +88,7 @@ Vector HMatrix::solve
       
     // broadcast operation
     // d -= u * VTd
-    LMatrix::gemmBro( -1.0, u, VTd, 1.0, d, ctx, runtime );
+    LMatrix::gemmBro('n', 'n', -1.0, u, VTd, 1.0, d, ctx, runtime );
   }
   
   return uTree.rhs();

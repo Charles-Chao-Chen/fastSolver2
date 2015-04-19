@@ -6,11 +6,14 @@ using namespace LegionRuntime::HighLevel;
 
 class GemmBroTask : public IndexLauncher {
 public:
-  
+  // the first member must be colorSize, which is referenced
+  //  in the projector
   struct TaskArgs {
-    int    colorSize; // used in projector
+    int colorSize;
     double alpha;
-    double beta;
+    char transa, transb;
+    int Arblk, Brblk, Crblk;
+    int Acols, Bcols, Ccols;
   };
   
   GemmBroTask(Domain domain,

@@ -174,4 +174,3 @@ void PtrMatrix::gemm
 	       V.pointer(), &LDB,
 	       &beta, W.pointer(), &LDC);
 }
-  

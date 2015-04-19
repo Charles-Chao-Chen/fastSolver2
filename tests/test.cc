@@ -17,6 +17,7 @@ void test_matrix();
 void test_lmatrix_init(Context, HighLevelRuntime*);
 void test_leaf_solve(Context, HighLevelRuntime*);
 void test_gemm_reduce(Context, HighLevelRuntime*);
+void test_gemm_broadcast(Context, HighLevelRuntime*);
 
 void top_level_task(const Task *task,
 		    const std::vector<PhysicalRegion> &regions,
@@ -27,6 +28,7 @@ void top_level_task(const Task *task,
   //test_lmatrix_init(ctx, runtime);
   //test_leaf_solve(ctx, runtime);
   test_gemm_reduce(ctx, runtime);
+  test_gemm_broadcast(ctx, runtime);
   
   /*
   // ======= Problem configuration =======
@@ -327,4 +329,28 @@ void test_gemm_reduce(Context ctx, HighLevelRuntime *runtime) {
   VMat.display("Vmat");
   UMat.display("Umat");
 */
+  std::cout << "Test for gemm reduce passed!" << std::endl;
+}
+
+void test_gemm_broadcast(Context ctx, HighLevelRuntime *runtime) {
+  int m=16, n=3;
+  int nProc = 4;
+  Matrix UMat(m, n), VMat(n, n);
+  UMat.rand(nProc);
+  VMat.rand(1);
+
+  int level = 3;
+  LMatrix U(m, n, level, ctx, runtime);
+  U.init_data(nProc, 0, n, UMat, ctx, runtime);
+  LMatrix V(n, n, 0, ctx, runtime);
+  V.init_data(1, 0, n, VMat, ctx, runtime);
+
+  Matrix WMat = UMat * VMat;
+  //UMat.display("UMat");
+  //VMat.display("VMat");
+  WMat.display("WMat");
+
+  LMatrix W(m, n, level, ctx, runtime);
+  LMatrix::gemmBro('n', 'n', 1.0, U, V, 0.0, W, ctx, runtime);
+  W.display("W", ctx, runtime);
 }

@@ -104,6 +104,9 @@ void LMatrix::clear
 
 void LMatrix::scale
 (double alpha, Context ctx, HighLevelRuntime *runtime, bool wait) {
+
+  // if alpha = 1.0, do nothing
+  if ( fabs(alpha -1.0) < 1e-10) return;
   
   // assuming partition is done
   assert(nPart > 0);
@@ -374,49 +377,7 @@ void LMatrix::add
     fm.wait_all_results();
   }  
 }
-/*
-// compute A.transpose() * B and reduce to C
-void LMatrix::gemmRed // static method
-(double alpha, const LMatrix& A, const LMatrix& B,
- double beta,  const LMatrix& C,
- Context ctx, HighLevelRuntime *runtime, bool wait) {
 
-  // A and B have the same number of partition
-  assert( A.rows() == B.rows() );
-  assert( A.num_partition() == B.num_partition() );
-
-  LogicalPartition APart = A.logical_partition();
-  LogicalPartition BPart = B.logical_partition();
-  LogicalPartition CPart = C.logical_partition();
-
-  LogicalRegion AReg = A.logical_region();
-  LogicalRegion BReg = B.logical_region();
-  LogicalRegion CReg = C.logical_region();
-
-  int colorSize = A.nPart / B.nPart;
-  GemmRedTask::TaskArgs args = {colorSize, alpha, beta};
-  TaskArgument tArgs(&args, sizeof(args));
-  Domain domain = A.color_domain();
-  GemmRedTask launcher(domain, tArgs, ArgumentMap());
-  
-  RegionRequirement AReq(APart, 0,           READ_ONLY, EXCLUSIVE, AReg);
-  RegionRequirement BReq(BPart, 0,           READ_ONLY, EXCLUSIVE, BReg);
-  RegionRequirement CReq(CPart, CONTRACTION, REDOP_ADD, EXCLUSIVE, CReg);
-  AReq.add_field(FIELDID_V);
-  BReq.add_field(FIELDID_V);
-  CReq.add_field(FIELDID_V);
-  launcher.add_region_requirement(AReq);
-  launcher.add_region_requirement(BReq);
-  launcher.add_region_requirement(CReq);
-  
-  FutureMap fm = runtime->execute_index_space(ctx, launcher);
-
-  if(wait) {
-    std::cout << "Wait for gemm reduce..." << std::endl;
-    fm.wait_all_results();
-  }  
-}
-*/
 void LMatrix::gemmRed // static method
 (char transa, char transb, double alpha,
  const LMatrix& A, const LMatrix& B,
@@ -466,13 +427,17 @@ void LMatrix::gemmRed // static method
 
 // compute A * B; broadcast B
 void LMatrix::gemmBro // static method
-(double alpha, const LMatrix& A, const LMatrix& B,
- double beta,  const LMatrix& C,
+(char transa, char transb, double alpha,
+ const LMatrix& A, const LMatrix& B,
+ double beta, LMatrix& C,
  Context ctx, HighLevelRuntime *runtime, bool wait) {
 
+  C.scale(beta, ctx, runtime);
+  
   // A and C have the same number of partition
   assert( A.num_partition() == C.num_partition() );
-
+  assert( A.num_partition() %  B.num_partition() == 0 );
+  
   LogicalPartition AP = A.logical_partition();
   LogicalPartition BP = B.logical_partition();
   LogicalPartition CP = C.logical_partition();
@@ -481,12 +446,14 @@ void LMatrix::gemmBro // static method
   LogicalRegion BReg = B.logical_region();
   LogicalRegion CReg = C.logical_region();
 
-  assert( A.nPart % B.nPart == 0 );
-  Domain domain = A.color_domain();
   int colorSize = A.nPart / B.nPart;
-  GemmBroTask::TaskArgs args = {colorSize, alpha, beta};
+  GemmBroTask::TaskArgs args = {colorSize,
+				alpha, transa, transb,
+				A.rowBlk(), B.rowBlk(), C.rowBlk(),
+				A.cols(), B.cols(), C.cols()};
   TaskArgument tArgs(&args, sizeof(args));
-  GemmRedTask launcher(domain, tArgs, ArgumentMap());
+  Domain domain = A.color_domain();
+  GemmBroTask launcher(domain, tArgs, ArgumentMap());
   
   RegionRequirement AReq(AP, 0,           READ_ONLY,  EXCLUSIVE, AReg);
   RegionRequirement BReq(BP, CONTRACTION, READ_ONLY,  EXCLUSIVE, BReg);

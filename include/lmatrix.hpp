@@ -104,8 +104,8 @@ public:
 
   // gemm broadcast
   static void gemmBro
-  (double, const LMatrix&, const LMatrix&,
-   double, const LMatrix&, Context, HighLevelRuntime*,
+  (char, char, double, const LMatrix&, const LMatrix&,
+   double, LMatrix&, Context, HighLevelRuntime*,
    bool wait=WAIT_DEFAULT);
   
 private:

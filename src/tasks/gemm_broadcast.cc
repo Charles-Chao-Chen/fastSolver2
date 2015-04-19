@@ -1,4 +1,6 @@
 #include "gemm_broadcast.hpp"
+#include "ptr_matrix.hpp"
+#include "utility.hpp"
 
 int GemmBroTask::TASKID;
 
@@ -32,5 +34,46 @@ void GemmBroTask::register_tasks(void)
 void GemmBroTask::cpu_task(const Task *task,
 			   const std::vector<PhysicalRegion> &regions,
 			   Context ctx, HighLevelRuntime *runtime) {
+  
+  assert(regions.size() == 3);
+  assert(task->regions.size() == 3);
+  assert(task->arglen == sizeof(TaskArgs));
+  Point<1> p = task->index_point.get_point<1>();
+  //printf("point = %d\n", p[0]);
+
+  const TaskArgs args = *((const TaskArgs*)task->args);
+  int Arblk = args.Arblk;
+  int Brblk = args.Brblk;
+  int Crblk = args.Crblk;
+  int Acols = args.Acols;
+  int Bcols = args.Bcols;
+  int Ccols = args.Ccols;
+  //printf("A(%d, %d), B(%d, %d), C(%d, %d)\n",
+  //	 Arblk, Acols, Brblk, Bcols, Crblk, Ccols);
+  
+  int Arlo = p[0]*Arblk;
+  int Arhi = (p[0] + 1) * Arblk;
+  int Crlo = p[0]*Crblk;
+  int Crhi = (p[0] + 1) * Crblk;
+  
+  int clrSize = args.colorSize;
+  int color = p[0] / clrSize;
+  int Brlo = color*Brblk;
+  int Brhi = (color + 1) * Brblk;
+  
+  PtrMatrix AMat = get_raw_pointer(regions[0], Arlo, Arhi, 0, Acols);
+  PtrMatrix BMat = get_raw_pointer(regions[1], Brlo, Brhi, 0, Bcols);
+  PtrMatrix CMat = get_raw_pointer(regions[2], Crlo, Crhi, 0, Ccols);
+  AMat.set_trans(args.transa);
+  BMat.set_trans(args.transb);
+  double alpha = args.alpha;
+
+  /*
+  std::cout << "gemm:" << std::endl;
+  AMat.display("A");
+  BMat.display("B");
+  CMat.display("C");
+*/
+  PtrMatrix::gemm(alpha, AMat, BMat, CMat);
 }
 
