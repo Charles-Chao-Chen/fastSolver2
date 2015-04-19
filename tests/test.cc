@@ -18,6 +18,7 @@ void test_lmatrix_init(Context, HighLevelRuntime*);
 void test_leaf_solve(Context, HighLevelRuntime*);
 void test_gemm_reduce(Context, HighLevelRuntime*);
 void test_gemm_broadcast(Context, HighLevelRuntime*);
+void test_node_solve(Context, HighLevelRuntime*);
 
 void top_level_task(const Task *task,
 		    const std::vector<PhysicalRegion> &regions,
@@ -29,6 +30,7 @@ void top_level_task(const Task *task,
   //test_leaf_solve(ctx, runtime);
   test_gemm_reduce(ctx, runtime);
   test_gemm_broadcast(ctx, runtime);
+  test_node_solve(ctx, runtime);
   
   /*
   // ======= Problem configuration =======
@@ -353,4 +355,37 @@ void test_gemm_broadcast(Context ctx, HighLevelRuntime *runtime) {
   LMatrix W(m, n, level, ctx, runtime);
   LMatrix::gemmBro('n', 'n', 1.0, U, V, 0.0, W, ctx, runtime);
   W.display("W", ctx, runtime);
+
+  std::cout << "Test for gemm broadcast passed!" << std::endl;
+}
+
+void test_node_solve(Context ctx, HighLevelRuntime *runtime) {
+  int r = 3;
+  int nProc = 1;
+  Matrix VuMat(2*r, r), VdMat(2*r, 1);
+  VuMat.rand(nProc);
+  VdMat.rand(nProc);
+  Matrix S = Matrix::identity(2*r);
+  for (int i=0; i<r; i++) {
+    for (int j=0; j<r; j++) {
+      S(r+i, j) = VuMat(i, j);
+      S(i, r+j) = VuMat(r+i, j);
+    }
+  }
+  //VuMat.display("VuMat");
+  //S.display("S");
+  Matrix rhs = VdMat;
+  Matrix A = S;
+  A.solve(rhs);
+  //rhs.display("sln");
+  
+  Matrix b = VdMat - S*rhs;
+  b.display("residule");
+
+  
+  LMatrix VTu(2*r, r, 1, ctx, runtime);
+  LMatrix VTd(2*r, 1, 1, ctx, runtime);
+  VTu.init_data(nProc, VuMat, ctx, runtime);
+  VTd.init_data(nProc, VdMat, ctx, runtime);
+  VTu.node_solve(VTd, ctx, runtime);
 }

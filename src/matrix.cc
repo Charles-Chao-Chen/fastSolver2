@@ -1,5 +1,6 @@
 #include "matrix.hpp"
 #include "ptr_matrix.hpp"
+#include "lapack_blas.hpp"
 
 #include <iostream>
 #include <assert.h>
@@ -7,11 +8,11 @@
 #include <stdlib.h> // for srand48_r(), lrand48_r() and drand48_r()
 #include <time.h>
 
-Vector::Vector() : nPart(-1), mRows(-1), generate_entry(true) {}
+Vector::Vector() : nPart(-1), mRows(-1), has_entry(true) {}
 
-Vector::Vector(int N, bool generate) : nPart(-1), mRows(N), generate_entry(generate) {
+Vector::Vector(int N, bool has) : nPart(-1), mRows(N), has_entry(has) {
   assert(N>0);
-  if (generate_entry) {
+  if (has_entry) {
     // allocate memory
     data.resize(mRows);
   }
@@ -27,7 +28,7 @@ long Vector::rand_seed(int i) const {
 }
 
 double Vector::norm() const {
-  assert( generate_entry == true );
+  assert( has_entry == true );
   double sum = 0.0;
   for (int i=0; i<mRows; i++)
     sum += data[i]*data[i];
@@ -46,7 +47,7 @@ void Vector::rand(int nPart_) {
   }
 
   // generating random numbers
-  if (generate_entry) {
+  if (has_entry) {
     int count = 0;
     int colorSize = mRows / nPart;
     for (int i=0; i<nPart; i++) {
@@ -60,13 +61,13 @@ void Vector::rand(int nPart_) {
 }
 
 double& Vector::operator[] (int i) {
-  assert( generate_entry == true );
+  assert( has_entry == true );
   assert( 0 <= i && i < mRows );
   return data[i];
 }
 
 double Vector::operator[] (int i) const {
-  assert( generate_entry == true );
+  assert( has_entry == true );
   assert( 0 <= i && i < mRows );
   return data[i];
 }
@@ -79,8 +80,8 @@ Matrix Vector::to_diag_matrix() const {
 }
 
 Vector Vector::multiply(const Vector& other) {
-  assert( this->generate_entry == true );
-  assert( other.generate_entry == true );
+  assert( this->has_entry == true );
+  assert( other.has_entry == true );
   int N = this->rows();
   assert( N == other.rows() );
   Vector temp(N);
@@ -99,7 +100,7 @@ void Vector::display(const std::string& name) const {
 	      << "values:"
 	      << std::endl;
   }
-  if (generate_entry) {
+  if (has_entry) {
     for (int j=0; j<mRows; j++)
       std::cout << data[j] << "\t";
     std::cout << std::endl;
@@ -107,8 +108,8 @@ void Vector::display(const std::string& name) const {
 }
 
 Vector operator + (const Vector& vec1, const Vector& vec2) {
-  assert( vec1.generate_entry == true );
-  assert( vec2.generate_entry == true );
+  assert( vec1.has_entry == true );
+  assert( vec2.has_entry == true );
   assert( vec1.rows() == vec2.rows() );
   Vector temp(vec1.rows());
   for (int i=0; i<vec1.rows(); i++)
@@ -117,8 +118,8 @@ Vector operator + (const Vector& vec1, const Vector& vec2) {
 }
 
 Vector operator - (const Vector& vec1, const Vector& vec2) {
-  assert( vec1.generate_entry == true );
-  assert( vec2.generate_entry == true );
+  assert( vec1.has_entry == true );
+  assert( vec2.has_entry == true );
   assert( vec1.rows() == vec2.rows() );
   Vector temp(vec1.rows());
   for (int i=0; i<vec1.rows(); i++)
@@ -127,8 +128,8 @@ Vector operator - (const Vector& vec1, const Vector& vec2) {
 }
 
 bool operator== (const Vector& vec1, const Vector& vec2) {  
-  assert( vec1.generate_entry == true );
-  assert( vec2.generate_entry == true );
+  assert( vec1.has_entry == true );
+  assert( vec2.has_entry == true );
   assert( vec1.rows() == vec2.rows() );
   for (int i=0; i<vec1.rows(); i++) {
     if ( fabs(vec1[i] - vec2[i]) > 1e-10 )
@@ -142,20 +143,20 @@ bool operator!= (const Vector& vec1, const Vector& vec2) {
 }
 
 Vector operator * (const double alpha,  const Vector& vec) {
-  assert( vec.generate_entry == true );
+  assert( vec.has_entry == true );
   Vector temp(vec.rows());
   for (int i=0; i<vec.rows(); i++)
     temp[i] = alpha * vec[i];
   return temp;
 }
 
-Matrix::Matrix() : nPart(-1), mRows(-1), mCols(-1), generate_entry(true) {}
+Matrix::Matrix() : nPart(-1), mRows(-1), mCols(-1), has_entry(true) {}
 
-Matrix::Matrix(int row, int col, bool generate)
-  : nPart(-1), mRows(row), mCols(col), generate_entry(generate) {
+Matrix::Matrix(int row, int col, bool has)
+  : nPart(-1), mRows(row), mCols(col), has_entry(has) {
   
   assert( mRows>0 && mCols>0 );
-  if (generate_entry) {
+  if (has_entry) {
     // allocate memory
     data.resize(mRows*mCols);
   }
@@ -164,6 +165,8 @@ Matrix::Matrix(int row, int col, bool generate)
 int Matrix::rows() const {return mRows;}
 
 int Matrix::cols() const {return mCols;}
+
+double* Matrix::pointer() {return &data[0];}
 
 int Matrix::num_partition() const {return nPart;}
 
@@ -179,7 +182,7 @@ void Matrix::rand(int nPart_) {
   }
     
   // generating random numbers
-  if (generate_entry) {
+  if (has_entry) {
     int nrow = mRows / nPart;
     for (int k=0; k<nPart; k++) {
       PtrMatrix pMat(nrow, mCols, mRows, &data[k*nrow]);
@@ -194,17 +197,17 @@ long Matrix::rand_seed(int i) const {
 }
 
 double Matrix::operator() (int i, int j) const {
-  assert( generate_entry == true );
+  assert( has_entry == true );
   return data[i+j*mRows];
 }
 
 double& Matrix::operator() (int i, int j) {
-  assert( generate_entry == true );
+  assert( has_entry == true );
   return data[i+j*mRows];
 }
 
 Matrix Matrix::T() {
-  assert( generate_entry == true );
+  assert( has_entry == true );
   Matrix temp(mCols, mRows);
   for (int i=0; i<mRows; i++)
     for (int j=0; j<mCols; j++)
@@ -212,8 +215,20 @@ Matrix Matrix::T() {
   return temp;
 }
 
+void Matrix::solve(Matrix &B) {
+  int N = this->mRows;
+  int NRHS = B.cols();
+  int LDA = mRows;
+  int LDB = B.rows();
+  int IPIV[N];
+  int INFO;
+  lapack::dgesv_(&N, &NRHS, this->pointer(), &LDA, IPIV,
+		 B.pointer(), &LDB, &INFO);
+  assert(INFO==0);  
+}
+
 Vector operator * (const Matrix& A, const Vector& b) {
-  assert( A.generate_entry == true );
+  assert( A.has_entry == true );
   assert( A.cols() == b.rows() );
   Vector temp(A.rows());
   for (int i=0; i<temp.rows(); i++) {
@@ -225,8 +240,8 @@ Vector operator * (const Matrix& A, const Vector& b) {
 }
 
 Matrix operator + (const Matrix& mat1, const Matrix& mat2) {
-  assert( mat1.generate_entry == true );
-  assert( mat2.generate_entry == true );
+  assert( mat1.has_entry == true );
+  assert( mat2.has_entry == true );
   assert(mat1.rows() == mat2.rows());
   assert(mat1.cols() == mat2.cols());
   Matrix temp(mat1.rows(), mat1.cols());
@@ -237,8 +252,8 @@ Matrix operator + (const Matrix& mat1, const Matrix& mat2) {
 }
 
 Matrix operator - (const Matrix& mat1, const Matrix& mat2) {
-  assert( mat1.generate_entry == true );
-  assert( mat2.generate_entry == true );
+  assert( mat1.has_entry == true );
+  assert( mat2.has_entry == true );
   assert(mat1.rows() == mat2.rows());
   assert(mat1.cols() == mat2.cols());
   Matrix temp(mat1.rows(), mat1.cols());
@@ -249,8 +264,8 @@ Matrix operator - (const Matrix& mat1, const Matrix& mat2) {
 }
 
 bool operator== (const Matrix& mat1, const Matrix& mat2) {
-  assert( mat1.generate_entry == true );
-  assert( mat2.generate_entry == true );
+  assert( mat1.has_entry == true );
+  assert( mat2.has_entry == true );
   assert(mat1.rows() == mat2.rows());
   assert(mat1.cols() == mat2.cols());
   for (int i=0; i<mat1.rows(); i++)
@@ -265,7 +280,7 @@ bool operator!= (const Matrix& mat1, const Matrix& mat2) {
 }
 
 Matrix operator * (const double alpha,  const Matrix& mat) {
-  assert( mat.generate_entry == true );
+  assert( mat.has_entry == true );
   Matrix temp(mat.rows(), mat.cols());
   for (int i=0; i<temp.rows(); i++)
     for (int j=0; j<temp.cols(); j++)
@@ -297,11 +312,18 @@ void Matrix::display(const std::string& name) const {
 	      << "values:"
 	      << std::endl;
   }
-  if (generate_entry) {
+  if (has_entry) {
     for (int i=0; i<mRows; i++) {
       for (int j=0; j<mCols; j++)
 	std::cout << (*this)(i, j) << "\t";
       std::cout << std::endl;
     }
   }
+}
+
+Matrix Matrix::identity(int N) {
+  Matrix temp = Matrix::constant<0>(N, N);
+  for (int i=0; i<N; i++)
+    temp(i, i) = 1.0;
+  return temp;
 }

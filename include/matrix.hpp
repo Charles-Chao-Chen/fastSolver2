@@ -8,7 +8,7 @@ class Matrix;
 class Vector {
 public:
   Vector();
-  Vector(int N, bool generate_entry=true);
+  Vector(int N, bool has_entry=true);
   
   // number of rows
   int rows() const;
@@ -20,7 +20,7 @@ public:
   double norm() const;
 
   // random entries
-  //void rand(int nPart, bool generate_entry=true);
+  //void rand(int nPart, bool has_entry=true);
   void rand(int nPart);
 
   // return the random seed
@@ -56,19 +56,23 @@ private:
 
   // for large matrices, we can avoid generating the entries,
   //  but only store the seeds
-  bool generate_entry;
+  bool has_entry;
 };
 
 class Matrix {
 public:
   Matrix();
-  Matrix(int nRow, int nCol, bool generate_entry=true);
+  Matrix(int nRow, int nCol, bool has_entry=true);
   //  ~Matrix();
 
   // consistant with eigen routines
   int rows() const;
   int cols() const;
 
+  // return the pointer to data
+  // used in solve() lapack routine
+  double* pointer();
+  
   // number of partitions
   int num_partition() const;
   
@@ -89,6 +93,9 @@ public:
   // return the matrix transpose
   Matrix T();
 
+  // solve A*X=B
+  void solve(Matrix &B);
+  
   // matrix vector product
   friend Vector operator * (const Matrix&, const Vector&);
   friend Matrix operator * (const Matrix&, const Matrix&);
@@ -104,6 +111,8 @@ public:
   // static methods
   template <int value>
   static Matrix constant(int m, int n);
+
+  static Matrix identity(int);
   
 private:
   int  nPart;
@@ -114,7 +123,7 @@ private:
 
   // for large matrices, we can avoid generating the entries,
   //  but only store the seeds
-  bool generate_entry;
+  bool has_entry;
 };
 
 template <int value>
