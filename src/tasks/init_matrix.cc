@@ -42,10 +42,10 @@ void InitMatrixTask::cpu_task(const Task *task,
   assert(task->local_arglen == sizeof(long));
 
   Point<1> p = task->index_point.get_point<1>();
-  printf("point = %d\n", p[0]);
+  //printf("point = %d\n", p[0]);
 
   const long seed = *((const long*)task->local_args);
-  printf("random seed = %lu \n", seed);
+  //  printf("random seed = %lu \n", seed);
   
   const TaskArgs blockSize = *((const TaskArgs*)task->args);
   int rblk  = blockSize.rblk;
@@ -57,17 +57,6 @@ void InitMatrixTask::cpu_task(const Task *task,
 
   int rlo = p[0]*rblk;
   int rhi = (p[0] + 1) * rblk;
-
-  /*
-  double *base = region_pointer(regions[0], rlo, rhi, clo, chi);
-  int colIdx = 0;
-  while (colIdx < chi-clo) {
-    double *ptr = base + colIdx*rblk;
-    PtrMatrix pMat(rblk, cblk, rblk, ptr);
-    pMat.rand(seed);
-    colIdx += cblk;
-  }
-  */
 
   while (clo+cblk <= chi) {
     PtrMatrix A = get_raw_pointer(regions[0], rlo, rhi, clo, clo+cblk);

@@ -11,7 +11,10 @@
 class PtrMatrix {
 public:
   PtrMatrix();
+  // allocate memory constructor
+  // used in DenseBlcokTask
   PtrMatrix(int, int);
+  // init with existing pointer
   PtrMatrix(int, int, int, double*, char trans='n');
   ~PtrMatrix();
   

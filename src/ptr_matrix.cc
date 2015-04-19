@@ -14,15 +14,17 @@ PtrMatrix::PtrMatrix(int r, int c)
   ptr = new double[mRows*mCols];
 }
 
+PtrMatrix::PtrMatrix(int r, int c, int l, double *p, char trans_)
+  : mRows(r), mCols(c), leadD(l), ptr(p),
+    has_memory(false), trans(trans_) {
+  assert(trans_ == 't' || trans_ == 'n');
+}
+
 PtrMatrix::~PtrMatrix() {
   if (has_memory)
     delete[] ptr;
   ptr = NULL;
 }
-
-PtrMatrix::PtrMatrix(int r, int c, int l, double *p, char trans_)
-  : mRows(r), mCols(c), leadD(l), ptr(p),
-    has_memory(false), trans(trans_) {}
 
 // assume row major storage,
 //  which is consistant with blas and lapack layout
@@ -40,7 +42,10 @@ double* PtrMatrix::pointer(int r, int c) {
   return &ptr[r+c*leadD];
 }
 
-void PtrMatrix::set_trans(char trans_) {this->trans=trans_;}
+void PtrMatrix::set_trans(char trans_) {
+  assert(trans_ == 't' || trans_ == 'n');
+  this->trans=trans_;
+}
 
 void PtrMatrix::clear(double value) {
   for (int j=0; j<mCols; j++)

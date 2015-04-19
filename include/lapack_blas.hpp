@@ -39,6 +39,8 @@ namespace blas {
 namespace lapack {
   extern "C" {
     // Declaration for lapack LU solve routine
+    // On exit, A is overwritten by the factors L and U from the factorization
+    // A = P*L*U; the unit diagonal elements of L are not stored.
     void dgesv_(int *N, int *NRHS, double *A, int *LDA, int *IPIV,
 		double *B, int *LDB, int *INFO);
 

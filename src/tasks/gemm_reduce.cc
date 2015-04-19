@@ -48,7 +48,6 @@ void GemmRedTask::cpu_task(const Task *task,
   int Acols = args.Acols;
   int Bcols = args.Bcols;
   int Ccols = args.Ccols;
-
   //printf("A(%d, %d), B(%d, %d), C(%d, %d)\n",
   //	 Arblk, Acols, Brblk, Bcols, Crblk, Ccols);
   
@@ -56,15 +55,25 @@ void GemmRedTask::cpu_task(const Task *task,
   int Arhi = (p[0] + 1) * Arblk;
   int Brlo = p[0]*Brblk;
   int Brhi = (p[0] + 1) * Brblk;
-  int Crlo = p[0]*Crblk;
-  int Crhi = (p[0] + 1) * Crblk;
-
+  
+  int clrSize = args.colorSize;
+  int color = p[0] / clrSize;
+  int Crlo = color*Crblk;
+  int Crhi = (color + 1) * Crblk;
+  
   PtrMatrix AMat = get_raw_pointer(regions[0], Arlo, Arhi, 0, Acols);
   PtrMatrix BMat = get_raw_pointer(regions[1], Brlo, Brhi, 0, Bcols);
   PtrMatrix CMat = reduction_pointer(regions[2], Crlo, Crhi, 0, Ccols);
   AMat.set_trans(args.transa);
   BMat.set_trans(args.transb);
   double alpha = args.alpha;
+
   PtrMatrix::gemm(alpha, AMat, BMat, CMat);
+  /*
+  std::cout << "gemm:" << std::endl;
+  AMat.display("A");
+  BMat.display("B");
+  CMat.display("C");
+  */
 }
 

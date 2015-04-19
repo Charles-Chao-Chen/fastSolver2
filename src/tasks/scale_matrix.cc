@@ -39,7 +39,7 @@ void ScaleMatrixTask::cpu_task(const Task *task,
   assert(task->arglen == sizeof(TaskArgs));
 
   Point<1> p = task->index_point.get_point<1>();
-  printf("point = %d\n", p[0]);
+  //printf("point = %d\n", p[0]);
 
   const TaskArgs args = *((const TaskArgs*)task->args);
   int rblk  = args.rblock;

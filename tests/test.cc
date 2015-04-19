@@ -16,6 +16,7 @@ void test_vector();
 void test_matrix();
 void test_lmatrix_init(Context, HighLevelRuntime*);
 void test_leaf_solve(Context, HighLevelRuntime*);
+void test_gemm_reduce(Context, HighLevelRuntime*);
 
 void top_level_task(const Task *task,
 		    const std::vector<PhysicalRegion> &regions,
@@ -24,7 +25,8 @@ void top_level_task(const Task *task,
   test_vector();
   test_matrix();
   //test_lmatrix_init(ctx, runtime);
-  test_leaf_solve(ctx, runtime);
+  //test_leaf_solve(ctx, runtime);
+  test_gemm_reduce(ctx, runtime);
   
   /*
   // ======= Problem configuration =======
@@ -301,3 +303,28 @@ void test_leaf_solve(Context ctx, HighLevelRuntime *runtime) {
   std::cout << "Test for leave solve passed!" << std::endl;
 }
 
+void test_gemm_reduce(Context ctx, HighLevelRuntime *runtime) {
+  int m=16, n=3;
+  int nProc = 4;
+  Matrix UMat(m, n), VMat(m, n);
+  UMat.rand(nProc);
+  VMat.rand(nProc);
+
+  int level = 3;
+  LMatrix U(m, n, level, ctx, runtime);
+  LMatrix V(m, n, level, ctx, runtime);
+  U.init_data(nProc, 0, n, UMat, ctx, runtime);
+  V.init_data(nProc, 0, n, VMat, ctx, runtime);
+
+  // V^T * U
+  LMatrix W(n, n, 0, ctx, runtime);
+  LMatrix::gemmRed('t', 'n', 1.0, V, U, 0.0, W, ctx, runtime);
+  W.display("W", ctx, runtime);
+
+  Matrix WMat = VMat.T() * UMat;
+  WMat.display("Wmat");
+  /*
+  VMat.display("Vmat");
+  UMat.display("Umat");
+*/
+}

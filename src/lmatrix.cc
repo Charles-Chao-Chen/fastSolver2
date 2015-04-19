@@ -438,7 +438,8 @@ void LMatrix::gemmRed // static method
   LogicalRegion CReg = C.logical_region();
 
   int colorSize = A.num_partition() / C.num_partition();
-  GemmRedTask::TaskArgs args={colorSize, alpha, transa, transb,
+  GemmRedTask::TaskArgs args={colorSize,
+			      alpha, transa, transb,
 			      A.rowBlk(), B.rowBlk(), C.rowBlk(),
 			      A.cols(), B.cols(), C.cols()};
   TaskArgument tArgs(&args, sizeof(args));
