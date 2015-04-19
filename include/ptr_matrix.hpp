@@ -37,6 +37,13 @@ public:
   // scale all entries
   void scale(double value);
   
+  // initialize to identity matrix
+  void identity();
+
+  // return entry/reference to the matrix entry
+  double  operator()(int, int) const;
+  double& operator()(int, int);
+
   static void add
   (double alpha, const PtrMatrix&,
    double beta,  const PtrMatrix&,
@@ -48,13 +55,7 @@ public:
   static void gemm
   (double, const PtrMatrix&, const PtrMatrix&, PtrMatrix&);
 
-  //friend std::ostream& operator<< (std::ostream& stream, const PtrMatrix&);
-
 private:
-  // helper function
-  // return entry/reference to the matrix entry
-  double  operator()(int, int) const;
-  double& operator()(int, int);
 
   // private variables  
   int mRows;

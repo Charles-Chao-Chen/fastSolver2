@@ -6,7 +6,11 @@ using namespace LegionRuntime::HighLevel;
 
 class NodeSolveTask : public IndexLauncher {
 public:
-
+  struct TaskArgs {
+    int rblock;
+    int Acols;
+    int Bcols;
+  };
   NodeSolveTask(Domain domain,
 		TaskArgument global_arg,
 		ArgumentMap arg_map,

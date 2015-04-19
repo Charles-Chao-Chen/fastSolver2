@@ -115,6 +115,14 @@ void PtrMatrix::solve(PtrMatrix& B) {
   */
 }
 
+void PtrMatrix::identity() {
+  assert(mRows==mCols);
+  assert(mRows==leadD);
+  memset(ptr, 0, mRows*mCols*sizeof(double)); // initialize to 0's
+  for (int i=0; i<mRows; i++)
+    (*this)(i, i) = 1.0;
+}
+
 void PtrMatrix::add
   (double alpha, const PtrMatrix& A,
    double beta,  const PtrMatrix& B, PtrMatrix& C) {

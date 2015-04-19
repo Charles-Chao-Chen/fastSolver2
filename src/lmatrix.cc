@@ -243,12 +243,22 @@ LMatrix LMatrix::partition
   return LMatrix(ip, region, ctx, runtime); // interface to be modified
 }
 
-void LMatrix::coarse_partition() {
-
+void LMatrix::fine_partition(Context ctx, HighLevelRuntime *runtime) {
+  this->nPart *= 2;
+  this->rblock = mRows/nPart;
+  this->ipart  = UniformRowPartition(nPart, 0, mCols, ctx, runtime);
+  this->lpart  = runtime->get_logical_partition(ctx, region, ipart);
+  this->colDom = runtime->get_index_partition_color_space(ctx, ipart);
 }
 
-void LMatrix::fine_partition() {
-
+void LMatrix::coarse_partition
+(Context ctx, HighLevelRuntime *runtime) {
+  assert(this->nPart%2==0);
+  this->nPart /= 2;
+  this->rblock = mRows/nPart;
+  this->ipart  = UniformRowPartition(nPart, 0, mCols, ctx, runtime);
+  this->lpart  = runtime->get_logical_partition(ctx, region, ipart);
+  this->colDom = runtime->get_index_partition_color_space(ctx, ipart);
 }
 
 // solve A x = b for each partition
@@ -304,11 +314,38 @@ void LMatrix::node_solve
 (LMatrix& b, Context ctx, HighLevelRuntime* runtime, bool wait) {
 
   // pair up neighbor cells
-  this->coarse_partition();
-  b.coarse_partition();
-  solve<NodeSolveTask>(b, ctx, runtime, wait);
+  this->coarse_partition(ctx, runtime);
+  b.coarse_partition(ctx, runtime);
+  //solve<NodeSolveTask>(b, ctx, runtime, wait);
+
+  // A and b have the same number of partition
+  assert( this->num_partition() == b.num_partition() );
+
+  LogicalPartition APart = this->logical_partition();
+  LogicalPartition bPart = b.logical_partition();
+
+  LogicalRegion ARegion = this->logical_region();
+  LogicalRegion bRegion = b.logical_region();
+
+  Domain domain = this->color_domain();
+  NodeSolveTask::TaskArgs args = {this->rowBlk(), mCols, b.cols()};
+  NodeSolveTask launcher(domain, TaskArgument(&args, sizeof(args)), ArgumentMap());
+  RegionRequirement AReq(APart, 0, READ_ONLY,  EXCLUSIVE, ARegion);
+  RegionRequirement bReq(bPart, 0, READ_WRITE, EXCLUSIVE, bRegion);
+  AReq.add_field(FIELDID_V);
+  bReq.add_field(FIELDID_V);
+  launcher.add_region_requirement(AReq);
+  launcher.add_region_requirement(bReq);
+  
+  FutureMap fm = runtime->execute_index_space(ctx, launcher);
+
+  if(wait) {
+    std::cout << "Wait for solve..." << std::endl;
+    fm.wait_all_results();
+  }
+  
   // recover the original partition
-  b.fine_partition();
+  b.fine_partition(ctx, runtime);
 }
 
 template <typename SolveTask>

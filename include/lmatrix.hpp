@@ -130,8 +130,8 @@ private:
   (int num_subregions, int, int, Context ctx, HighLevelRuntime *runtime);
   
   // for node_solve
-  void coarse_partition();
-  void fine_partition();
+  void fine_partition(Context ctx, HighLevelRuntime *); // double the partition
+  void coarse_partition(Context ctx, HighLevelRuntime *); // coarse the partition
 
   template <typename T>
   void solve
@@ -145,7 +145,6 @@ private:
   // matrix and block size
   int mRows;
   int mCols;
-  int rblock;
 
   // number of ranks
   // used to init data
@@ -153,9 +152,10 @@ private:
 
   // partition
   int              nPart;
-  Domain           colDom;
+  int              rblock;
   IndexPartition   ipart;
   LogicalPartition lpart;
+  Domain           colDom;
 
   // region
   IndexSpace       ispace;

@@ -377,10 +377,10 @@ void test_node_solve(Context ctx, HighLevelRuntime *runtime) {
   Matrix rhs = VdMat;
   Matrix A = S;
   A.solve(rhs);
-  //rhs.display("sln");
+  rhs.display("sln");
   
-  Matrix b = VdMat - S*rhs;
-  b.display("residule");
+  //Matrix b = VdMat - S*rhs;
+  //b.display("residule");
 
   
   LMatrix VTu(2*r, r, 1, ctx, runtime);
@@ -388,4 +388,5 @@ void test_node_solve(Context ctx, HighLevelRuntime *runtime) {
   VTu.init_data(nProc, VuMat, ctx, runtime);
   VTd.init_data(nProc, VdMat, ctx, runtime);
   VTu.node_solve(VTd, ctx, runtime);
+  VTd.display("VTd", ctx, runtime);
 }
