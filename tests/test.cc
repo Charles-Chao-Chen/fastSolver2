@@ -374,13 +374,18 @@ void test_node_solve(Context ctx, HighLevelRuntime *runtime) {
   }
   //VuMat.display("VuMat");
   //S.display("S");
-  Matrix rhs = VdMat;
+  Matrix rhs(2*r, 1);
+  for (int i=0; i<r; i++) {
+    rhs(i, 0) = VdMat(r+i, 0);
+    rhs(r+i, 0) = VdMat(i, 0);
+  }
+  Matrix rhs_copy = rhs;
   Matrix A = S;
   A.solve(rhs);
   rhs.display("sln");
   
-  //Matrix b = VdMat - S*rhs;
-  //b.display("residule");
+  Matrix b = rhs_copy - S*rhs;
+  b.display("residule");
 
   
   LMatrix VTu(2*r, r, 1, ctx, runtime);

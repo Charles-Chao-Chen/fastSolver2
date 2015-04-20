@@ -69,6 +69,15 @@ void NodeSolveTask::cpu_task(const Task *task,
       S(r+i, j) = AMat(i, j);
       S(i, r+j) = AMat(r+i, j);
     }
+  }
+  // set the right hand side
+  for (int j=0; j<Bcols; j++) {
+    for (int i=0; i<r; i++) {
+      // switch BMat(i, j) with BMat(r+i, j)
+      double temp = BMat(i, j);
+      BMat(i, j) = BMat(r+i, j);
+      BMat(r+i, j) = temp;
+    }
   }  
   S.solve( BMat );
 }
