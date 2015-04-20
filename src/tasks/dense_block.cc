@@ -43,25 +43,25 @@ void DenseBlockTask::cpu_task(const Task *task,
   assert(task->local_arglen == sizeof(ThreeSeeds));
 
   Point<1> p = task->index_point.get_point<1>();
-  printf("point = %d\n", p[0]);
+  //printf("point = %d\n", p[0]);
 
   const ThreeSeeds seeds = *((const ThreeSeeds*)task->local_args);
   long uSeed = seeds.uSeed;
   long vSeed = seeds.vSeed;
   long dSeed = seeds.dSeed;
-  printf("random seeds = (%lu, %lu, %lu) \n", uSeed, vSeed, dSeed);
+  //  printf("random seeds = (%lu, %lu, %lu) \n", uSeed, vSeed, dSeed);
   
   const TaskArgs matrix = *((const TaskArgs*)task->args);
   int rows = matrix.rows;
   int cols = matrix.cols;
   int rank = matrix.rank;
   int blks = matrix.blocks;
-  
+  /*
   printf("matrix row size = %i\n", rows);
   printf("matrix col size = %i\n", cols);
   printf("rank = %i\n", rank);
   printf("block size = %i\n", blks);
-  
+*/  
   int rlo = p[0] * rows;
   int rhi = (p[0] + 1) * rows;
   double *base = region_pointer(regions[0], rlo, rhi, 0, cols);

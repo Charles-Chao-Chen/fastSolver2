@@ -13,7 +13,9 @@ public:
   
   // initialize problem right hand side
   void init_rhs(const Vector&, Context ctx, HighLevelRuntime *runtime);
-
+  void init_rhs
+  (const Matrix&, Context ctx, HighLevelRuntime *runtime);
+  
   // return right hand side (overwritten by solution)
   Vector rhs();
   
@@ -21,18 +23,9 @@ public:
   void partition
   (int level, Context ctx, HighLevelRuntime *runtime);
 
-  /*
-  // return type for level()
-  struct UDMat {
-    LMatrix uMat;
-    LMatrix dMat;
-  };
-  */
   // return the legion matrix for one level
   LMatrix& uMat_level(int);
   LMatrix& dMat_level(int);
-  
-  // UDMat& level(int);
 
   // legion matrices at leaf level
   LMatrix& leaf();

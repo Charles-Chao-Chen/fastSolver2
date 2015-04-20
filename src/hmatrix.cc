@@ -47,10 +47,11 @@ void HMatrix::init
 }
 
 Vector HMatrix::solve
-(const Vector& b, Context ctx, HighLevelRuntime* runtime) {
+(const Matrix& b, Context ctx, HighLevelRuntime* runtime) {
 
   // check input
   assert( b.rows() > 0 );
+  assert( b.cols() == 1 ); // only support a single right hand side now
   
   // initialize the right hand side
   uTree.init_rhs(b, ctx, runtime);

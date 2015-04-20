@@ -15,7 +15,7 @@ class LMatrix {
 public:
   LMatrix();
   LMatrix(int, int, int, Context, HighLevelRuntime*);
-  LMatrix(IndexPartition ip, LogicalRegion lr, Context, HighLevelRuntime*);
+  LMatrix(int, int, int, IndexPartition ip, LogicalRegion lr, Context, HighLevelRuntime*);
   ~LMatrix();
   
   int rows() const;

@@ -17,7 +17,7 @@ public:
    Context, HighLevelRuntime*);
 
   // fast solver
-  Vector solve(const Vector& b, Context, HighLevelRuntime*);
+  Vector solve(const Matrix& b, Context, HighLevelRuntime*);
 
   // destructor
   void destroy(Context, HighLevelRuntime*);

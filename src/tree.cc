@@ -12,13 +12,17 @@ void UTree::init(int nProc_, const Matrix& UMat_) {
 
 void UTree::init_rhs
 (const Vector& b, Context ctx, HighLevelRuntime *runtime) {
-  //assert(Rhs.rows() == b.rows());
-  //assert(Rhs.cols() == 1);
-  // Matrix Rhs = b;
-  //Rhs.init_data(nProc, 0, 1, b, ctx, runtime);
+  assert(false);
+}
+
+void UTree::init_rhs
+(const Matrix& b, Context ctx, HighLevelRuntime *runtime) {
+  assert(b.cols()==1);
+  U.init_data(nProc, 0, 1, b, ctx, runtime);
 }
 
 Vector UTree::rhs() {
+  assert(false);
   //return Rhs.to_vector();
   return Vector();
 }

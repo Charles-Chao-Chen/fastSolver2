@@ -19,6 +19,7 @@ void test_leaf_solve(Context, HighLevelRuntime*);
 void test_gemm_reduce(Context, HighLevelRuntime*);
 void test_gemm_broadcast(Context, HighLevelRuntime*);
 void test_node_solve(Context, HighLevelRuntime*);
+void test_trees(Context, HighLevelRuntime*);
 
 void top_level_task(const Task *task,
 		    const std::vector<PhysicalRegion> &regions,
@@ -26,12 +27,13 @@ void top_level_task(const Task *task,
 
   test_vector();
   test_matrix();
-  //test_lmatrix_init(ctx, runtime);
-  //test_leaf_solve(ctx, runtime);
+  test_lmatrix_init(ctx, runtime);
+  test_leaf_solve(ctx, runtime);
   test_gemm_reduce(ctx, runtime);
-  //test_gemm_broadcast(ctx, runtime);
-  //test_node_solve(ctx, runtime);
-  
+  test_gemm_broadcast(ctx, runtime);
+  test_node_solve(ctx, runtime);
+  test_trees(ctx, runtime);
+    
   /*
   // ======= Problem configuration =======
   // solve: A x = b where A = U * V' + D
@@ -254,8 +256,8 @@ void test_leaf_solve(Context ctx, HighLevelRuntime *runtime) {
   int ncol = DVec.rows() / nblk;
   assert(nblk >= nProc);
   assert(ncol >= UMat.cols());
-  LMatrix K( nrow, ncol, level, ctx, runtime );;
-  LMatrix K_copy( nrow, ncol, level, ctx, runtime );;
+  LMatrix K( nrow, ncol, level, ctx, runtime );
+  LMatrix K_copy( nrow, ncol, level, ctx, runtime );
   K.init_dense_blocks(nProc, nblk, UMat, VMat, DVec, ctx, runtime);
   K_copy.init_dense_blocks(nProc, nblk, UMat, VMat, DVec, ctx, runtime);
   
@@ -403,4 +405,55 @@ void test_node_solve(Context ctx, HighLevelRuntime *runtime) {
   VTd.init_data(nProc, VdMat, ctx, runtime);
   VTu.node_solve(VTd, ctx, runtime);
   VTd.display("VTd", ctx, runtime);
+}
+
+void test_trees(Context ctx, HighLevelRuntime *runtime) {
+
+  int m = 16, n = 2;
+  int nProc = 4;
+  int level = 3;
+  Matrix VMat(m, n), UMat(m, n), Rhs(m, 1);
+  VMat.rand(nProc);
+  UMat.rand(nProc);
+  Rhs.rand(nProc);
+
+  Vector DVec(m);
+  DVec.rand(nProc);
+  int nrow = DVec.rows();
+  int nblk = pow(2, level);
+  int ncol = DVec.rows() / nblk;
+  assert(nblk >= nProc);
+  assert(ncol >= UMat.cols());
+  LMatrix K( nrow, ncol, level, ctx, runtime );
+  K.init_dense_blocks(nProc, nblk, UMat, VMat, DVec, ctx, runtime);
+  
+  LMatrix b(Rhs.rows(), 1, level, ctx, runtime);
+  b.init_data(nProc, 0, 1, Rhs, ctx, runtime);
+
+  // linear solve
+  K.solve( b, ctx, runtime );
+  b.display("sln", ctx, runtime);
+
+  UTree uTree;
+  VTree vTree;
+  KTree kTree;
+  
+  // init trees
+  uTree.init( nProc, UMat);
+  vTree.init( nProc, VMat );
+  kTree.init( nProc, UMat, VMat, DVec );
+
+  // data partition
+  uTree.partition( level, ctx, runtime );
+  vTree.partition( level, ctx, runtime );
+  kTree.partition( level, ctx, runtime );
+
+  // init rhs
+  uTree.init_rhs(Rhs, ctx, runtime);
+  
+  // leaf solve: U = dense \ U
+  kTree.solve( uTree.leaf(), ctx, runtime );  
+  uTree.leaf().display("leaf solve", ctx, runtime);
+
+  
 }
