@@ -337,21 +337,22 @@ void test_gemm_reduce(Context ctx, HighLevelRuntime *runtime) {
 void test_gemm_broadcast(Context ctx, HighLevelRuntime *runtime) {
   int m=16, n=3;
   int nProc = 4;
-  Matrix UMat(m, n), VMat(n, n);
+  Matrix UMat(m, n), VMat(2*n, n);
   UMat.rand(nProc);
   VMat.rand(1);
-
+  //  UMat.display("UMat");
+  //  VMat.display("VMat");
+  
+  Matrix WMat0 = UMat.block(0,8,0,n) * VMat.block(0,n,0,n);
+  Matrix WMat1 = UMat.block(8,16,0,n) * VMat.block(n,2*n,0,n);
+  WMat0.display("WMat0");
+  WMat1.display("WMat1");
+  
   int level = 3;
   LMatrix U(m, n, level, ctx, runtime);
   U.init_data(nProc, UMat, ctx, runtime);
-  LMatrix V(n, n, 0, ctx, runtime);
+  LMatrix V(2*n, n, 1, ctx, runtime);
   V.init_data(1, VMat, ctx, runtime);
-
-  Matrix WMat = UMat * VMat;
-  //UMat.display("UMat");
-  //VMat.display("VMat");
-  WMat.display("WMat");
-
   LMatrix W(m, n, level, ctx, runtime);
   LMatrix::gemmBro('n', 'n', 1.0, U, V, 0.0, W, ctx, runtime);
   W.display("W", ctx, runtime);

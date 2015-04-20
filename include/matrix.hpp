@@ -28,7 +28,7 @@ public:
   
   // form a diagonal matrix
   Matrix to_diag_matrix() const;
-  
+
   // return the ith entry / reference  
   double  operator[] (int i) const;
   double& operator[] (int i);
@@ -92,7 +92,10 @@ public:
 
   // return the matrix transpose
   Matrix T();
-
+  
+  // return matrix block
+  Matrix block(int, int, int, int) const;
+  
   // solve A*X=B
   void solve(Matrix &B);
   

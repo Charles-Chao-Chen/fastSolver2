@@ -215,6 +215,15 @@ Matrix Matrix::T() {
   return temp;
 }
 
+Matrix Matrix::block(int rlo, int rhi, int clo, int chi) const {
+  assert(rhi>rlo && chi>clo);
+  Matrix temp(rhi-rlo, chi-clo);
+  for (int i=0; i<temp.rows(); i++)
+    for (int j=0; j<temp.cols(); j++)
+      temp(i, j) = (*this)(rlo+i, clo+j);
+  return temp;
+}
+
 void Matrix::solve(Matrix &B) {
   int N = this->mRows;
   int NRHS = B.cols();
