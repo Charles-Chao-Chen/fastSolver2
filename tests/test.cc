@@ -360,36 +360,43 @@ void test_gemm_broadcast(Context ctx, HighLevelRuntime *runtime) {
 }
 
 void test_node_solve(Context ctx, HighLevelRuntime *runtime) {
+  int level = 2;
   int r = 3;
   int nProc = 1;
-  Matrix VuMat(2*r, r), VdMat(2*r, 1);
+  Matrix VuMat(level*2*r, r), VdMat(level*2*r, 1);
   VuMat.rand(nProc);
   VdMat.rand(nProc);
-  Matrix S = Matrix::identity(2*r);
-  for (int i=0; i<r; i++) {
-    for (int j=0; j<r; j++) {
-      S(r+i, j) = VuMat(i, j);
-      S(i, r+j) = VuMat(r+i, j);
+  //  VuMat.display("VuMat");
+  //VdMat.display("VdMat");
+  for (int l=0; l<level; l++) {
+    std::cout << "level: " << l << std::endl;
+    int ofs = l*2*r;
+    Matrix S = Matrix::identity(2*r);
+    for (int i=0; i<r; i++) {
+      for (int j=0; j<r; j++) {
+	S(r+i, j) = VuMat(ofs+i, j);
+	S(i, r+j) = VuMat(ofs+r+i, j);
+      }
+    }    
+    //S.display("S");
+    Matrix rhs(2*r, 1);
+    for (int i=0; i<r; i++) {
+      rhs(i, 0) = VdMat(ofs+r+i, 0);
+      rhs(r+i, 0) = VdMat(ofs+i, 0);
     }
-  }
-  //VuMat.display("VuMat");
-  //S.display("S");
-  Matrix rhs(2*r, 1);
-  for (int i=0; i<r; i++) {
-    rhs(i, 0) = VdMat(r+i, 0);
-    rhs(r+i, 0) = VdMat(i, 0);
-  }
-  Matrix rhs_copy = rhs;
-  Matrix A = S;
-  A.solve(rhs);
-  rhs.display("sln");
+    //rhs.display("rhs");
+    Matrix rhs_copy = rhs;
+    Matrix A = S;
+    A.solve(rhs);
+    rhs.display("sln");
   
-  Matrix b = rhs_copy - S*rhs;
-  b.display("residule");
+    Matrix b = rhs_copy - S*rhs;
+    //b.display("residule");
+  }
+  
 
-  
-  LMatrix VTu(2*r, r, 1, ctx, runtime);
-  LMatrix VTd(2*r, 1, 1, ctx, runtime);
+  LMatrix VTu(level*2*r, r, 2, ctx, runtime);
+  LMatrix VTd(level*2*r, 1, 2, ctx, runtime);
   VTu.init_data(nProc, VuMat, ctx, runtime);
   VTd.init_data(nProc, VdMat, ctx, runtime);
   VTu.node_solve(VTd, ctx, runtime);
