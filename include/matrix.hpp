@@ -99,6 +99,7 @@ public:
   
   // return matrix block
   Matrix block(int, int, int, int) const;
+  Matrix row_block(int, int) const;
   
   // solve A*X=B
   void solve(Matrix &B);

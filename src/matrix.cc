@@ -244,6 +244,10 @@ Matrix Matrix::block(int rlo, int rhi, int clo, int chi) const {
   return temp;
 }
 
+Matrix Matrix::row_block(int rlo, int rhi) const {
+  return block(rlo, rhi, 0, mCols);
+}
+
 void Matrix::solve(Matrix &B) {
   int N = this->mRows;
   int NRHS = B.cols();
