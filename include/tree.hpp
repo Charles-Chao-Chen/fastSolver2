@@ -18,11 +18,14 @@ public:
   
   // return right hand side (overwritten by solution)
   Vector rhs();
-  
+
   // create partition
   void partition
   (int level, Context ctx, HighLevelRuntime *runtime);
 
+  // return the solution
+  Matrix solution(Context ctx, HighLevelRuntime *runtime);
+  
   // return the legion matrix for one level
   LMatrix& uMat_level(int);
   LMatrix& dMat_level(int);
@@ -41,11 +44,8 @@ private:
   LMatrix U; // original data
 
   // partitions at different levels
-  //LMatrix Rhs;
   std::vector<LMatrix> uMat_vec;
   std::vector<LMatrix> dMat_vec;
-  
-  //std::vector<UDMat> Ulevel;
 };
 
 class VTree {

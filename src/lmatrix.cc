@@ -13,7 +13,8 @@ LMatrix::LMatrix
 LMatrix::LMatrix
 (int rows, int cols, int part, IndexPartition ip, LogicalRegion lr,
  Context ctx, HighLevelRuntime *runtime)
-  : mRows(rows), mCols(cols), nPart(part), ipart(ip), region(lr) {
+  : mRows(rows), mCols(cols),
+    nPart(part), rblock(rows/part), ipart(ip), region(lr) {
   this->lpart  = runtime->get_logical_partition(ctx, region, ipart);
   this->colDom = runtime->get_index_partition_color_space(ctx,ipart);
 }
@@ -127,6 +128,7 @@ void LMatrix::scale
 void LMatrix::init_data
 (int nProc_, const Matrix& mat,
  Context ctx, HighLevelRuntime *runtime, bool wait) {
+  assert(mCols==mat.cols());
   init_data(nProc_, 0, mCols, mat, ctx, runtime, wait);
 }
 
@@ -240,8 +242,10 @@ LMatrix LMatrix::partition
 (int level, int col0, int col1, Context ctx, HighLevelRuntime *runtime) {
   // if level=1, the number of partition is 2 for V0 and V1
   int num_subregions = pow(2, level);
+  assert(mRows%num_subregions==0);
   IndexPartition ip = UniformRowPartition(num_subregions, col0, col1, ctx, runtime);
-  return LMatrix(mRows, mCols, num_subregions, ip, region, ctx, runtime); // interface to be modified
+  int cols = col1-col0;
+  return LMatrix(mRows, cols, num_subregions, ip, region, ctx, runtime); // interface to be modified
 }
 
 void LMatrix::fine_partition(Context ctx, HighLevelRuntime *runtime) {

@@ -45,7 +45,7 @@ void UTree::partition
     int ncol = nRhs + i*rank;
     LMatrix dMat = U.partition(mLevel, 0, ncol, ctx, runtime);
     dMat_vec.push_back(dMat);
-    LMatrix uMat = U.partition(mLevel, ncol+1, ncol+1+rank, ctx, runtime);
+    LMatrix uMat = U.partition(mLevel, ncol, ncol+rank, ctx, runtime);
     uMat_vec.push_back(uMat);
   }
   LMatrix leaf = U.partition(mLevel, 0, U.cols(), ctx, runtime);
@@ -55,30 +55,36 @@ void UTree::partition
 }
 
 LMatrix& UTree::uMat_level(int i) {
-  assert(0<=i && i<mLevel);
-  return uMat_vec[i];
+  assert(0<i && i<=mLevel);
+  return uMat_vec[i-1];
 }
 
 LMatrix& UTree::dMat_level(int i) {
-  assert(0<=i && i<=mLevel);
-  return dMat_vec[i];
+  assert(0<i && i<=mLevel+1);
+  return dMat_vec[i-1];
 }
 
 LMatrix& UTree::leaf() {
   return dMat_vec[mLevel];
 }
 
-/*
-LMatrix& UTree::leaf() {
-  return level(mLevel-1).uMat;
+Matrix UTree::solution(Context ctx, HighLevelRuntime *runtime) {
+  Matrix sln(UMat.rows(), nRhs);
+  LogicalRegion lr = U.logical_region();
+  RegionRequirement req(lr, READ_ONLY, EXCLUSIVE, lr);
+  req.add_field(FIELDID_V);
+ 
+  InlineLauncher launcher(req);
+  PhysicalRegion region = runtime->map_region(ctx, launcher);
+  region.wait_until_valid();
+ 
+  PtrMatrix temp = get_raw_pointer(region, 0, U.rows(), 0, U.cols());
+  for (int j=0; j<nRhs; j++)
+    for (int i=0; i<sln.rows(); i++)
+      sln(i, j) = temp(i, j);
+  runtime->unmap_region(ctx, region);
+  return sln;
 }
-
-UTree::UDMat& UTree::level(int i) {
-  assert( i > 0 );
-  assert( i < mLevel );
-  return Ulevel[i];
-}
-*/
 
 void VTree::init(int nProc_, const Matrix& VMat_) {
   this->nProc = nProc_;
@@ -100,8 +106,7 @@ void VTree::partition
 }
 
 LMatrix& VTree::level(int i) {
-  assert( i >= 0 );
-  assert( i <  mLevel );
+  assert( 0 < i && i <= mLevel );
   return V;
 }
 

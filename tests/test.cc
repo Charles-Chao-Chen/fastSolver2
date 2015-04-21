@@ -19,7 +19,7 @@ void test_leaf_solve(Context, HighLevelRuntime*);
 void test_gemm_reduce(Context, HighLevelRuntime*);
 void test_gemm_broadcast(Context, HighLevelRuntime*);
 void test_node_solve(Context, HighLevelRuntime*);
-void test_trees(Context, HighLevelRuntime*);
+void test_one_level(Context, HighLevelRuntime*);
 
 void top_level_task(const Task *task,
 		    const std::vector<PhysicalRegion> &regions,
@@ -32,7 +32,7 @@ void top_level_task(const Task *task,
   test_gemm_reduce(ctx, runtime);
   test_gemm_broadcast(ctx, runtime);
   test_node_solve(ctx, runtime);
-  test_trees(ctx, runtime);
+  test_one_level(ctx, runtime);
     
   /*
   // ======= Problem configuration =======
@@ -398,7 +398,6 @@ void test_node_solve(Context ctx, HighLevelRuntime *runtime) {
     //b.display("residule");
   }
   
-
   LMatrix VTu(level*2*r, r, 2, ctx, runtime);
   LMatrix VTd(level*2*r, 1, 2, ctx, runtime);
   VTu.init_data(nProc, VuMat, ctx, runtime);
@@ -407,11 +406,11 @@ void test_node_solve(Context ctx, HighLevelRuntime *runtime) {
   VTd.display("VTd", ctx, runtime);
 }
 
-void test_trees(Context ctx, HighLevelRuntime *runtime) {
+void test_one_level(Context ctx, HighLevelRuntime *runtime) {
 
-  int m = 16, n = 2;
-  int nProc = 4;
-  int level = 3;
+  int m = 8, n = 3;
+  int nProc = 2;
+  int level = 1;
   Matrix VMat(m, n), UMat(m, n), Rhs(m, 1);
   VMat.rand(nProc);
   UMat.rand(nProc);
@@ -455,5 +454,42 @@ void test_trees(Context ctx, HighLevelRuntime *runtime) {
   kTree.solve( uTree.leaf(), ctx, runtime );  
   uTree.leaf().display("leaf solve", ctx, runtime);
 
-  
+  for (int i=level; i>0; i--) {
+
+    LMatrix& V = vTree.level(i);
+    LMatrix& u = uTree.uMat_level(i);
+    LMatrix& d = uTree.dMat_level(i);
+    
+    // reduction operation
+    int rows = V.num_partition()*V.cols();
+    LMatrix VTu(rows, u.cols(), i, ctx, runtime);
+    LMatrix VTd(rows, d.cols(), i, ctx, runtime);
+    LMatrix::gemmRed('t', 'n', 1.0, V, u, 0.0, VTu, ctx, runtime );
+
+    LMatrix::gemmRed('t', 'n', 1.0, V, d, 0.0, VTd, ctx, runtime );
+    
+    // form and solve the small linear system
+    VTu.node_solve( VTd, ctx, runtime );
+      
+    // broadcast operation
+    // d -= u * VTd
+    LMatrix::gemmBro('n', 'n', -1.0, u, VTd, 1.0, d, ctx, runtime );
+  }
+  Matrix x = uTree.solution(ctx, runtime);
+
+  // compute residule
+  Matrix err = Rhs - ( UMat * (VMat.T() * x) + DVec.multiply(x) );
+  std::cout << "Residual: " << err.norm() << std::endl;
 }
+/*
+void compute_residual
+(const LMatrix& A, const LMatrix& x, const LMatrix& b,) {
+  int rows = x.rows();
+  int cols = x.cols();
+  LMatrix Ax(rows, cols, level, ctx, runtime);
+  LMatrix r(rows, cols, level, ctx, runtime);
+  LMatrix::gemmRed('n', 'n', 1.0, A, x, 0.0, Ax, ctx, runtime);
+  LMatrix::add(1.0, b, -1.0, Ax, r, ctx, runtime);
+  r.display("residule", ctx, runtime);
+}
+*/

@@ -72,7 +72,7 @@ Vector HMatrix::solve
   // | x1 |   | d1 - u1*eta1 |
   // -    -   --            --
   
-  for (int i=level; i>0; i--) {
+  for (int i=level-1; i>=0; i--) {
 
     LMatrix& V = vTree.level(i);
     LMatrix& u = uTree.uMat_level(i);

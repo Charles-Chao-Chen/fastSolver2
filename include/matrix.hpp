@@ -33,8 +33,9 @@ public:
   double  operator[] (int i) const;
   double& operator[] (int i);
   
-  // entry-wise operations
+  // treat as diagonal matrix
   Vector multiply(const Vector&);
+  Matrix multiply(const Matrix&);
   friend Vector operator + (const Vector&, const Vector&);
   friend Vector operator - (const Vector&, const Vector&);
   friend bool   operator== (const Vector&, const Vector&);
@@ -69,6 +70,9 @@ public:
   int rows() const;
   int cols() const;
 
+  // return the F norm
+  double norm() const;
+  
   // return the pointer to data
   // used in solve() lapack routine
   double* pointer();

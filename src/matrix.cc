@@ -90,6 +90,18 @@ Vector Vector::multiply(const Vector& other) {
   return temp;
 }
 
+Matrix Vector::multiply(const Matrix& other) {
+  assert( this->has_entry == true );
+  int m = other.rows();
+  int n = other.cols();
+  assert( m == this->rows() );
+  Matrix temp(m, n);
+  for (int i=0; i<m; i++)
+    for (int j=0; j<n; j++)
+      temp(i, j) = data[i] * other(i, j);
+  return temp;
+}
+
 void Vector::display(const std::string& name) const {
   std::cout << name << ":" << std::endl;
   if (nPart > 0) {
@@ -165,6 +177,14 @@ Matrix::Matrix(int row, int col, bool has)
 int Matrix::rows() const {return mRows;}
 
 int Matrix::cols() const {return mCols;}
+
+double Matrix::norm() const {
+  double sum = 0;
+  for (int j=0; j<mCols; j++)
+    for (int i=0; i<mRows; i++)
+      sum += (*this)(i, j) * (*this)(i, j);
+  return sqrt(sum);
+}
 
 double* Matrix::pointer() {return &data[0];}
 
