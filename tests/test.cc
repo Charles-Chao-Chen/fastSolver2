@@ -27,8 +27,8 @@ void top_level_task(const Task *task,
 
   test_vector();
   test_matrix();
-  test_lmatrix_init(ctx, runtime);
-  //test_leaf_solve(ctx, runtime);
+  //test_lmatrix_init(ctx, runtime);
+  test_leaf_solve(ctx, runtime);
   /*
   test_gemm_reduce(ctx, runtime);
   test_gemm_broadcast(ctx, runtime);
@@ -246,8 +246,9 @@ void test_lmatrix_init(Context ctx, HighLevelRuntime *runtime) {
 void test_leaf_solve(Context ctx, HighLevelRuntime *runtime) {
 
   int m = 16, n = 2;
-  int nProc = 2;//4;
-  int level = 1;//3;
+  int nProc = 4;
+  int level = 2;
+  assert(nProc==pow(2, level));
   Matrix VMat(m, n), UMat(m, n), Rhs(m, 1);
   VMat.rand(nProc);
   UMat.rand(nProc);
@@ -258,57 +259,24 @@ void test_leaf_solve(Context ctx, HighLevelRuntime *runtime) {
   int nrow = DVec.rows();
   int nblk = pow(2, level);
   int ncol = DVec.rows() / nblk;
-  assert(nblk >= nProc);
-  assert(ncol >= UMat.cols());
   LMatrix K( nrow, ncol, level, ctx, runtime );
   LMatrix K_copy( nrow, ncol, level, ctx, runtime );
-  K.init_dense_blocks(nProc, nblk, UMat, VMat, DVec, ctx, runtime);
-  K_copy.init_dense_blocks(nProc, nblk, UMat, VMat, DVec, ctx, runtime);
+  K.init_dense_blocks(UMat, VMat, DVec, ctx, runtime);
+  K_copy.init_dense_blocks(UMat, VMat, DVec, ctx, runtime);
   
   LMatrix b(Rhs.rows(), 1, level, ctx, runtime);
   LMatrix b_copy(Rhs.rows(), 1, level, ctx, runtime);
-  b.init_data(nProc, 0, 1, Rhs, ctx, runtime);
-  b_copy.init_data(nProc, 0, 1, Rhs, ctx, runtime);
+  b.init_data(Rhs, ctx, runtime);
+  b_copy.init_data(Rhs, ctx, runtime);
 
   // linear solve
   K.solve( b, ctx, runtime );
   
   LMatrix Ax(Rhs.rows(), 1, level, ctx, runtime);
   LMatrix::gemmRed('n', 'n', 1.0, K_copy, b, 0.0, Ax, ctx, runtime);
-  //Ax.display("Ax", ctx, runtime);
-
   LMatrix r(Rhs.rows(), 1, level, ctx, runtime);
-
-  // r = b - Ax
   LMatrix::add(1.0, b_copy, -1.0, Ax, r, ctx, runtime);
-  //r.display("residule", ctx, runtime);
-
-  /*
-  b_copy.display("rhs", ctx, runtime);
-  K.display("K", ctx, runtime);
-  b.display("sln", ctx, runtime);
-  Ax.display("Ax", ctx, runtime);
-  */
-    
-  /*
-  // test LMatrix::add
-  LMatrix U0, U1;
-  U0.create(UMat.rows(), UMat.cols(), ctx, runtime);
-  U0.init_data(nProc, 0, UMat.cols(), UMat, ctx, runtime);
-  U0.partition(level, ctx, runtime);
-  U1.create(UMat.rows(), UMat.cols(), ctx, runtime);
-  U1.init_data(nProc, 0, UMat.cols(), UMat, ctx, runtime);
-  U1.partition(level, ctx, runtime);
-  LMatrix res;
-  res.create(UMat.rows(), UMat.cols(), ctx, runtime);
-  res.partition(level, ctx, runtime);
-  LMatrix::add(1.0, U0, -1.0, U1, res, ctx, runtime);
-  res.display("result", ctx, runtime);
-  LMatrix::add(1.0, U0,  0.0, U1, res, ctx, runtime);
-  res.display("result", ctx, runtime);
-  LMatrix::add(1.0, U0,  1.0, U1, res, ctx, runtime);
-  res.display("result", ctx, runtime);
-*/
+  r.display("residule", ctx, runtime);
     
   std::cout << "Test for leave solve passed!" << std::endl;
 }

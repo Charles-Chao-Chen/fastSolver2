@@ -69,11 +69,11 @@ void GemmRedTask::cpu_task(const Task *task,
   double alpha = args.alpha;
 
   PtrMatrix::gemm(alpha, AMat, BMat, CMat);
-
+  /*
   std::cout << "gemm:" << std::endl;
   AMat.display("A");
   BMat.display("B");
   CMat.display("C");
-
+*/
 }
 
