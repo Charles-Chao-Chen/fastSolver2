@@ -279,7 +279,8 @@ void test_leaf_solve(Context ctx, HighLevelRuntime *runtime) {
   LMatrix r(Rhs.rows(), 1, level, ctx, runtime);
   LMatrix::add(1.0, b_copy, -1.0, Ax, r, ctx, runtime);
   r.display("residule", ctx, runtime);
-  if (r.norm()<1.0e-13) {
+  Matrix res = r.to_matrix(ctx, runtime);
+  if (res.norm()<1.0e-13) {
     std::cout << "Test for leave solve passed!" << std::endl;
   }
 }
@@ -319,24 +320,27 @@ void test_gemm_broadcast(Context ctx, HighLevelRuntime *runtime) {
   int nProc = 8;
   Matrix UMat(m, n), VMat(2*n, n);
   UMat.rand(nProc);
-  VMat.rand(1);
+  VMat.rand(2);
   
   Matrix WMat0 = UMat.block(0,8,0,n) * VMat.block(0,n,0,n);
   Matrix WMat1 = UMat.block(8,16,0,n) * VMat.block(n,2*n,0,n);
-  WMat0.display("WMat0");
-  WMat1.display("WMat1");
   
   int level = 3;
   assert(nProc==pow(2,level));
   LMatrix U(m, n, level, ctx, runtime);
-  U.init_data(nProc, UMat, ctx, runtime);
+  U.init_data(UMat, ctx, runtime);
   LMatrix V(2*n, n, 1, ctx, runtime);
-  V.init_data(1, VMat, ctx, runtime);
+  V.init_data(VMat, ctx, runtime);
   LMatrix W(m, n, level, ctx, runtime);
   LMatrix::gemmBro('n', 'n', 1.0, U, V, 0.0, W, ctx, runtime);
   W.display("W", ctx, runtime);
-
-  std::cout << "Test for gemm broadcast passed!" << std::endl;
+  Matrix r0 = W.to_matrix(0,m/2,0,n,ctx,runtime) - WMat0;
+  Matrix r1 = W.to_matrix(m/2,m,0,n,ctx,runtime) - WMat1;
+  r0.display("gemm residual");
+  r1.display("gemm residual");
+  if (r0.norm()<1.0e-13 && r1.norm()<1.0e-13) {
+    std::cout << "Test for gemm broadcast passed!" << std::endl;
+  }
 }
 
 void test_node_solve(Context ctx, HighLevelRuntime *runtime) {
