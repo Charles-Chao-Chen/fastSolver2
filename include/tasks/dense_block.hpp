@@ -14,10 +14,8 @@ struct ThreeSeeds {
 class DenseBlockTask : public IndexLauncher {
 public:
   struct TaskArgs {
-    int rows;
-    int cols;
+    int size;
     int rank;
-    int blocks;
   };
   DenseBlockTask(Domain domain,
 		 TaskArgument global_arg,

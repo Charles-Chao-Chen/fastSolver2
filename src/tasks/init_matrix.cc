@@ -46,7 +46,7 @@ void InitMatrixTask::cpu_task(const Task *task,
 
   const long seed = *((const long*)task->local_args);
   //  printf("random seed = %lu \n", seed);
-  
+
   const TaskArgs blockSize = *((const TaskArgs*)task->args);
   int rblk  = blockSize.rblk;
   int cblk  = blockSize.cblk;
@@ -62,8 +62,5 @@ void InitMatrixTask::cpu_task(const Task *task,
     PtrMatrix A = get_raw_pointer(regions[0], rlo, rhi, clo, clo+cblk);
     A.rand(seed);
     clo += cblk;
-  }  
+  }
 }
-
-
-

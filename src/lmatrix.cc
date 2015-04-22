@@ -115,14 +115,17 @@ void LMatrix::scale
 void LMatrix::init_data
 (const Matrix& mat,
  Context ctx, HighLevelRuntime *runtime, bool wait) {
-  assert(mCols==mat.cols());  
-  init_data(0, mCols, mat, ctx, runtime, wait);
+  assert(mCols>=mat.cols());  
+  init_data(0, mat.cols(), mat, ctx, runtime, wait);
 }
 
 void LMatrix::init_data
 (int col0, int col1, const Matrix& mat,
  Context ctx, HighLevelRuntime *runtime, bool wait) {
-
+  assert(col0>=0);
+  assert(col1<=mCols);
+  assert((col1-col0)>=mat.cols());
+  assert((col1-col0)%mat.cols()==0);
   assert(this->nPart == mat.num_partition());
   ArgumentMap seeds = MapSeed(mat);  
   InitMatrixTask::TaskArgs args = {rblock, mat.cols(), col0, col1};
@@ -150,6 +153,47 @@ Matrix LMatrix::to_matrix(Context ctx, HighLevelRuntime *runtime) {
   PtrMatrix pMat = get_raw_pointer(region, 0, mRows, 0, mCols);
   for (int j=0; j<mCols; j++)
     for (int i=0; i<mRows; i++)
+      temp(i, j) = pMat(i, j);
+  runtime->unmap_region(ctx, region);
+  return temp;
+}
+  
+Matrix LMatrix::to_matrix
+(int col0, int col1, Context ctx, HighLevelRuntime *runtime) {
+  assert(col0>=0);
+  assert(col1<=mCols);
+  Matrix temp(mRows, col1-col0);
+  RegionRequirement req(region, READ_ONLY, EXCLUSIVE, region);
+  req.add_field(FIELDID_V);
+ 
+  InlineLauncher launcher(req);
+  PhysicalRegion region = runtime->map_region(ctx, launcher);
+  region.wait_until_valid();
+ 
+  PtrMatrix pMat = get_raw_pointer(region, 0, mRows, col0, col1);
+  for (int j=0; j<temp.cols(); j++)
+    for (int i=0; i<temp.rows(); i++)
+      temp(i, j) = pMat(i, j);
+  runtime->unmap_region(ctx, region);
+  return temp;
+}
+  
+Matrix LMatrix::to_matrix
+(int rlo, int rhi, int clo, int chi,
+ Context ctx, HighLevelRuntime *runtime) {
+  assert(rlo>=0&&clo>=0);
+  assert(rhi<=mRows&&chi<=mCols);
+  Matrix temp(rhi-rlo, chi-clo);
+  RegionRequirement req(region, READ_ONLY, EXCLUSIVE, region);
+  req.add_field(FIELDID_V);
+ 
+  InlineLauncher launcher(req);
+  PhysicalRegion region = runtime->map_region(ctx, launcher);
+  region.wait_until_valid();
+ 
+  PtrMatrix pMat = get_raw_pointer(region, rlo, rhi, clo, chi);
+  for (int j=0; j<temp.cols(); j++)
+    for (int i=0; i<temp.rows(); i++)
       temp(i, j) = pMat(i, j);
   runtime->unmap_region(ctx, region);
   return temp;
@@ -190,6 +234,30 @@ void LMatrix::init_data
 }
 
 void LMatrix::init_dense_blocks
+(const Matrix& U, const Matrix& V, const Vector& D,
+ Context ctx, HighLevelRuntime *runtime, bool wait) {
+  assert(nPart==U.num_partition());
+  assert(nPart==V.num_partition());
+  assert(nPart==D.num_partition());
+  assert(U.cols()==V.cols());
+  assert(U.rows()==V.rows());
+  assert(U.rows()==D.rows());
+  ArgumentMap seeds = MapSeed(U, V, D);
+  int rank = U.cols();
+  DenseBlockTask::TaskArgs args = {rblock, rank};
+  DenseBlockTask launcher(colDom, TaskArgument(&args, sizeof(args)), seeds);
+  RegionRequirement req(lpart, 0, WRITE_DISCARD, EXCLUSIVE, region);
+  req.add_field(FIELDID_V);
+  launcher.add_region_requirement(req);
+  FutureMap fm = runtime->execute_index_space(ctx, launcher);
+    
+  if(wait) {
+    std::cout << "Wait for init..." << std::endl;
+    fm.wait_all_results();
+  }
+}
+
+void LMatrix::init_dense_blocks
 (int nProc_, int nblk, const Matrix& U, const Matrix& V, const Vector& D,
  Context ctx, HighLevelRuntime *runtime, bool wait) {
   
@@ -202,7 +270,7 @@ void LMatrix::init_dense_blocks
   LogicalPartition lp = runtime->get_logical_partition(ctx, region, ip);
   Domain dom = runtime->get_index_partition_color_space(ctx, ip);
 
-  DenseBlockTask::TaskArgs args = {mRows/nProc, mCols, U.cols(), nblk/nProc};
+  DenseBlockTask::TaskArgs args;// = {mRows/nProc, mCols, U.cols(), nblk/nProc};
   DenseBlockTask launcher(dom, TaskArgument(&args, sizeof(args)), seeds);
   RegionRequirement req(lp, 0, WRITE_DISCARD, EXCLUSIVE, region);
   req.add_field(FIELDID_V);
@@ -222,6 +290,20 @@ ArgumentMap LMatrix::MapSeed(const Matrix& matrix) {
     long s = matrix.rand_seed(i);
     argMap.set_point(DomainPoint::from_point<1>(Point<1>(i)),
 		     TaskArgument(&s,sizeof(s)));
+  }
+  return argMap;
+}
+
+ArgumentMap LMatrix::MapSeed
+(const Matrix& U, const Matrix& V, const Vector& D) {
+  int nPart = U.num_partition();
+  ArgumentMap argMap;
+  for (int i = 0; i < nPart; i++) {
+    ThreeSeeds  threeSeeds = {U.rand_seed(i),
+			      V.rand_seed(i),
+			      D.rand_seed(i)};
+    argMap.set_point(DomainPoint::from_point<1>(Point<1>(i)),
+		     TaskArgument(&threeSeeds,sizeof(threeSeeds)));
   }
   return argMap;
 }

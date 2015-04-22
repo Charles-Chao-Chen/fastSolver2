@@ -192,66 +192,54 @@ void test_matrix() {
 void test_lmatrix_init(Context ctx, HighLevelRuntime *runtime) {
   
   int m = 16, n = 2;
-  int nPart = 2;
+  int nPart = 4;
   Matrix mat0(m, n);
   mat0.rand(nPart);
 
-  int nlevel = 1;
+  int nlevel = 2;
   assert(nPart == pow(2,nlevel));
   LMatrix lmat0(m, n, nlevel, ctx, runtime);
   lmat0.init_data(mat0, ctx, runtime);
   lmat0.display("lmat0", ctx, runtime);
-  Matrix check = lmat0.to_matrix(ctx, runtime) - mat0;
-  check.display("init data residule");
+  Matrix check0 = lmat0.to_matrix(ctx, runtime) - mat0;
+  check0.display("init data residule");  
+
+  Matrix UMat(m, n);
+  UMat.rand(nPart);
+  int nRhs = 1;
+  int cols = nRhs+nlevel*n;
+  LMatrix lgUmat(m, cols, nlevel, ctx, runtime);
   
-  
-  //lmat0.init_data(nPart, 0, mat0.cols(), mat0, ctx, runtime);
-  //lmat0.display("lmat0", ctx, runtime);
-  
-  /*
-  LMatrix lmat0;
-  lmat0.create(m, n, ctx, runtime);
-  lmat0.init_data(nPart, 0, mat0.cols(), mat0, ctx, runtime);
-  //lmat0.display("lmat0", ctx, runtime);
-*/
-  
+  // right hand side
+  Matrix Rhs(m, nRhs);
+  Rhs.rand(nPart);
+  lgUmat.init_data(Rhs, ctx, runtime);
+  lgUmat.init_data(nRhs, cols, UMat, ctx, runtime);
+  //Rhs.display("Rhs");
+  //UMat.display("UMat");
+  lgUmat.display("UTree", ctx, runtime);
+  Matrix check1 = lgUmat.to_matrix(0, nRhs, ctx, runtime) - Rhs;
+  check1.display("rhs residule");  
+  Matrix check2 = lgUmat.to_matrix(nRhs, nRhs+n, ctx, runtime) - UMat;
+  check2.display("Umat residule");  
   
   Matrix U(m, n), V(m, n);
   Vector D(m);
   U.rand(nPart);
   V.rand(nPart);
   D.rand(nPart);
-  //U.display("U");
-  //V.display("V");
-  //D.display("D");
   
-  int level = 3;
   int nrow = D.rows();
-  int nblk = pow(2, level-1);
+  int nblk = pow(2, nlevel);
   int ncol = D.rows() / nblk;
-  LMatrix lmat;
-  lmat.create(nrow, ncol, ctx, runtime);
-  lmat.init_dense_blocks(nPart, nblk, U, V, D, ctx, runtime);
-
-  /*
-  Matrix A = (U * V.T()) + D.to_diag_matrix();    
-  A.display("full matrix");
-  lmat.display("diagonal blocks", ctx, runtime);
-*/
-  LMatrix lgUmat;
-  int cols = 1+level*U.cols();
-  lgUmat.create(U.rows(), cols, ctx, runtime);
-  lgUmat.init_data(nPart, 1, cols, U, ctx, runtime);
-
-  // right hand side
-  Matrix Rhs(m, 1);
-  Rhs.rand(nPart);
-  lgUmat.init_data(nPart, 0, 1, Rhs, ctx, runtime);
-  /*
-  Rhs.display("rhs");
-  U.display("U");
-  lgUmat.display("UTree", ctx, runtime);
-*/  
+  LMatrix lmat(nrow, ncol, nlevel, ctx, runtime);
+  lmat.init_dense_blocks(U, V, D, ctx, runtime);
+  lmat.display("dense blocks", ctx, runtime);
+  Matrix KMat = (U * V.T()) + D.to_diag_matrix();
+  Matrix check3 = lmat.to_matrix(0,m/nPart,0,m/nPart,ctx,runtime)
+    - KMat.block(0,m/nPart,0,m/nPart);
+  check3.display("dense block residule");
+  
   std::cout << "Test for legion matrix initialization passed!" << std::endl;
 }
 

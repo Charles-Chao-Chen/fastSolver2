@@ -50,11 +50,11 @@ public:
   void init_data
   (int, int, const Matrix& mat, Context, HighLevelRuntime*,
    bool wait=WAIT_DEFAULT);
-
+  
   // output region
   Matrix to_matrix(Context, HighLevelRuntime*);
-  
-  
+  Matrix to_matrix(int, int, Context, HighLevelRuntime*);
+  Matrix to_matrix(int, int, int, int, Context, HighLevelRuntime*);
 
   // to be removed
   void init_data
@@ -68,6 +68,10 @@ public:
    bool wait=WAIT_DEFAULT);
   
   // for KTree::partition
+  void init_dense_blocks
+  (const Matrix& UMat, const Matrix& VMat, const Vector& DVec,
+   Context, HighLevelRuntime*, bool wait=WAIT_DEFAULT);
+
   void init_dense_blocks
   (int, int, const Matrix& UMat, const Matrix& VMat, const Vector& DVec,
    Context, HighLevelRuntime*, bool wait=WAIT_DEFAULT);
@@ -134,7 +138,9 @@ private:
 
   // for init_matrix task
   ArgumentMap MapSeed(const Matrix& matrix);
-
+  ArgumentMap MapSeed
+  (const Matrix& U, const Matrix& V, const Vector& D);
+  
   // to be removed 
   ArgumentMap MapSeed(int nPart, const Matrix& matrix);
   ArgumentMap MapSeed(int nPart, const Matrix& U, const Matrix& V, const Vector& D);

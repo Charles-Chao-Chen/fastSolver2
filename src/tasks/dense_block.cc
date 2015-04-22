@@ -52,18 +52,24 @@ void DenseBlockTask::cpu_task(const Task *task,
   //  printf("random seeds = (%lu, %lu, %lu) \n", uSeed, vSeed, dSeed);
   
   const TaskArgs matrix = *((const TaskArgs*)task->args);
-  int rows = matrix.rows;
-  int cols = matrix.cols;
+  int size = matrix.size;
   int rank = matrix.rank;
-  int blks = matrix.blocks;
+  int rlo = p[0]*size;
+  int rhi = (p[0]+1)*size;
+
+  PtrMatrix K = get_raw_pointer(regions[0], rlo, rhi, 0, size);
+
+  // recover U, V and D
+  PtrMatrix U(size, rank), V(size, rank), D(size, 1);
+  U.rand(uSeed);
+  V.rand(vSeed);
+  D.rand(dSeed);
+
+  V.set_trans('t');
+  PtrMatrix::gemm(U, V, D, K);
+
+  
   /*
-  printf("matrix row size = %i\n", rows);
-  printf("matrix col size = %i\n", cols);
-  printf("rank = %i\n", rank);
-  printf("block size = %i\n", blks);
-*/  
-  int rlo = p[0] * rows;
-  int rhi = (p[0] + 1) * rows;
   double *base = region_pointer(regions[0], rlo, rhi, 0, cols);
 
   // recover U, V and D
@@ -82,6 +88,7 @@ void DenseBlockTask::cpu_task(const Task *task,
     PtrMatrix pMat(bSize, cols, rows, base       +i*bSize);
     PtrMatrix::gemm(Ublk, Vblk, Dblk, pMat);
   }
+  */
 }
 
 
