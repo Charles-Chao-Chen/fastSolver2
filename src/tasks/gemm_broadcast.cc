@@ -68,12 +68,12 @@ void GemmBroTask::cpu_task(const Task *task,
   BMat.set_trans(args.transb);
   double alpha = args.alpha;
 
-  /*
+
   std::cout << "gemm:" << std::endl;
   AMat.display("A");
   BMat.display("B");
   CMat.display("C");
-*/
+
   PtrMatrix::gemm(alpha, AMat, BMat, CMat);
 }
 

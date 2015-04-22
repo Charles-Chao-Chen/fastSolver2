@@ -54,7 +54,8 @@ void NodeSolveTask::cpu_task(const Task *task,
   int Bcols = args.Bcols;
   int rlo = p[0]*rblk;
   int rhi = (p[0] + 1) * rblk;
-
+  //printf("(rblock=%d, Acols=%d, Bcols=%d)\n", rblk, Acols, Bcols);
+  
   PtrMatrix AMat = get_raw_pointer(regions[0], rlo, rhi, 0, Acols);
   PtrMatrix BMat = get_raw_pointer(regions[1], rlo, rhi, 0, Bcols);
 

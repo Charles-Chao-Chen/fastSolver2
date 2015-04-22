@@ -45,11 +45,68 @@ void UTree::partition
     int ncol = nRhs + i*rank;
     LMatrix dMat = U.partition(mLevel, 0, ncol, ctx, runtime);
     dMat_vec.push_back(dMat);
-    LMatrix uMat = U.partition(mLevel, ncol, ncol+rank, ctx, runtime);
-    uMat_vec.push_back(uMat);
+    //LMatrix uMat = U.partition(mLevel, ncol, ncol+rank, ctx, runtime);
+    //uMat_vec.push_back(uMat);
   }
   LMatrix leaf = U.partition(mLevel, 0, U.cols(), ctx, runtime);
   dMat_vec.push_back(leaf);
+
+
+  
+  LogicalPartition lp;
+  {
+    // partition U along column
+    Rect<1> bounds(Point<1>(0),Point<1>(mLevel-1));
+    Domain  domain = Domain::from_rect<1>(bounds);
+    int size = this->rank;
+    DomainColoring coloring;
+    for (int i = 0; i < mLevel; i++) {
+      Point<2> lo = make_point( 0,          nRhs+size*i);
+      Point<2> hi = make_point( U.rows()-1, nRhs+size*(i+1)-1);
+      Rect<2> subrect(lo, hi);
+      coloring[i] = Domain::from_rect<2>(subrect);
+    }
+    IndexPartition ip = runtime->create_index_partition(ctx,
+							U.index_space(), domain, coloring, true);
+
+    lp = runtime->get_logical_partition(ctx, U.logical_region(), ip);
+  }
+
+  for (int i=0; i<mLevel; i++) {
+    LogicalRegion lr = runtime->get_logical_subregion_by_color(ctx, lp, i);
+
+    IndexSpace is = lr.get_index_space();
+
+    
+    // partition for uMat
+    int num_subregions = pow(2, mLevel);
+    
+    Rect<1> bounds(Point<1>(0),Point<1>(num_subregions-1));
+    Domain  domain = Domain::from_rect<1>(bounds);
+
+    int size = U.rows() / num_subregions;
+    DomainColoring coloring;
+    for (int i = 0; i < num_subregions; i++) {
+      Point<2> lo = make_point(  i   *size,   0);
+      Point<2> hi = make_point( (i+1)*size-1, rank);
+      Rect<2> subrect(lo, hi);
+      coloring[i] = Domain::from_rect<2>(subrect);
+    }
+    IndexPartition ip = runtime->create_index_partition(ctx, is, domain, coloring, true);
+    //LogicalPartition lp = runtime->get_logical_partition(ctx, U.logical_region(), ip);
+    //int cols = col1-col0;
+    LMatrix uMat(U.rows(), rank, num_subregions, ip, lr, ctx, runtime); // interface to be modified
+    //uMat.set_parent_region(U.logical_region());
+    uMat_vec.push_back(uMat);
+
+
+  
+
+    //uMat_vec[i].set_logical_region(lr);
+    //uMat_vec[i].set_logical_partition(lpart);
+  }
+
+  
   assert(uMat_vec.size() == size_t(mLevel));
   assert(dMat_vec.size() == size_t(mLevel+1));
 }

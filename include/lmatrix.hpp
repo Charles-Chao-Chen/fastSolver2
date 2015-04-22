@@ -23,20 +23,17 @@ public:
   int rowBlk() const;
   int num_partition() const;
   Domain color_domain() const;
+  IndexSpace index_space() const;
   LogicalRegion logical_region() const;
+  IndexPartition index_partition() const;
   LogicalPartition logical_partition() const;
-  //LogicalPartition logical_partition(Context, HighLevelRuntime*) const;
-
+  
+  void set_logical_region(LogicalRegion);
+  //void set_parent_region(LogicalRegion);
+  void set_logical_partition(LogicalPartition lp);
+  
   // create logical region
-  void create(int, int, Context, HighLevelRuntime*,
-	      bool wait=WAIT_DEFAULT);
-
-  // initialize region, assuming it exists
-  /*
-  void init_data
-  (int, const Vector& Rhs, Context, HighLevelRuntime*,
-   bool wait=WAIT_DEFAULT);
-*/
+  void create(int, int, Context, HighLevelRuntime*);
 
   // set the matrix to value
   void clear(double, Context, HighLevelRuntime*, bool wait=WAIT_DEFAULT);
@@ -45,7 +42,21 @@ public:
   void scale(double, Context, HighLevelRuntime*, bool wait=WAIT_DEFAULT);
 
   // initialize data from Matrix object
-  // for VTree init
+  void init_data
+  (const Matrix& mat, Context, HighLevelRuntime*,
+   bool wait=WAIT_DEFAULT);
+
+  // init part of the region
+  void init_data
+  (int, int, const Matrix& mat, Context, HighLevelRuntime*,
+   bool wait=WAIT_DEFAULT);
+
+  // output region
+  Matrix to_matrix(Context, HighLevelRuntime*);
+  
+  
+
+  // to be removed
   void init_data
   (int, const Matrix& VMat, Context, HighLevelRuntime*,
    bool wait=WAIT_DEFAULT);
@@ -122,10 +133,16 @@ private:
   // ******************
 
   // for init_matrix task
+  ArgumentMap MapSeed(const Matrix& matrix);
+
+  // to be removed 
   ArgumentMap MapSeed(int nPart, const Matrix& matrix);
   ArgumentMap MapSeed(int nPart, const Matrix& U, const Matrix& V, const Vector& D);
 
   // partition the matrix along rows
+  IndexPartition UniformRowPartition
+  (Context ctx, HighLevelRuntime *runtime);
+  
   IndexPartition UniformRowPartition
   (int num_subregions, int, int, Context ctx, HighLevelRuntime *runtime);
   
@@ -145,10 +162,11 @@ private:
   // matrix and block size
   int mRows;
   int mCols;
-
+  //int level;
+  
   // number of ranks
   // used to init data
-  int              nProc;  
+  int              nProc; // to be removed
 
   // partition
   int              nPart;
@@ -161,6 +179,7 @@ private:
   IndexSpace       ispace;
   FieldSpace       fspace;
   LogicalRegion    region;
+  LogicalRegion    pregion; // to be removed
 };
 
 #endif
