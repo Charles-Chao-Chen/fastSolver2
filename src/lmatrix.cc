@@ -389,7 +389,7 @@ LMatrix LMatrix::partition
   int cols = col1-col0;
   return LMatrix(mRows, cols, num_subregions, ip, region, ctx, runtime); // interface to be modified
 }
-
+/*
 void LMatrix::fine_partition(Context ctx, HighLevelRuntime *runtime) {
   this->nPart *= 2;
   this->rblock = mRows/nPart;
@@ -407,7 +407,7 @@ void LMatrix::coarse_partition
   this->lpart  = runtime->get_logical_partition(ctx, region, ipart);
   this->colDom = runtime->get_index_partition_color_space(ctx, ipart);
 }
-
+*/
 // solve A x = b for each partition
 //  b will be overwritten by x
 void LMatrix::solve
@@ -461,8 +461,8 @@ void LMatrix::node_solve
 (LMatrix& b, Context ctx, HighLevelRuntime* runtime, bool wait) {
 
   // pair up neighbor cells
-  this->coarse_partition(ctx, runtime);
-  b.coarse_partition(ctx, runtime);
+  //this->coarse_partition(ctx, runtime);
+  //b.coarse_partition(ctx, runtime);
   //solve<NodeSolveTask>(b, ctx, runtime, wait);
 
   // A and b have the same number of partition
@@ -474,6 +474,7 @@ void LMatrix::node_solve
   LogicalRegion ARegion = this->logical_region();
   LogicalRegion bRegion = b.logical_region();
 
+  assert(this->rowBlk()==2*mCols);
   Domain domain = this->color_domain();
   NodeSolveTask::TaskArgs args = {this->rowBlk(), mCols, b.cols()};
   NodeSolveTask launcher(domain, TaskArgument(&args, sizeof(args)), ArgumentMap());
@@ -492,7 +493,7 @@ void LMatrix::node_solve
   }
   
   // recover the original partition
-  b.fine_partition(ctx, runtime);
+  //b.fine_partition(ctx, runtime);
 }
 
 template <typename SolveTask>

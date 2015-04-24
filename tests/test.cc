@@ -30,8 +30,8 @@ void top_level_task(const Task *task,
   //test_lmatrix_init(ctx, runtime);
   //test_leaf_solve(ctx, runtime);  
   //test_gemm_reduce(ctx, runtime);
-  test_gemm_broadcast(ctx, runtime);
-  //test_node_solve(ctx, runtime);
+  //test_gemm_broadcast(ctx, runtime);
+  test_node_solve(ctx, runtime);
   //test_one_level(ctx, runtime);
 
     
@@ -346,12 +346,12 @@ void test_gemm_broadcast(Context ctx, HighLevelRuntime *runtime) {
 void test_node_solve(Context ctx, HighLevelRuntime *runtime) {
   int level = 2;
   int r = 3;
-  int nProc = 1;
+  int nProc = 2;
   Matrix VuMat(level*2*r, r), VdMat(level*2*r, 1);
   VuMat.rand(nProc);
   VdMat.rand(nProc);
-  //  VuMat.display("VuMat");
-  //VdMat.display("VdMat");
+
+  Matrix sln[2];
   for (int l=0; l<level; l++) {
     std::cout << "level: " << l << std::endl;
     int ofs = l*2*r;
@@ -372,20 +372,28 @@ void test_node_solve(Context ctx, HighLevelRuntime *runtime) {
     Matrix rhs_copy = rhs;
     Matrix A = S;
     A.solve(rhs);
-    rhs.display("sln");
+    sln[l] = rhs;
+    //rhs.display("sln");
   
     Matrix b = rhs_copy - S*rhs;
     //b.display("residule");
   }
-  
-  LMatrix VTu(level*2*r, r, 2, ctx, runtime);
-  LMatrix VTd(level*2*r, 1, 2, ctx, runtime);
-  VTu.init_data(nProc, VuMat, ctx, runtime);
-  VTd.init_data(nProc, VdMat, ctx, runtime);
+
+  int nlevel = 1;
+  assert(nProc==pow(2,nlevel));
+  LMatrix VTu(level*2*r, r, nlevel, ctx, runtime);
+  LMatrix VTd(level*2*r, 1, nlevel, ctx, runtime);
+  VTu.init_data(VuMat, ctx, runtime);
+  VTd.init_data(VdMat, ctx, runtime);
   VTu.node_solve(VTd, ctx, runtime);
   VTd.display("VTd", ctx, runtime);
 
-  std::cout << "Test for node solve passed!" << std::endl;  
+  Matrix r0 = VTd.to_matrix(0,2*r,0,1,ctx,runtime) - sln[0];
+  Matrix r1 = VTd.to_matrix(2*r,4*r,0,1,ctx,runtime) - sln[1];  
+  r0.display("node solve residual");
+  r1.display("node solve residual");
+  if (r0.norm()<1.0e-13&&r1.norm()<1.0e-13)
+    std::cout << "Test for node solve passed!" << std::endl;
 }
 
 void test_one_level(Context ctx, HighLevelRuntime *runtime) {

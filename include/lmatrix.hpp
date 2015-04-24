@@ -153,8 +153,8 @@ private:
   (int num_subregions, int, int, Context ctx, HighLevelRuntime *runtime);
   
   // for node_solve
-  void fine_partition(Context ctx, HighLevelRuntime *); // double the partition
-  void coarse_partition(Context ctx, HighLevelRuntime *); // coarse the partition
+  //void fine_partition(Context ctx, HighLevelRuntime *); // double the partition
+  //void coarse_partition(Context ctx, HighLevelRuntime *); // coarse the partition
 
   template <typename T>
   void solve
