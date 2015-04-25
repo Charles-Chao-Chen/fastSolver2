@@ -18,7 +18,7 @@ void UTree::init_rhs
 void UTree::init_rhs
 (const Matrix& b, Context ctx, HighLevelRuntime *runtime) {
   assert(b.cols()==1);
-  U.init_data(nProc, 0, 1, b, ctx, runtime);
+  U.init_data(b, ctx, runtime);
 }
 
 Vector UTree::rhs() {
@@ -35,80 +35,32 @@ void UTree::partition
   // create region
   int cols = nRhs + level*UMat.cols();
   U.create(UMat.rows(), cols, ctx, runtime);
-  // initialize region
-  U.init_data(nProc, 1, cols, UMat, ctx, runtime);
-  // create partition
+  // partition the big region
+  // this is the only partition we will use
+  // i.e. the same partition for all u and d
+  // matrices
+  // More precise/complicated partitions can be
+  // used, but not necessary in this case.
   this->mLevel = level;
-  // right hand side partition
-  //Rhs = U.partition(/* !LEVEL, NOT NPART*/, 0, nRhs, ctx, runtime);
+  U.partition(mLevel, ctx, runtime);
+  // initialize region
+  U.init_data(1, U.cols(), UMat, ctx, runtime);
+
+  // Set column range for all u and d matrics.
+  // In particular, we need to set the column begin
+  // for u matrices.
   for (int i=0; i<mLevel; i++) {
     int ncol = nRhs + i*rank;
-    LMatrix dMat = U.partition(mLevel, 0, ncol, ctx, runtime);
+    LMatrix dMat = U;
+    dMat.set_column_size(ncol);
     dMat_vec.push_back(dMat);
-    //LMatrix uMat = U.partition(mLevel, ncol, ncol+rank, ctx, runtime);
-    //uMat_vec.push_back(uMat);
-  }
-  LMatrix leaf = U.partition(mLevel, 0, U.cols(), ctx, runtime);
-  dMat_vec.push_back(leaf);
-
-
-  
-  LogicalPartition lp;
-  {
-    // partition U along column
-    Rect<1> bounds(Point<1>(0),Point<1>(mLevel-1));
-    Domain  domain = Domain::from_rect<1>(bounds);
-    int size = this->rank;
-    DomainColoring coloring;
-    for (int i = 0; i < mLevel; i++) {
-      Point<2> lo = make_point( 0,          nRhs+size*i);
-      Point<2> hi = make_point( U.rows()-1, nRhs+size*(i+1)-1);
-      Rect<2> subrect(lo, hi);
-      coloring[i] = Domain::from_rect<2>(subrect);
-    }
-    IndexPartition ip = runtime->create_index_partition(ctx,
-							U.index_space(), domain, coloring, true);
-
-    lp = runtime->get_logical_partition(ctx, U.logical_region(), ip);
-  }
-
-  for (int i=0; i<mLevel; i++) {
-    LogicalRegion lr = runtime->get_logical_subregion_by_color(ctx, lp, i);
-
-    IndexSpace is = lr.get_index_space();
-
-    
-    // partition for uMat
-    int num_subregions = pow(2, mLevel);
-    
-    Rect<1> bounds(Point<1>(0),Point<1>(num_subregions-1));
-    Domain  domain = Domain::from_rect<1>(bounds);
-
-    int size = U.rows() / num_subregions;
-    DomainColoring coloring;
-    for (int i = 0; i < num_subregions; i++) {
-      Point<2> lo = make_point(  i   *size,   0);
-      Point<2> hi = make_point( (i+1)*size-1, rank);
-      Rect<2> subrect(lo, hi);
-      coloring[i] = Domain::from_rect<2>(subrect);
-    }
-    IndexPartition ip = runtime->create_index_partition(ctx, is, domain, coloring, true);
-    //LogicalPartition lp = runtime->get_logical_partition(ctx, U.logical_region(), ip);
-    //int cols = col1-col0;
-    LMatrix uMat(U.rows(), rank, num_subregions, ip, lr, ctx, runtime); // interface to be modified
-    //uMat.set_parent_region(U.logical_region());
+    LMatrix uMat = U;
+    uMat.set_column_size(rank);
+    uMat.set_column_begin(ncol);
     uMat_vec.push_back(uMat);
-
-
-  
-
-    //uMat_vec[i].set_logical_region(lr);
-    //uMat_vec[i].set_logical_partition(lpart);
-  }
-
-  
+  }  
   assert(uMat_vec.size() == size_t(mLevel));
-  assert(dMat_vec.size() == size_t(mLevel+1));
+  assert(dMat_vec.size() == size_t(mLevel));
 }
 
 LMatrix& UTree::uMat_level(int i) {
@@ -117,12 +69,12 @@ LMatrix& UTree::uMat_level(int i) {
 }
 
 LMatrix& UTree::dMat_level(int i) {
-  assert(0<i && i<=mLevel+1);
+  assert(0<i && i<=mLevel);
   return dMat_vec[i-1];
 }
 
 LMatrix& UTree::leaf() {
-  return dMat_vec[mLevel];
+  return U;
 }
 
 Matrix UTree::solution(Context ctx, HighLevelRuntime *runtime) {
@@ -155,11 +107,11 @@ void VTree::partition
   assert( VMat.cols() > 0 );
   // create region
   V.create(VMat.rows(), VMat.cols(), ctx, runtime);
-  // initialize region
-  V.init_data(nProc, 0, VMat.cols(), VMat, ctx, runtime);
   // create partition
   this->mLevel = level;
   V.partition(mLevel, ctx, runtime);
+  // initialize region
+  V.init_data(VMat, ctx, runtime);
 }
 
 LMatrix& VTree::level(int i) {
@@ -190,12 +142,13 @@ void KTree::partition
   int ncol = DVec.rows() / nblk;
   assert(nblk >= nProc);
   assert(ncol >= UMat.cols());
+  // create region
   K.create( nrow, ncol, ctx, runtime );
-  // initialize region
-  K.init_dense_blocks(nProc, nblk, UMat, VMat, DVec, ctx, runtime);
   // partition region
   this->mLevel = level;
   K.partition(mLevel, ctx, runtime);
+  // initialize region
+  K.init_dense_blocks(UMat, VMat, DVec, ctx, runtime);
 }
 
 void KTree::solve

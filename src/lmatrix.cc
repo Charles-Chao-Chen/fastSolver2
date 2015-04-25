@@ -5,7 +5,7 @@ LMatrix::LMatrix() : nPart(-1) {}
 
 LMatrix::LMatrix
 (int rows, int cols, int level,
- Context ctx, HighLevelRuntime *runtime) {  
+ Context ctx, HighLevelRuntime *runtime) {
   create(rows, cols, ctx, runtime);
   partition(level, ctx, runtime);
 }
@@ -46,9 +46,13 @@ LogicalPartition LMatrix::logical_partition() const {
   return lpart;
 }
 
+void LMatrix::set_column_size(int n) {mCols=n;}
+
+void LMatrix::set_column_begin(int begin) {colIdx=begin;}
+
 void LMatrix::set_logical_region(LogicalRegion lr) {region=lr;}
 
-//void LMatrix::set_parent_region(LogicalRegion lr) {pregion=lr;}
+void LMatrix::set_parent_region(LogicalRegion lr) {pregion=lr;}
 
 void LMatrix::set_logical_partition(LogicalPartition lp) {lpart=lp;}
 
@@ -57,6 +61,7 @@ void LMatrix::create
   assert(rows>0 && cols>0);
   this->mRows = rows;
   this->mCols = cols;
+  this->colIdx = 0;
   Point<2> lo = make_point(0, 0);
   Point<2> hi = make_point(mRows-1, mCols-1);
   Rect<2> rect(lo, hi);
@@ -219,8 +224,9 @@ void LMatrix::init_data
   IndexPartition ip = UniformRowPartition(nProc, col0, col1, ctx, runtime);
   LogicalPartition lp = runtime->get_logical_partition(ctx, region, ip);
   Domain dom = runtime->get_index_partition_color_space(ctx, ip);
-  
-  InitMatrixTask::TaskArgs args = {mRows/nProc, mat.cols(), col0, col1};
+
+  assert(false);
+  InitMatrixTask::TaskArgs args;// = {mRows/nProc, mat.cols(), col0, col1};
   InitMatrixTask launcher(dom, TaskArgument(&args, sizeof(args)), seeds);
   RegionRequirement req(lp, 0, WRITE_DISCARD, EXCLUSIVE, region);
   req.add_field(FIELDID_V);
@@ -270,6 +276,7 @@ void LMatrix::init_dense_blocks
   LogicalPartition lp = runtime->get_logical_partition(ctx, region, ip);
   Domain dom = runtime->get_index_partition_color_space(ctx, ip);
 
+  assert(false);
   DenseBlockTask::TaskArgs args;// = {mRows/nProc, mCols, U.cols(), nblk/nProc};
   DenseBlockTask launcher(dom, TaskArgument(&args, sizeof(args)), seeds);
   RegionRequirement req(lp, 0, WRITE_DISCARD, EXCLUSIVE, region);
@@ -389,25 +396,7 @@ LMatrix LMatrix::partition
   int cols = col1-col0;
   return LMatrix(mRows, cols, num_subregions, ip, region, ctx, runtime); // interface to be modified
 }
-/*
-void LMatrix::fine_partition(Context ctx, HighLevelRuntime *runtime) {
-  this->nPart *= 2;
-  this->rblock = mRows/nPart;
-  this->ipart  = UniformRowPartition(nPart, 0, mCols, ctx, runtime);
-  this->lpart  = runtime->get_logical_partition(ctx, region, ipart);
-  this->colDom = runtime->get_index_partition_color_space(ctx, ipart);
-}
 
-void LMatrix::coarse_partition
-(Context ctx, HighLevelRuntime *runtime) {
-  assert(this->nPart%2==0);
-  this->nPart /= 2;
-  this->rblock = mRows/nPart;
-  this->ipart  = UniformRowPartition(nPart, 0, mCols, ctx, runtime);
-  this->lpart  = runtime->get_logical_partition(ctx, region, ipart);
-  this->colDom = runtime->get_index_partition_color_space(ctx, ipart);
-}
-*/
 // solve A x = b for each partition
 //  b will be overwritten by x
 void LMatrix::solve

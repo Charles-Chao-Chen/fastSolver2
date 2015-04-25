@@ -15,7 +15,9 @@ class LMatrix {
 public:
   LMatrix();
   LMatrix(int, int, int, Context, HighLevelRuntime*);
-  LMatrix(int, int, int, IndexPartition ip, LogicalRegion lr, Context, HighLevelRuntime*);
+  LMatrix
+  (int, int, int, IndexPartition ip, LogicalRegion lr,
+   Context, HighLevelRuntime*); // to be removed
   ~LMatrix();
   
   int rows() const;
@@ -27,9 +29,11 @@ public:
   LogicalRegion logical_region() const;
   IndexPartition index_partition() const;
   LogicalPartition logical_partition() const;
-  
+
+  void set_column_size(int);
+  void set_column_begin(int);
   void set_logical_region(LogicalRegion);
-  //void set_parent_region(LogicalRegion);
+  void set_parent_region(LogicalRegion);
   void set_logical_partition(LogicalPartition lp);
   
   // create logical region
@@ -152,10 +156,6 @@ private:
   IndexPartition UniformRowPartition
   (int num_subregions, int, int, Context ctx, HighLevelRuntime *runtime);
   
-  // for node_solve
-  //void fine_partition(Context ctx, HighLevelRuntime *); // double the partition
-  //void coarse_partition(Context ctx, HighLevelRuntime *); // coarse the partition
-
   template <typename T>
   void solve
   (LMatrix& b, Context ctx, HighLevelRuntime *runtime,
@@ -168,7 +168,7 @@ private:
   // matrix and block size
   int mRows;
   int mCols;
-  //int level;
+  int colIdx; // starting column index in the region
   
   // number of ranks
   // used to init data

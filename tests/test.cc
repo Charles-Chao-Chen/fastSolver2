@@ -31,8 +31,8 @@ void top_level_task(const Task *task,
   //test_leaf_solve(ctx, runtime);  
   //test_gemm_reduce(ctx, runtime);
   //test_gemm_broadcast(ctx, runtime);
-  test_node_solve(ctx, runtime);
-  //test_one_level(ctx, runtime);
+  //test_node_solve(ctx, runtime);
+  test_one_level(ctx, runtime);
 
     
   /*
@@ -401,6 +401,7 @@ void test_one_level(Context ctx, HighLevelRuntime *runtime) {
   int m = 8, n = 2;
   int nProc = 2;
   int level = 1;
+  assert(nProc==pow(2,level));
   Matrix VMat(m, n), UMat(m, n), Rhs(m, 1);
   VMat.rand(nProc);
   UMat.rand(nProc);
@@ -414,19 +415,21 @@ void test_one_level(Context ctx, HighLevelRuntime *runtime) {
   assert(nblk >= nProc);
   assert(ncol >= UMat.cols());
   LMatrix K( nrow, ncol, level, ctx, runtime );
-  K.init_dense_blocks(nProc, nblk, UMat, VMat, DVec, ctx, runtime);
-  
-  //LMatrix b(m, 1, level, ctx, runtime);
-  //b.init_data(nProc, 0, 1, Rhs, ctx, runtime);
+
   /*
+  LMatrix b(m, 1, level, ctx, runtime);
   LMatrix U(m, n, level, ctx, runtime);
-  U.init_data(nProc, UMat, ctx, runtime);
+  b.init_data(Rhs, ctx, runtime);
+  U.init_data(UMat, ctx, runtime);
   
   // linear solve
+  K.init_dense_blocks(UMat, VMat, DVec, ctx, runtime);
   K.solve( U, ctx, runtime );
   U.display("sln", ctx, runtime);
-  //b.display("sln", ctx, runtime);
-*/
+  K.init_dense_blocks(UMat, VMat, DVec, ctx, runtime);
+  K.solve( b, ctx, runtime );
+  b.display("sln", ctx, runtime);
+  */
     
   UTree uTree;
   VTree vTree;
@@ -449,6 +452,7 @@ void test_one_level(Context ctx, HighLevelRuntime *runtime) {
   kTree.solve( uTree.leaf(), ctx, runtime );  
   uTree.leaf().display("leaf solve", ctx, runtime);
 
+      /*      
   for (int i=level; i>0; i--) {
 
     LMatrix& V = vTree.level(i);
@@ -458,14 +462,14 @@ void test_one_level(Context ctx, HighLevelRuntime *runtime) {
     u.display("u", ctx, runtime);
     d.display("d", ctx, runtime);
     
-      
+
     // reduction operation
     int rows = pow(2, i)*V.cols();
     LMatrix VTu(rows, u.cols(), i, ctx, runtime);
     LMatrix VTd(rows, d.cols(), i, ctx, runtime);
 
     LMatrix::gemmRed('t', 'n', 1.0, V, u, 0.0, VTu, ctx, runtime );
-    /*
+
     VTu.display("VTu", ctx, runtime);
     Matrix vtu0 = VMat.row_block(0,4).T()*UMat.row_block(0,4);
     Matrix vtu1 = VMat.row_block(4,8).T()*UMat.row_block(4,8);
@@ -474,17 +478,18 @@ void test_one_level(Context ctx, HighLevelRuntime *runtime) {
     vtu0.display("vtu0");
     vtu1.display("vtu1");
 */	
-    /*
-    LMatrix::gemmRed('t', 'n', 1.0, V, d, 0.0, VTd, ctx, runtime );
+
+    //LMatrix::gemmRed('t', 'n', 1.0, V, d, 0.0, VTd, ctx, runtime );
     
     // form and solve the small linear system
-    VTu.node_solve( VTd, ctx, runtime );
+    //VTu.node_solve( VTd, ctx, runtime );
       
     // broadcast operation
     // d -= u * VTd
-    LMatrix::gemmBro('n', 'n', -1.0, u, VTd, 1.0, d, ctx, runtime );
-*/
-  }
+    //LMatrix::gemmBro('n', 'n', -1.0, u, VTd, 1.0, d, ctx, runtime );
+
+    //  }
+  
   /*
   Matrix x = uTree.solution(ctx, runtime);
 

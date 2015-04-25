@@ -40,10 +40,14 @@ private:
   int nRhs;
   Matrix  UMat;
 
-  // legion matrices
-  LMatrix U; // original data
+  // ----------------------
+  // legion matrices below
+  // ----------------------
+  
+  // one large region for all data
+  LMatrix U; 
 
-  // partitions at different levels
+  // u and d matrices at all levels
   std::vector<LMatrix> uMat_vec;
   std::vector<LMatrix> dMat_vec;
 };
