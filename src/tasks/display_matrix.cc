@@ -5,10 +5,11 @@
 #include <assert.h>
 
 DisplayMatrixTask::TaskArgs::TaskArgs
-(const std::string& name_, int rows_, int cols_) {
+(const std::string& name_, int rows_, int cols_, int begin) {
   strcpy(this->name, name_.c_str());
   this->rows = rows_;
   this->cols = cols_;
+  this->colIdx = begin;
 }
 
 int DisplayMatrixTask::TASKID;
@@ -45,10 +46,9 @@ void DisplayMatrixTask::cpu_task
   const char *name = args.name;
   const int   rows = args.rows;
   const int   cols = args.cols;
- 
-  //double *base = region_pointer(regions[0], 0, rows, 0, cols);    
-  //PtrMatrix pMat(rows, cols, rows, base);
-  PtrMatrix A = get_raw_pointer(regions[0], 0, rows, 0, cols);    
+  const int   colIdx = args.colIdx;
+  
+  PtrMatrix A = get_raw_pointer(regions[0], 0, rows, colIdx, colIdx+cols);
   A.display(name);
 }
 

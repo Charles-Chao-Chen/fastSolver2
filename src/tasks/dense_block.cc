@@ -41,7 +41,6 @@ void DenseBlockTask::cpu_task(const Task *task,
   assert(task->regions.size() == 1);
   assert(task->arglen == sizeof(TaskArgs));
   assert(task->local_arglen == sizeof(ThreeSeeds));
-
   Point<1> p = task->index_point.get_point<1>();
   //printf("point = %d\n", p[0]);
 
@@ -64,10 +63,8 @@ void DenseBlockTask::cpu_task(const Task *task,
   U.rand(uSeed);
   V.rand(vSeed);
   D.rand(dSeed);
-
   V.set_trans('t');
   PtrMatrix::gemm(U, V, D, K);
-
   
   /*
   double *base = region_pointer(regions[0], rlo, rhi, 0, cols);

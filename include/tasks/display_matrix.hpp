@@ -10,10 +10,11 @@ using namespace LegionRuntime::Accessor;
 class DisplayMatrixTask : public TaskLauncher {
 public:
   struct TaskArgs {
-    TaskArgs(const std::string&, int, int);
+    TaskArgs(const std::string&, int, int, int);
     char name[20];
     int  rows;
     int  cols;
+    int  colIdx;
   };
   DisplayMatrixTask(TaskArgument global_arg,
 		    Predicate pred = Predicate::TRUE_PRED,

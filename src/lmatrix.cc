@@ -656,8 +656,10 @@ void LMatrix::gemmBro // static method
 void LMatrix::display
 (const std::string& name,
  Context ctx, HighLevelRuntime *runtime, bool wait) {
-  
-  DisplayMatrixTask::TaskArgs args(name, mRows, mCols);
+
+  Domain dom = runtime->get_index_space_domain(ctx, region.get_index_space());
+  assert(colIdx+mCols<=dom.get_rect<2>().dim_size(1));
+  DisplayMatrixTask::TaskArgs args(name, mRows, mCols, colIdx);
   DisplayMatrixTask launcher(TaskArgument(&args, sizeof(args)));
   RegionRequirement req(region, READ_ONLY, EXCLUSIVE, region);
   req.add_field(FIELDID_V);

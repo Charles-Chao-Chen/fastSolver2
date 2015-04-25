@@ -452,15 +452,15 @@ void test_one_level(Context ctx, HighLevelRuntime *runtime) {
   kTree.solve( uTree.leaf(), ctx, runtime );  
   uTree.leaf().display("leaf solve", ctx, runtime);
 
-      /*      
+
   for (int i=level; i>0; i--) {
 
     LMatrix& V = vTree.level(i);
     LMatrix& u = uTree.uMat_level(i);
     LMatrix& d = uTree.dMat_level(i);
 
-    u.display("u", ctx, runtime);
-    d.display("d", ctx, runtime);
+    //u.display("u", ctx, runtime);
+    //d.display("d", ctx, runtime);
     
 
     // reduction operation
@@ -468,6 +468,7 @@ void test_one_level(Context ctx, HighLevelRuntime *runtime) {
     LMatrix VTu(rows, u.cols(), i, ctx, runtime);
     LMatrix VTd(rows, d.cols(), i, ctx, runtime);
 
+    /*      
     LMatrix::gemmRed('t', 'n', 1.0, V, u, 0.0, VTu, ctx, runtime );
 
     VTu.display("VTu", ctx, runtime);
@@ -488,7 +489,7 @@ void test_one_level(Context ctx, HighLevelRuntime *runtime) {
     // d -= u * VTd
     //LMatrix::gemmBro('n', 'n', -1.0, u, VTd, 1.0, d, ctx, runtime );
 
-    //  }
+  }
   
   /*
   Matrix x = uTree.solution(ctx, runtime);
