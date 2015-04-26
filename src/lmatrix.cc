@@ -13,7 +13,7 @@ LMatrix::LMatrix
 LMatrix::LMatrix
 (int rows, int cols, int part, IndexPartition ip, LogicalRegion lr,
  Context ctx, HighLevelRuntime *runtime)
-  : mRows(rows), mCols(cols),
+  : mRows(rows), mCols(cols), colIdx(0),
     nPart(part), rblock(rows/part),
     ipart(ip), region(lr), pregion(lr) {
   this->lpart  = runtime->get_logical_partition(ctx, region, ipart);
@@ -27,6 +27,8 @@ int LMatrix::rows() const {return mRows;}
 int LMatrix::cols() const {return mCols;}
 
 int LMatrix::rowBlk() const {return rblock;}
+
+int LMatrix::column_begin() const {return colIdx;}
 
 int LMatrix::num_partition() const {return nPart;}
 
@@ -155,7 +157,7 @@ Matrix LMatrix::to_matrix(Context ctx, HighLevelRuntime *runtime) {
   PhysicalRegion region = runtime->map_region(ctx, launcher);
   region.wait_until_valid();
  
-  PtrMatrix pMat = get_raw_pointer(region, 0, mRows, 0, mCols);
+  PtrMatrix pMat = get_raw_pointer(region, 0, mRows, colIdx, colIdx+mCols);
   for (int j=0; j<mCols; j++)
     for (int i=0; i<mRows; i++)
       temp(i, j) = pMat(i, j);
@@ -437,6 +439,57 @@ void LMatrix::solve
   }
 }
 
+void LMatrix::two_level_partition
+(Context ctx, HighLevelRuntime *runtime) {
+  // partition each subregion into two pieces
+  // for V0Tu0 and V1Tu1
+  for (int i=0; i<nPart; i++) {
+    LogicalRegion lr = runtime->get_logical_subregion_by_color(ctx, lpart, i);
+
+    Rect<1> bounds(Point<1>(0),Point<1>(1));
+    Domain  domain = Domain::from_rect<1>(bounds);
+    int size = rblock/2;
+    DomainColoring coloring;
+    for (int j = 0; j < 2; j++) {
+      Point<2> lo = make_point( i*rblock+j*size,   0);
+      Point<2> hi = make_point( i*rblock+(j+1)*size-1, mCols-1);
+      Rect<2> subrect(lo, hi);
+      coloring[j] = Domain::from_rect<2>(subrect);
+    }
+    IndexSpace is = lr.get_index_space();
+    IndexPartition ip = runtime->create_index_partition(ctx, is, domain, coloring, true);
+    LogicalPartition lp = runtime->get_logical_partition(ctx, lr, ip);
+    (void)lp;
+  }
+
+  for (int i=0; i<nPart; i++) {
+    LogicalRegion lr = runtime->get_logical_subregion_by_color(ctx, lpart, i);
+    LogicalPartition lp = runtime->get_logical_partition_by_color(ctx,
+								  lr,
+								  0);
+    LogicalRegion lr0 = runtime->get_logical_subregion_by_color(ctx,
+								lp,
+								0);
+    
+    Domain dom0 = runtime->get_index_space_domain(ctx,
+						  lr0.get_index_space());
+
+    Rect<2> rect0 = dom0.get_rect<2>();
+    LogicalRegion lr1 = runtime->get_logical_subregion_by_color(ctx,
+								lp,
+								1);
+    Domain dom1 = runtime->get_index_space_domain(ctx,
+						  lr1.get_index_space());
+
+    Rect<2> rect1 = dom1.get_rect<2>();    
+
+
+    printf("lo: (%d, %d), hi: (%d, %d), lo: (%d, %d), hi: (%d, %d)\n",
+	   rect0.lo[0], rect0.lo[1], rect0.hi[0], rect0.hi[1],
+	   rect1.lo[0], rect1.lo[1], rect1.hi[0], rect1.hi[1]);
+  }
+}
+
 // solve the following system for every partition
 // --             --  --    --     --      --
 // |  I     V1'*u1 |  | eta0 |     | V1'*d1 |
@@ -582,7 +635,8 @@ void LMatrix::gemmRed // static method
   GemmRedTask::TaskArgs args={colorSize,
 			      alpha, transa, transb,
 			      A.rowBlk(), B.rowBlk(), C.rowBlk(),
-			      A.cols(), B.cols(), C.cols()};
+			      A.cols(), B.cols(), C.cols(),
+			      A.column_begin(), B.column_begin(), C.column_begin()};
   TaskArgument tArgs(&args, sizeof(args));
   Domain domain = A.color_domain();
   GemmRedTask launcher(domain, tArgs, ArgumentMap());

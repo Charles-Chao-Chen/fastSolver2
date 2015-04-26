@@ -436,7 +436,7 @@ void test_one_level(Context ctx, HighLevelRuntime *runtime) {
   KTree kTree;
   
   // init trees
-  uTree.init( nProc, UMat);
+  uTree.init( nProc, UMat );
   vTree.init( nProc, VMat );
   kTree.init( nProc, UMat, VMat, DVec );
 
@@ -462,23 +462,25 @@ void test_one_level(Context ctx, HighLevelRuntime *runtime) {
     //u.display("u", ctx, runtime);
     //d.display("d", ctx, runtime);
     
-
     // reduction operation
     int rows = pow(2, i)*V.cols();
-    LMatrix VTu(rows, u.cols(), i, ctx, runtime);
-    LMatrix VTd(rows, d.cols(), i, ctx, runtime);
+    LMatrix VTu(rows, u.cols(), i-1, ctx, runtime);
+    LMatrix VTd(rows, d.cols(), i-1, ctx, runtime);
+    VTu.two_level_partition(ctx, runtime);
+    VTu.two_level_partition(ctx, runtime);
 
-    /*      
-    LMatrix::gemmRed('t', 'n', 1.0, V, u, 0.0, VTu, ctx, runtime );
-
+    /*    LMatrix::gemmRed('t', 'n', 1.0, V, u, 0.0, VTu, ctx, runtime );
     VTu.display("VTu", ctx, runtime);
-    Matrix vtu0 = VMat.row_block(0,4).T()*UMat.row_block(0,4);
-    Matrix vtu1 = VMat.row_block(4,8).T()*UMat.row_block(4,8);
-    VMat.display("VMat");
-    UMat.display("UMat");
+    
+    Matrix uMat = uTree.leaf().to_matrix(ctx, runtime);
+    uMat.display("uMat");
+    Matrix vtu0 = VMat.row_block(0,4).T()*uMat.row_block(0,4);
+    Matrix vtu1 = VMat.row_block(4,8).T()*uMat.row_block(4,8);
+    //VMat.display("VMat");
+    //UMat.display("UMat");
     vtu0.display("vtu0");
     vtu1.display("vtu1");
-*/	
+    */
 
     //LMatrix::gemmRed('t', 'n', 1.0, V, d, 0.0, VTd, ctx, runtime );
     

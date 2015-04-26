@@ -23,6 +23,7 @@ public:
   int rows() const;
   int cols() const;
   int rowBlk() const;
+  int column_begin() const;
   int num_partition() const;
   Domain color_domain() const;
   IndexSpace index_space() const;
@@ -89,6 +90,9 @@ public:
   LMatrix partition
   (int level, int col0, int col1,
    Context ctx, HighLevelRuntime *runtime);
+
+  // for node solve
+  void two_level_partition(Context, HighLevelRuntime*);
   
   // output the right hand side
   // for UTree::rhs()
@@ -180,7 +184,7 @@ private:
   IndexPartition   ipart;
   LogicalPartition lpart;
   Domain           colDom;
-
+  
   // region
   IndexSpace       ispace;
   FieldSpace       fspace;

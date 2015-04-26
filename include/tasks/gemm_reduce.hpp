@@ -14,6 +14,7 @@ public:
     char transa, transb;
     int Arblk, Brblk, Crblk;
     int Acols, Bcols, Ccols;
+    int AcolIdx, BcolIdx, CcolIdx;
   };
   
   GemmRedTask(Domain domain,
