@@ -10,6 +10,7 @@ public:
   //  in the projector
   struct TaskArgs {
     int colorSize;
+    int plevel;
     double alpha;
     char transa, transb;
     int Arblk, Brblk, Crblk;

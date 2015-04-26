@@ -8,8 +8,9 @@ LMatrix::LMatrix
  Context ctx, HighLevelRuntime *runtime) {
   create(rows, cols, ctx, runtime);
   partition(level, ctx, runtime);
+  this->plevel = 1;
 }
-
+/*
 LMatrix::LMatrix
 (int rows, int cols, int part, IndexPartition ip, LogicalRegion lr,
  Context ctx, HighLevelRuntime *runtime)
@@ -19,7 +20,7 @@ LMatrix::LMatrix
   this->lpart  = runtime->get_logical_partition(ctx, region, ipart);
   this->colDom = runtime->get_index_partition_color_space(ctx,ipart);
 }
-
+*/
 LMatrix::~LMatrix() {}
 
 int LMatrix::rows() const {return mRows;}
@@ -31,6 +32,8 @@ int LMatrix::rowBlk() const {return rblock;}
 int LMatrix::column_begin() const {return colIdx;}
 
 int LMatrix::num_partition() const {return nPart;}
+
+int LMatrix::partition_level() const {return plevel;}
 
 Domain LMatrix::color_domain() const {
   //return runtime->get_index_partition_color_space(ctx,ipart);
@@ -388,7 +391,7 @@ void LMatrix::partition
   this->lpart  = runtime->get_logical_partition(ctx, region, ipart);
   this->colDom = runtime->get_index_partition_color_space(ctx, ipart);
 }
-
+/*
 LMatrix LMatrix::partition
 (int level, int col0, int col1, Context ctx, HighLevelRuntime *runtime) {
   // if level=1, the number of partition is 2 for V0 and V1
@@ -398,7 +401,7 @@ LMatrix LMatrix::partition
   int cols = col1-col0;
   return LMatrix(mRows, cols, num_subregions, ip, region, ctx, runtime); // interface to be modified
 }
-
+*/
 // solve A x = b for each partition
 //  b will be overwritten by x
 void LMatrix::solve
@@ -441,6 +444,9 @@ void LMatrix::solve
 
 void LMatrix::two_level_partition
 (Context ctx, HighLevelRuntime *runtime) {
+  // to be used in the projector
+  this->plevel = 2;
+  
   // partition each subregion into two pieces
   // for V0Tu0 and V1Tu1
   for (int i=0; i<nPart; i++) {
@@ -462,6 +468,7 @@ void LMatrix::two_level_partition
     (void)lp;
   }
 
+  /*
   for (int i=0; i<nPart; i++) {
     LogicalRegion lr = runtime->get_logical_subregion_by_color(ctx, lpart, i);
     LogicalPartition lp = runtime->get_logical_partition_by_color(ctx,
@@ -470,7 +477,6 @@ void LMatrix::two_level_partition
     LogicalRegion lr0 = runtime->get_logical_subregion_by_color(ctx,
 								lp,
 								0);
-    
     Domain dom0 = runtime->get_index_space_domain(ctx,
 						  lr0.get_index_space());
 
@@ -488,6 +494,7 @@ void LMatrix::two_level_partition
 	   rect0.lo[0], rect0.lo[1], rect0.hi[0], rect0.hi[1],
 	   rect1.lo[0], rect1.lo[1], rect1.hi[0], rect1.hi[1]);
   }
+*/
 }
 
 // solve the following system for every partition
@@ -632,7 +639,7 @@ void LMatrix::gemmRed // static method
   LogicalRegion CReg = C.logical_region();
 
   int colorSize = A.num_partition() / C.num_partition();
-  GemmRedTask::TaskArgs args={colorSize,
+  GemmRedTask::TaskArgs args={colorSize, C.partition_level(),
 			      alpha, transa, transb,
 			      A.rowBlk(), B.rowBlk(), C.rowBlk(),
 			      A.cols(), B.cols(), C.cols(),
@@ -681,7 +688,7 @@ void LMatrix::gemmBro // static method
   LogicalRegion CReg = C.logical_region();
 
   int colorSize = A.nPart / B.nPart;
-  GemmBroTask::TaskArgs args = {colorSize,
+  GemmBroTask::TaskArgs args = {colorSize, B.partition_level(),
 				alpha, transa, transb,
 				A.rowBlk(), B.rowBlk(), C.rowBlk(),
 				A.cols(), B.cols(), C.cols()};

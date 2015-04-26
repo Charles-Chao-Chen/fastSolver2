@@ -9,7 +9,10 @@ public:
   // the first member must be colorSize, which is referenced
   //  in the projector
   struct TaskArgs {
+    // used in the projector
     int colorSize;
+    int plevel;
+    // gemm arguments
     double alpha;
     char transa, transb;
     int Arblk, Brblk, Crblk;

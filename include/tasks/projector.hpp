@@ -24,16 +24,17 @@ public:
                                 LogicalPartition upper_bound,
                                 const DomainPoint &point);
 };
+
 /*
-extern const ProjectionID EXPAND;
+extern const ProjectionID CONTRACT2;
 
-void register_expand(Machine machine, HighLevelRuntime *runtime,
-		     const std::set<Processor> &local_procs);
+void register_contract2(Machine machine, HighLevelRuntime *runtime,
+			const std::set<Processor> &local_procs);
 
-class Expand : public ProjectionFunctor {
+class Contract2 : public ProjectionFunctor {
 public:
   
-  Expand(HighLevelRuntime *runtime);
+  Contract2(HighLevelRuntime *runtime);
 
   virtual LogicalRegion project(Context ctx, Task *task,
                                 unsigned index,
@@ -46,4 +47,5 @@ public:
                                 const DomainPoint &point);
 };
 */
+
 #endif

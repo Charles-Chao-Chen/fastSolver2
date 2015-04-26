@@ -25,12 +25,21 @@ LogicalRegion Contraction::project(Context ctx, Task *task,
 				   const DomainPoint &point) {
 
   // pass in the size of the launch domain
-  int clrSize = *((int*)task->args);
+  int *args = (int*)task->args;
+  int clrSize = *args;
+  int plevel  = *(++args);
+  printf("colorSize: %d, partition level: %d\n", clrSize, plevel);
   int color = point.point_data[0] / clrSize;
-  //  printf("point: %d\tcolor: %d\n",
-  //	 point.point_data[0], color);
-  
-  return runtime->get_logical_subregion_by_color(ctx, partition, color);
+  if (plevel == 1) {
+    return runtime->get_logical_subregion_by_color(ctx, partition, color);
+  }
+  if (plevel == 2) {
+    int clr1 = color / 2;
+    LogicalRegion lr1 = runtime->get_logical_subregion_by_color(ctx, partition, clr1);
+    LogicalPartition lp = runtime->get_logical_partition_by_color(ctx, lr1, 0);
+    return runtime->get_logical_subregion_by_color(ctx, lp, color);
+  }
+  assert(false);
 }
 /*
 const ProjectionID EXPAND = 1989;

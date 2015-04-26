@@ -15,9 +15,11 @@ class LMatrix {
 public:
   LMatrix();
   LMatrix(int, int, int, Context, HighLevelRuntime*);
+  /*
   LMatrix
   (int, int, int, IndexPartition ip, LogicalRegion lr,
    Context, HighLevelRuntime*); // to be removed
+  */
   ~LMatrix();
   
   int rows() const;
@@ -25,6 +27,7 @@ public:
   int rowBlk() const;
   int column_begin() const;
   int num_partition() const;
+  int partition_level() const;
   Domain color_domain() const;
   IndexSpace index_space() const;
   LogicalRegion logical_region() const;
@@ -85,12 +88,14 @@ public:
   // Note: the first argument is level, NOT nPart
   void partition(int level, Context, HighLevelRuntime*);
 
+  /*
   // return a new matrix with created partition,
   //  so no need to destroy region twice
   LMatrix partition
   (int level, int col0, int col1,
    Context ctx, HighLevelRuntime *runtime);
-
+  */
+  
   // for node solve
   void two_level_partition(Context, HighLevelRuntime*);
   
@@ -181,6 +186,7 @@ private:
   // partition
   int              nPart;
   int              rblock;
+  int              plevel; // partition level
   IndexPartition   ipart;
   LogicalPartition lpart;
   Domain           colDom;

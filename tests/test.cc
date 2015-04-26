@@ -28,11 +28,11 @@ void top_level_task(const Task *task,
   test_vector();
   test_matrix();
   //test_lmatrix_init(ctx, runtime);
-  //test_leaf_solve(ctx, runtime);  
-  //test_gemm_reduce(ctx, runtime);
-  //test_gemm_broadcast(ctx, runtime);
+  test_leaf_solve(ctx, runtime);  
+  test_gemm_reduce(ctx, runtime);
+  test_gemm_broadcast(ctx, runtime);
   //test_node_solve(ctx, runtime);
-  test_one_level(ctx, runtime);
+  //test_one_level(ctx, runtime);
 
     
   /*
@@ -77,29 +77,10 @@ void top_level_task(const Task *task,
 int main(int argc, char *argv[]) {
   // register top level task
   HighLevelRuntime::set_top_level_task_id(TOP_LEVEL_TASK_ID);
-
-  HighLevelRuntime::register_legion_task<top_level_task>(TOP_LEVEL_TASK_ID,
-							 Processor::LOC_PROC, true/*single*/, false/*index*/);
-
-
+  HighLevelRuntime::register_legion_task<top_level_task>
+    (TOP_LEVEL_TASK_ID, Processor::LOC_PROC, true/*single*/, false/*index*/);
   register_solver_tasks();
   
-    
-  /*
-  HighLevelRuntime::register_single_task<top_level_task>(TOP_LEVEL_TASK_ID, Processor::LOC_PROC, false, "top_level_task");
-
-
-  HighLevelRuntime::register_legion_task<top_level_task>(
-    TOP_LEVEL_TASK_ID,
-    Processor::LOC_PROC,
-    true,
-    false,
-    AUTO_GENERATE_ID,
-    TaskConfigOptions(false),
-    "master-task
-  );
-*/
-    
   // start legion master task
   return HighLevelRuntime::start(argc, argv);
 }
