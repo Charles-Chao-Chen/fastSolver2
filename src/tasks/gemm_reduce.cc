@@ -71,6 +71,8 @@ void GemmRedTask::cpu_task(const Task *task,
   BMat.set_trans(args.transb);
   double alpha = args.alpha;
 
+  printf("leading D: %d\n", CMat.LD());
+  
   PtrMatrix::gemm(alpha, AMat, BMat, CMat);
   /*
   std::cout << "gemm:" << std::endl;

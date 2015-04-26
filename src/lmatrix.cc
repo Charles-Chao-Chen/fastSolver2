@@ -444,8 +444,6 @@ void LMatrix::solve
 
 void LMatrix::two_level_partition
 (Context ctx, HighLevelRuntime *runtime) {
-  // to be used in the projector
-  this->plevel = 2;
   
   // partition each subregion into two pieces
   // for V0Tu0 and V1Tu1
@@ -468,6 +466,11 @@ void LMatrix::two_level_partition
     (void)lp;
   }
 
+  // update partition parameters
+  this->plevel  = 2;
+  this->rblock /= 2;
+  this->nPart  *= 2;
+  
   /*
   for (int i=0; i<nPart; i++) {
     LogicalRegion lr = runtime->get_logical_subregion_by_color(ctx, lpart, i);

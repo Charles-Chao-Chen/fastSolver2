@@ -19,6 +19,7 @@ void test_leaf_solve(Context, HighLevelRuntime*);
 void test_gemm_reduce(Context, HighLevelRuntime*);
 void test_gemm_broadcast(Context, HighLevelRuntime*);
 void test_node_solve(Context, HighLevelRuntime*);
+void test_two_level_reduce(Context, HighLevelRuntime*);
 void test_one_level(Context, HighLevelRuntime*);
 
 void top_level_task(const Task *task,
@@ -28,10 +29,11 @@ void top_level_task(const Task *task,
   test_vector();
   test_matrix();
   //test_lmatrix_init(ctx, runtime);
-  test_leaf_solve(ctx, runtime);  
-  test_gemm_reduce(ctx, runtime);
-  test_gemm_broadcast(ctx, runtime);
+  //test_leaf_solve(ctx, runtime);  
+  //test_gemm_reduce(ctx, runtime);
+  //test_gemm_broadcast(ctx, runtime);
   //test_node_solve(ctx, runtime);
+  test_two_level_reduce(ctx, runtime);
   //test_one_level(ctx, runtime);
 
     
@@ -375,6 +377,37 @@ void test_node_solve(Context ctx, HighLevelRuntime *runtime) {
   r1.display("node solve residual");
   if (r0.norm()<1.0e-13&&r1.norm()<1.0e-13)
     std::cout << "Test for node solve passed!" << std::endl;
+}
+
+void test_two_level_reduce(Context ctx, HighLevelRuntime *runtime) {
+  int m=16, n=3;
+  int nProc = 4;
+  int level = 2;
+  assert(nProc == pow(2,level));
+  Matrix UMat(m, n), VMat(m, n);
+  UMat.rand(nProc);
+  VMat.rand(nProc);
+
+  Matrix WMat0 = VMat.block(0,m/2,0,n).T() * UMat.block(0,m/2,0,n);
+  Matrix WMat1 = VMat.block(m/2,m,0,n).T() * UMat.block(m/2,m,0,n);
+
+  LMatrix U(m, n, level, ctx, runtime);
+  LMatrix V(m, n, level, ctx, runtime);
+  U.init_data(UMat, ctx, runtime);
+  V.init_data(VMat, ctx, runtime);
+
+  // V^T * U
+  LMatrix W(2*n, n, 0, ctx, runtime);
+  W.two_level_partition(ctx, runtime);
+  LMatrix::gemmRed('t', 'n', 1.0, V, U, 0.0, W, ctx, runtime);
+  W.display("W", ctx, runtime);
+  Matrix check0 = W.to_matrix(0,n,0,n,ctx,runtime) - WMat0;
+  Matrix check1 = W.to_matrix(n,2*n,0,n,ctx,runtime) - WMat1;
+  check0.display("gemm residual");
+  check1.display("gemm residual");
+  if (check0.norm()<1.0e-13 && check1.norm()<1.0e-13) {
+    std::cout << "Test for gemm reduce passed!" << std::endl;
+  }
 }
 
 void test_one_level(Context ctx, HighLevelRuntime *runtime) {
