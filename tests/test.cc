@@ -20,6 +20,7 @@ void test_gemm_reduce(Context, HighLevelRuntime*);
 void test_gemm_broadcast(Context, HighLevelRuntime*);
 void test_node_solve(Context, HighLevelRuntime*);
 void test_two_level_reduce(Context, HighLevelRuntime*);
+void test_two_level_broadcast(Context, HighLevelRuntime*);
 void test_one_level(Context, HighLevelRuntime*);
 
 void top_level_task(const Task *task,
@@ -33,7 +34,8 @@ void top_level_task(const Task *task,
   //test_gemm_reduce(ctx, runtime);
   //test_gemm_broadcast(ctx, runtime);
   //test_node_solve(ctx, runtime);
-  test_two_level_reduce(ctx, runtime);
+  //test_two_level_reduce(ctx, runtime);
+  //test_two_level_broadcast(ctx, runtime);
   //test_one_level(ctx, runtime);
 
     
@@ -407,6 +409,35 @@ void test_two_level_reduce(Context ctx, HighLevelRuntime *runtime) {
   check1.display("gemm residual");
   if (check0.norm()<1.0e-13 && check1.norm()<1.0e-13) {
     std::cout << "Test for gemm reduce passed!" << std::endl;
+  }
+}
+
+void test_two_level_broadcast(Context ctx, HighLevelRuntime *runtime) {
+  int m=16, n=3;
+  int nProc = 8;
+  Matrix UMat(m, n), VMat(2*n, n);
+  UMat.rand(nProc);
+  VMat.rand(1);
+  
+  Matrix WMat0 = UMat.block(0,8,0,n) * VMat.block(0,n,0,n);
+  Matrix WMat1 = UMat.block(8,16,0,n) * VMat.block(n,2*n,0,n);
+  
+  int level = 3;
+  assert(nProc==pow(2,level));
+  LMatrix U(m, n, level, ctx, runtime);
+  U.init_data(UMat, ctx, runtime);
+  LMatrix V(2*n, n, 0, ctx, runtime);
+  V.init_data(VMat, ctx, runtime);
+  V.two_level_partition(ctx, runtime);
+  LMatrix W(m, n, level, ctx, runtime);
+  LMatrix::gemmBro('n', 'n', 1.0, U, V, 0.0, W, ctx, runtime);
+  W.display("W", ctx, runtime);
+  Matrix r0 = W.to_matrix(0,m/2,0,n,ctx,runtime) - WMat0;
+  Matrix r1 = W.to_matrix(m/2,m,0,n,ctx,runtime) - WMat1;
+  r0.display("gemm residual");
+  r1.display("gemm residual");
+  if (r0.norm()<1.0e-13 && r1.norm()<1.0e-13) {
+    std::cout << "Test for gemm broadcast passed!" << std::endl;
   }
 }
 

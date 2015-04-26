@@ -105,17 +105,14 @@ void LMatrix::scale
 (double alpha, Context ctx, HighLevelRuntime *runtime, bool wait) {
 
   // if alpha = 1.0, do nothing
-  if ( fabs(alpha -1.0) < 1e-10) return;
-  
-  // assuming partition is done
-  assert(nPart > 0);
-  ScaleMatrixTask::TaskArgs args = {rblock, mCols, alpha};
+  if ( fabs(alpha - 1.0) < 1e-10) return;
+  ScaleMatrixTask::TaskArgs args = {this->rblock * plevel, mCols, alpha};
   ScaleMatrixTask launcher(colDom, TaskArgument(&args, sizeof(args)), ArgumentMap());
-  RegionRequirement req(lpart, 0, WRITE_DISCARD, EXCLUSIVE, region);
+  RegionRequirement req(lpart, 0, READ_WRITE, EXCLUSIVE, region);
   req.add_field(FIELDID_V);
   launcher.add_region_requirement(req);
   FutureMap fm = runtime->execute_index_space(ctx, launcher);
-    
+  
   if(wait) {
     std::cout << "Wait for scaling matrix..." << std::endl;
     fm.wait_all_results();
@@ -465,39 +462,11 @@ void LMatrix::two_level_partition
     LogicalPartition lp = runtime->get_logical_partition(ctx, lr, ip);
     (void)lp;
   }
-
+  
   // update partition parameters
   this->plevel  = 2;
   this->rblock /= 2;
   this->nPart  *= 2;
-  
-  /*
-  for (int i=0; i<nPart; i++) {
-    LogicalRegion lr = runtime->get_logical_subregion_by_color(ctx, lpart, i);
-    LogicalPartition lp = runtime->get_logical_partition_by_color(ctx,
-								  lr,
-								  0);
-    LogicalRegion lr0 = runtime->get_logical_subregion_by_color(ctx,
-								lp,
-								0);
-    Domain dom0 = runtime->get_index_space_domain(ctx,
-						  lr0.get_index_space());
-
-    Rect<2> rect0 = dom0.get_rect<2>();
-    LogicalRegion lr1 = runtime->get_logical_subregion_by_color(ctx,
-								lp,
-								1);
-    Domain dom1 = runtime->get_index_space_domain(ctx,
-						  lr1.get_index_space());
-
-    Rect<2> rect1 = dom1.get_rect<2>();    
-
-
-    printf("lo: (%d, %d), hi: (%d, %d), lo: (%d, %d), hi: (%d, %d)\n",
-	   rect0.lo[0], rect0.lo[1], rect0.hi[0], rect0.hi[1],
-	   rect1.lo[0], rect1.lo[1], rect1.hi[0], rect1.hi[1]);
-  }
-*/
 }
 
 // solve the following system for every partition
