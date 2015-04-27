@@ -645,14 +645,17 @@ void LMatrix::gemmRed // static method
   }  
 }
 
-// compute A * B; broadcast B
+// compute A * B = C; broadcast B
+// this is hard coded in that A and C are the same region
+// so is GemmBroTask.
 void LMatrix::gemmBro // static method
 (char transa, char transb, double alpha,
  const LMatrix& A, const LMatrix& B,
  double beta, LMatrix& C,
  Context ctx, HighLevelRuntime *runtime, bool wait) {
 
-  C.scale(beta, ctx, runtime);
+  assert( fabs(beta - 1.0) < 1e-10);
+  //C.scale(beta, ctx, runtime);
   
   // A and C have the same number of partition
   assert( A.num_partition() == C.num_partition() );
@@ -665,25 +668,29 @@ void LMatrix::gemmBro // static method
   LogicalRegion AReg = A.logical_region();
   LogicalRegion BReg = B.logical_region();
   LogicalRegion CReg = C.logical_region();
-
+  assert(AReg==CReg);
+  
   int colorSize = A.nPart / B.nPart;
   GemmBroTask::TaskArgs args = {colorSize, B.partition_level(),
 				alpha, transa, transb,
 				A.rowBlk(), B.rowBlk(), C.rowBlk(),
-				A.cols(), B.cols(), C.cols()};
+				A.cols(), B.cols(), C.cols(),
+				A.column_begin()};
   TaskArgument tArgs(&args, sizeof(args));
   Domain domain = A.color_domain();
   GemmBroTask launcher(domain, tArgs, ArgumentMap());
   
-  RegionRequirement AReq(AP, 0,           READ_ONLY,  EXCLUSIVE, AReg);
+  //RegionRequirement AReq(AP, 0,           READ_ONLY,  EXCLUSIVE, AReg);
+  RegionRequirement AReq(AP, 0,           READ_WRITE,  EXCLUSIVE, AReg);
   RegionRequirement BReq(BP, CONTRACTION, READ_ONLY,  EXCLUSIVE, BReg);
+  //RegionRequirement BReq(BP, CONTRACTION, READ_WRITE,  EXCLUSIVE, BReg);
   RegionRequirement CReq(CP, 0,           READ_WRITE, EXCLUSIVE, CReg);
   AReq.add_field(FIELDID_V);
   BReq.add_field(FIELDID_V);
   CReq.add_field(FIELDID_V);
   launcher.add_region_requirement(AReq);
   launcher.add_region_requirement(BReq);
-  launcher.add_region_requirement(CReq);
+  //launcher.add_region_requirement(CReq);
   
   FutureMap fm = runtime->execute_index_space(ctx, launcher);
 

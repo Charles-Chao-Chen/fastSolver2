@@ -589,16 +589,13 @@ void test_one_level_solver(Context ctx, HighLevelRuntime *runtime) {
       
     // broadcast operation
     // d -= u * VTd
-    //LMatrix::gemmBro('n', 'n', -1.0, u, VTd, 1.0, d, ctx, runtime );
-
+    LMatrix::gemmBro('n', 'n', -1.0, u, VTd, 1.0, d, ctx, runtime );
   }
   
-  /*
   Matrix x = uTree.solution(ctx, runtime);
 
   // compute residule
   Matrix err = Rhs - ( UMat * (VMat.T() * x) + DVec.multiply(x) );
   err.display("err");
   std::cout << "Residual: " << err.norm() << std::endl;
-*/
 }
