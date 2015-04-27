@@ -50,5 +50,5 @@ void ScaleMatrixTask::cpu_task(const Task *task,
   int rhi = (p[0] + 1) * rblk;
   PtrMatrix A = get_raw_pointer(regions[0], rlo, rhi, 0, cols);
   A.scale(alpha);
-  A.display("After scaling");
+  //A.display("After scaling");
 }

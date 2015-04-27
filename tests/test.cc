@@ -36,7 +36,7 @@ void top_level_task(const Task *task,
   //test_node_solve(ctx, runtime);
   //test_two_level_reduce(ctx, runtime);
   //test_two_level_broadcast(ctx, runtime);
-  //test_one_level(ctx, runtime);
+  test_one_level(ctx, runtime);
 
     
   /*
@@ -495,14 +495,14 @@ void test_one_level(Context ctx, HighLevelRuntime *runtime) {
   
   // leaf solve: U = dense \ U
   kTree.solve( uTree.leaf(), ctx, runtime );  
-  uTree.leaf().display("leaf solve", ctx, runtime);
+  //uTree.leaf().display("leaf solve", ctx, runtime);
 
 
   for (int i=level; i>0; i--) {
 
     LMatrix& V = vTree.level(i);
     LMatrix& u = uTree.uMat_level(i);
-    LMatrix& d = uTree.dMat_level(i);
+    
 
     //u.display("u", ctx, runtime);
     //d.display("d", ctx, runtime);
@@ -510,22 +510,27 @@ void test_one_level(Context ctx, HighLevelRuntime *runtime) {
     // reduction operation
     int rows = pow(2, i)*V.cols();
     LMatrix VTu(rows, u.cols(), i-1, ctx, runtime);
-    LMatrix VTd(rows, d.cols(), i-1, ctx, runtime);
-    VTu.two_level_partition(ctx, runtime);
     VTu.two_level_partition(ctx, runtime);
 
-    /*    LMatrix::gemmRed('t', 'n', 1.0, V, u, 0.0, VTu, ctx, runtime );
-    VTu.display("VTu", ctx, runtime);
+
+    LMatrix::gemmRed('t', 'n', 1.0, V, u, 0.0, VTu, ctx, runtime );
     
+      VTu.display("VTu", ctx, runtime);
+      /*
     Matrix uMat = uTree.leaf().to_matrix(ctx, runtime);
-    uMat.display("uMat");
+    //uMat.display("uMat");
     Matrix vtu0 = VMat.row_block(0,4).T()*uMat.row_block(0,4);
     Matrix vtu1 = VMat.row_block(4,8).T()*uMat.row_block(4,8);
     //VMat.display("VMat");
     //UMat.display("UMat");
     vtu0.display("vtu0");
     vtu1.display("vtu1");
-    */
+*/
+
+
+    //LMatrix& d = uTree.dMat_level(i);
+    //LMatrix VTd(rows, d.cols(), i-1, ctx, runtime);
+    //VTd.two_level_partition(ctx, runtime);
 
     //LMatrix::gemmRed('t', 'n', 1.0, V, d, 0.0, VTd, ctx, runtime );
     
