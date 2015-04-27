@@ -501,9 +501,9 @@ void test_two_level_node_solve(Context ctx, HighLevelRuntime *runtime) {
 
 void test_one_level_solver(Context ctx, HighLevelRuntime *runtime) {
 
-  int m = 8, n = 2;
-  int nProc = 2;
-  int level = 1;
+  int m = 16, n = 2;
+  int nProc = 4;
+  int level = 2;
   assert(nProc==pow(2,level));
   Matrix VMat(m, n), UMat(m, n), Rhs(m, 1);
   VMat.rand(nProc);
@@ -591,11 +591,13 @@ void test_one_level_solver(Context ctx, HighLevelRuntime *runtime) {
     // d -= u * VTd
     LMatrix::gemmBro('n', 'n', -1.0, u, VTd, 1.0, d, ctx, runtime );
   }
-  
+
+
   Matrix x = uTree.solution(ctx, runtime);
 
   // compute residule
   Matrix err = Rhs - ( UMat * (VMat.T() * x) + DVec.multiply(x) );
   err.display("err");
   std::cout << "Residual: " << err.norm() << std::endl;
+
 }
