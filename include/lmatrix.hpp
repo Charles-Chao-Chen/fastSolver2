@@ -183,10 +183,12 @@ private:
   // used to init data
   int              nProc; // to be removed
 
-  // partition
+  // second level partition, if it exists
   int              nPart;
   int              rblock;
-  int              plevel; // partition level
+  int              plevel;
+
+  // first level partition
   IndexPartition   ipart;
   LogicalPartition lpart;
   Domain           colDom;

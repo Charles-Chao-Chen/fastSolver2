@@ -52,7 +52,7 @@ void NodeSolveTask::cpu_task(const Task *task,
   int rblk  = args.rblock;
   int Acols = args.Acols;
   int Bcols = args.Bcols;
-  int rlo = p[0]*rblk;
+  int rlo = p[0] * rblk;
   int rhi = (p[0] + 1) * rblk;
   //printf("(rblock=%d, Acols=%d, Bcols=%d)\n", rblk, Acols, Bcols);
   

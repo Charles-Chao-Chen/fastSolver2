@@ -481,23 +481,31 @@ void LMatrix::two_level_partition
 void LMatrix::node_solve
 (LMatrix& b, Context ctx, HighLevelRuntime* runtime, bool wait) {
 
-  // pair up neighbor cells
-  //this->coarse_partition(ctx, runtime);
-  //b.coarse_partition(ctx, runtime);
+  //--------------------------------------------------------------
+  // node solve is always launched at the first level of partition
+  //--------------------------------------------------------------
+  
   //solve<NodeSolveTask>(b, ctx, runtime, wait);
 
   // A and b have the same number of partition
+  // this should refer to the second level
   assert( this->num_partition() == b.num_partition() );
 
+  // rowBlk is the size of the Shur complement,
+  // so rowBlk = 2*rowBlk() when plevel=2,
+  // or rowBlk = rowBlk() when plevel=1.
+  int rowBlk = this->rowBlk()*plevel;
+  assert( rowBlk/2 == mCols );
+  
+  // first level stuff
   LogicalPartition APart = this->logical_partition();
   LogicalPartition bPart = b.logical_partition();
 
   LogicalRegion ARegion = this->logical_region();
   LogicalRegion bRegion = b.logical_region();
 
-  assert(this->rowBlk()==2*mCols);
   Domain domain = this->color_domain();
-  NodeSolveTask::TaskArgs args = {this->rowBlk(), mCols, b.cols()};
+  NodeSolveTask::TaskArgs args = {rowBlk, mCols, b.cols()};
   NodeSolveTask launcher(domain, TaskArgument(&args, sizeof(args)), ArgumentMap());
   RegionRequirement AReq(APart, 0, READ_ONLY,  EXCLUSIVE, ARegion);
   RegionRequirement bReq(bPart, 0, READ_WRITE, EXCLUSIVE, bRegion);
@@ -512,9 +520,6 @@ void LMatrix::node_solve
     std::cout << "Wait for solve..." << std::endl;
     fm.wait_all_results();
   }
-  
-  // recover the original partition
-  //b.fine_partition(ctx, runtime);
 }
 
 template <typename SolveTask>
