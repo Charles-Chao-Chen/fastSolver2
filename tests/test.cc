@@ -22,7 +22,7 @@ void test_node_solve(Context, HighLevelRuntime*);
 void test_two_level_reduce(Context, HighLevelRuntime*);
 void test_two_level_broadcast(Context, HighLevelRuntime*);
 void test_two_level_node_solve(Context, HighLevelRuntime*);
-void test_one_level(Context, HighLevelRuntime*);
+void test_one_level_solver(Context, HighLevelRuntime*);
 
 void top_level_task(const Task *task,
 		    const std::vector<PhysicalRegion> &regions,
@@ -37,8 +37,8 @@ void top_level_task(const Task *task,
   //test_node_solve(ctx, runtime);
   //test_two_level_reduce(ctx, runtime);
   //test_two_level_broadcast(ctx, runtime);
-  test_two_level_node_solve(ctx, runtime);
-  //test_one_level(ctx, runtime);
+  //test_two_level_node_solve(ctx, runtime);
+  test_one_level_solver(ctx, runtime);
 
     
   /*
@@ -499,7 +499,7 @@ void test_two_level_node_solve(Context ctx, HighLevelRuntime *runtime) {
     std::cout << "Test for node solve passed!" << std::endl;
 }
 
-void test_one_level(Context ctx, HighLevelRuntime *runtime) {
+void test_one_level_solver(Context ctx, HighLevelRuntime *runtime) {
 
   int m = 8, n = 2;
   int nProc = 2;
@@ -572,8 +572,8 @@ void test_one_level(Context ctx, HighLevelRuntime *runtime) {
 
     LMatrix::gemmRed('t', 'n', 1.0, V, u, 0.0, VTu, ctx, runtime );
     LMatrix::gemmRed('t', 'n', 1.0, V, d, 0.0, VTd, ctx, runtime );
-    VTu.display("VTu", ctx, runtime);
-    VTd.display("VTd", ctx, runtime);
+    //VTu.display("VTu", ctx, runtime);
+    //VTd.display("VTd", ctx, runtime);
 	
     /*
     Matrix uMat = uTree.leaf().to_matrix(ctx, runtime);
