@@ -28,8 +28,8 @@ void top_level_task(const Task *task,
 		    const std::vector<PhysicalRegion> &regions,
 		    Context ctx, HighLevelRuntime *runtime) {  
 
-  test_vector();
-  test_matrix();
+  //test_vector();
+  //test_matrix();
   //test_lmatrix_init(ctx, runtime);
   //test_leaf_solve(ctx, runtime);  
   //test_gemm_reduce(ctx, runtime);
@@ -501,9 +501,9 @@ void test_two_level_node_solve(Context ctx, HighLevelRuntime *runtime) {
 
 void test_one_level_solver(Context ctx, HighLevelRuntime *runtime) {
 
-  int m = 16, n = 2;
-  int nProc = 4;
-  int level = 2;
+  int level = 1;
+  int m = 8*pow(2,level), n = 2;
+  int nProc = pow(2,level);
   assert(nProc==pow(2,level));
   Matrix VMat(m, n), UMat(m, n), Rhs(m, 1);
   VMat.rand(nProc);
@@ -592,12 +592,12 @@ void test_one_level_solver(Context ctx, HighLevelRuntime *runtime) {
     LMatrix::gemmBro('n', 'n', -1.0, u, VTd, 1.0, d, ctx, runtime );
   }
 
-
+  /*
   Matrix x = uTree.solution(ctx, runtime);
 
   // compute residule
   Matrix err = Rhs - ( UMat * (VMat.T() * x) + DVec.multiply(x) );
-  err.display("err");
+  //err.display("err");
   std::cout << "Residual: " << err.norm() << std::endl;
-
+*/
 }

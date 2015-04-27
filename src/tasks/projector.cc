@@ -28,7 +28,8 @@ LogicalRegion Contraction::project(Context ctx, Task *task,
   int *args = (int*)task->args;
   int clrSize = *args;
   int plevel  = *(++args);
-  printf("colorSize: %d, partition level: %d\n", clrSize, plevel);
+  //printf("colorSize: %d, partition level: %d\n", clrSize, plevel);
+  
   int color = point.point_data[0] / clrSize;
   if (plevel == 1) {
     return runtime->get_logical_subregion_by_color(ctx, partition, color);
