@@ -3,7 +3,7 @@ $(error LG_RT_DIR variable is not defined, aborting build)
 endif
 
 #Flags for directing the runtime makefile what to include
-DEBUG=1                   # Include debugging symbols
+DEBUG=0                   # Include debugging symbols
 OUTPUT_LEVEL=LEVEL_DEBUG  # Compile time print level
 SHARED_LOWLEVEL=0	  # Use the shared low level
 USE_CUDA=0
@@ -23,7 +23,7 @@ GEN_SRC	:= 	test.cc \
 		../src/tasks/solver_tasks.cc ../src/tasks/display_matrix.cc \
 		../src/tasks/dense_block.cc ../src/tasks/add_matrix.cc \
 		../src/ptr_matrix.cc ../src/utility.cc \
-		../src/tasks/scale_matrix.cc
+		../src/tasks/scale_matrix.cc ../src/tasks/mapper.cc
 
 GEN_GPU_SRC	:=				# .cu files
 

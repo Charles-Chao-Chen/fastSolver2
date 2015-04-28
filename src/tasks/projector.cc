@@ -2,13 +2,6 @@
 
 const ProjectionID CONTRACTION = 1988;
 
-void register_projector(Machine machine, HighLevelRuntime *runtime,
-			const std::set<Processor> &local_procs) {
-
-  runtime->register_projection_functor(
-    CONTRACTION, new Contraction(runtime));
-}
-
 Contraction::Contraction(HighLevelRuntime *runtime)
   : ProjectionFunctor(runtime) {}
 
