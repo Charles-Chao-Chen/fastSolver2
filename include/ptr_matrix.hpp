@@ -18,7 +18,7 @@ public:
   PtrMatrix(int, int, int, double*, char trans='n');
   ~PtrMatrix();
   
-  void rand(long seed);
+  void rand(long seed, int offset=0);
   void display(const std::string&);
 
   int rows() const;

@@ -252,7 +252,7 @@ void LMatrix::init_dense_blocks
   assert(U.rows()==D.rows());
   ArgumentMap seeds = MapSeed(U, V, D);
   int rank = U.cols();
-  DenseBlockTask::TaskArgs args = {rblock, rank};
+  DenseBlockTask::TaskArgs args = {rblock, rank, D.offset()};
   DenseBlockTask launcher(colDom, TaskArgument(&args, sizeof(args)), seeds);
   RegionRequirement req(lpart, 0, WRITE_DISCARD, EXCLUSIVE, region);
   req.add_field(FIELDID_V);

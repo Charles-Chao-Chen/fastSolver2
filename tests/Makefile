@@ -167,6 +167,9 @@ cleanall:
 tar:	
 	tar cvfz fastSolver.tgz
 
+run:
+	./test -level 2
+
 r2n:
 	mpiexec -n 2 -ppn 1	\
 	-env MV2_SHOW_CPU_BINDING=1 \

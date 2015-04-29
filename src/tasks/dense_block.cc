@@ -53,16 +53,17 @@ void DenseBlockTask::cpu_task(const Task *task,
   const TaskArgs matrix = *((const TaskArgs*)task->args);
   int size = matrix.size;
   int rank = matrix.rank;
+  int ofst = matrix.offset;
   int rlo = p[0]*size;
   int rhi = (p[0]+1)*size;
-
+  
   PtrMatrix K = get_raw_pointer(regions[0], rlo, rhi, 0, size);
 
   // recover U, V and D
   PtrMatrix U(size, rank), V(size, rank), D(size, 1);
   U.rand(uSeed);
   V.rand(vSeed);
-  D.rand(dSeed);
+  D.rand(dSeed, ofst);
   V.set_trans('t');
   PtrMatrix::gemm(U, V, D, K);
   
@@ -87,6 +88,3 @@ void DenseBlockTask::cpu_task(const Task *task,
   }
   */
 }
-
-
-

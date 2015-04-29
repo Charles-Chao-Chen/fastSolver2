@@ -22,6 +22,8 @@ int Vector::rows() const {return mRows;}
 
 int Vector::num_partition() const {return nPart;}
 
+int Vector::offset() const {return mOffset;}
+
 long Vector::rand_seed(int i) const {
   assert( 0<=i && i<nPart );
   return seeds[i];
@@ -35,7 +37,8 @@ double Vector::norm() const {
   return sqrt(sum);
 }
 
-void Vector::rand(int nPart_) {
+void Vector::rand(int nPart_, int offset_) {
+  this->mOffset = offset_;
   assert( mRows%nPart == 0 );
   this->nPart = nPart_;
   struct drand48_data buffer;
@@ -54,6 +57,7 @@ void Vector::rand(int nPart_) {
       assert( srand48_r( seeds[i], &buffer ) == 0 );
       for (int j=0; j<colorSize; j++) {
 	assert( drand48_r(&buffer, &data[count]) == 0 );
+	data[count] += offset_;
 	count++;
       }
     }

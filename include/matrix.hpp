@@ -15,13 +15,16 @@ public:
 
   // number of partitions
   int num_partition() const;
+
+  // return offset
+  int offset() const;
   
   // 2-norm
   double norm() const;
 
   // random entries
   //void rand(int nPart, bool has_entry=true);
-  void rand(int nPart);
+  void rand(int nPart, int offset=0);
 
   // return the random seed
   long rand_seed(int) const;
@@ -52,6 +55,7 @@ public:
 private:
   int nPart;
   int mRows;
+  int mOffset;
   std::vector<long>   seeds;
   std::vector<double> data;
 

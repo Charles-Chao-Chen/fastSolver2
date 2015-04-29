@@ -16,6 +16,7 @@ public:
   struct TaskArgs {
     int size;
     int rank;
+    int offset;
   };
   DenseBlockTask(Domain domain,
 		 TaskArgument global_arg,

@@ -239,9 +239,9 @@ void test_lmatrix_init(Context ctx, HighLevelRuntime *runtime) {
 
 void test_leaf_solve(Context ctx, HighLevelRuntime *runtime) {
 
-  int m = 16, n = 2;
-  int nProc = 8;
-  int level = 3;
+  int level = 2;
+  int m = (1<<10)*pow(2, level), n = 10;
+  int nProc = pow(2, level);
   assert(nProc==pow(2, level));
   Matrix VMat(m, n), UMat(m, n), Rhs(m, 1);
   VMat.rand(nProc);
@@ -249,14 +249,15 @@ void test_leaf_solve(Context ctx, HighLevelRuntime *runtime) {
   Rhs.rand(nProc);
 
   Vector DVec(m);
-  DVec.rand(nProc);
+  DVec.rand(nProc, 100);
   int nrow = DVec.rows();
   int nblk = pow(2, level);
   int ncol = DVec.rows() / nblk;
+  assert(ncol > n);
   LMatrix K( nrow, ncol, level, ctx, runtime );
   LMatrix K_copy( nrow, ncol, level, ctx, runtime );
   K.init_dense_blocks(UMat, VMat, DVec, ctx, runtime);
-  /*
+
   K_copy.init_dense_blocks(UMat, VMat, DVec, ctx, runtime);
   
   LMatrix b(Rhs.rows(), 1, level, ctx, runtime);
@@ -272,12 +273,14 @@ void test_leaf_solve(Context ctx, HighLevelRuntime *runtime) {
   LMatrix::gemmRed('n', 'n', 1.0, K_copy, b, 0.0, Ax, ctx, runtime);
   LMatrix r(Rhs.rows(), 1, level, ctx, runtime);
   LMatrix::add(1.0, b_copy, -1.0, Ax, r, ctx, runtime);
-  r.display("residule", ctx, runtime);
+  //r.display("residule", ctx, runtime);
   Matrix res = r.to_matrix(ctx, runtime);
-  if (res.norm()<1.0e-13) {
+  double rnorm = res.norm() / Rhs.norm();
+  std::cout << "Relative residule norm: " << rnorm << std::endl;
+  if (rnorm<1.0e-13) {
     std::cout << "Test for leave solve passed!" << std::endl;
   }
-  */
+
 }
 
 void test_gemm_reduce(Context ctx, HighLevelRuntime *runtime) {
@@ -510,7 +513,7 @@ void test_two_level_node_solve(Context ctx, HighLevelRuntime *runtime) {
 void test_one_level_solver(Context ctx, HighLevelRuntime *runtime) {
 
   int level = 3;
-  int m = (2<<10)*pow(2,level), n = 100;
+  int m = (1<<11)*pow(2,level), n = 100;
   int nProc = pow(2,level);
   assert(nProc==pow(2,level));
   Matrix VMat(m, n), UMat(m, n), Rhs(m, 1);
@@ -519,7 +522,7 @@ void test_one_level_solver(Context ctx, HighLevelRuntime *runtime) {
   Rhs.rand(nProc);
 
   Vector DVec(m);
-  DVec.rand(nProc, 100);
+  DVec.rand(nProc, 1000);
   int nrow = DVec.rows();
   int nblk = pow(2, level);
   int ncol = DVec.rows() / nblk;
@@ -600,10 +603,8 @@ void test_one_level_solver(Context ctx, HighLevelRuntime *runtime) {
     LMatrix::gemmBro('n', 'n', -1.0, u, VTd, 1.0, d, ctx, runtime );
   }
 
-
-  Matrix x = uTree.solution(ctx, runtime);
-
   // compute residule
+  Matrix x = uTree.solution(ctx, runtime);
   Matrix err = Rhs - ( UMat * (VMat.T() * x) + DVec.multiply(x) );
   //err.display("err");
   std::cout << "Residual: " << err.norm() << std::endl;

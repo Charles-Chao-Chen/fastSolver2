@@ -59,12 +59,13 @@ void PtrMatrix::scale(double alpha) {
       (*this)(i, j) *= alpha;
 }
 
-void PtrMatrix::rand(long seed) {
+void PtrMatrix::rand(long seed, int offset) {
   struct drand48_data buffer;
   assert( srand48_r( seed, &buffer ) == 0 );
   for (int i=0; i<mRows; i++) {
     for (int j=0; j<mCols; j++) {
       assert( drand48_r(&buffer, this->pointer(i,j) ) == 0 );
+      (*this)(i,j) += offset;
     }
   }
 }
