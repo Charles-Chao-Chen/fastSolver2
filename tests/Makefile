@@ -167,8 +167,9 @@ cleanall:
 tar:	
 	tar cvfz fastSolver.tgz
 
-run:
-	./test -level 2
+prof1:
+	./test -ll:cpu 8 -ll:csize 3000 -level 2 -cat legion_prof
+	~/legion/tools/legion_prof.py -p node_0.log
 
 r2n:
 	mpiexec -n 2 -ppn 1	\
@@ -217,23 +218,11 @@ prof:
 	$(numa) 		\
 
 
-# --- legion spy ---
-#spy2:\
-	mpiexec -n 2 -ppn 1	\
-	-env OMP_NUM_THREADS=1	\
-	-env MV2_SHOW_CPU_BINDING=1 \
-	-env MV2_ENABLE_AFFINITY=0  \
-	-env GASNET_IB_SPAWNER=mpi  \
-	-env GASNET_BACKTRACE=1     \
-	./main -cat legion_spy -level 2 \
-	-ll:cpu 12 -ll:csize 30000 \
-	-hl:sched 8192 -hl:window 8192
-
 # --- Sapling commands ---
 
 # check task execution (data movement)
 spy:
-	./test -level 2
+	./test -ll:cpu 8 -ll:csize 3000 -level 2 -cat legion_spy
 	python ~/legion/tools/legion_spy.py -p node_0.log
 
 prof2:

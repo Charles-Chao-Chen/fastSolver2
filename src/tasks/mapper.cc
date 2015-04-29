@@ -37,7 +37,7 @@ SolverMapper::SolverMapper
 
 void SolverMapper::select_task_options(Task *task) {
 
-  //std::cout << "inside select_task()" << std::endl;
+  //  std::cout << "inside select_task()" << std::endl;
   
   task->inline_task   = false;
   task->spawn_task    = false;
@@ -53,7 +53,7 @@ void SolverMapper::select_task_options(Task *task) {
   if ( !procs.empty() ) {
     task->target_proc = procs[0];
     task->additional_procs.insert(procs.begin(),
-				  procs.end());
+    				  procs.end());
   } else {
     // no valid processor available
     assert(false);
@@ -63,7 +63,7 @@ void SolverMapper::select_task_options(Task *task) {
 void SolverMapper::slice_domain(const Task *task, const Domain &domain,
 				std::vector<DomainSplit> &slices) {
 
-  //std::cout << "inside slice_domain()" << std::endl;
+  //  std::cout << "inside slice_domain()" << std::endl;
     
   std::set<Processor> all_procs;
   machine.get_all_processors(all_procs);
@@ -91,7 +91,7 @@ void SolverMapper::slice_domain(const Task *task, const Domain &domain,
 
 bool SolverMapper::map_task(Task *task) {
 
-  //std::cout << "inside map_task()" << std::endl;
+  //  std::cout << "inside map_task()" << std::endl;
     
   // Put everything in the system memory
   Memory sys_mem = machine_interface.find_memory_kind
@@ -115,10 +115,12 @@ void SolverMapper::notify_mapping_failed(const Mappable *mappable)
 {
   printf("WARNING: MAPPING FAILED!  Retrying...\n");
 }
-
 /*
 void SolverMapper::notify_mapping_result(const Mappable *mappable)
 {
+  std::cout << "inside notify_result()" << std::endl;
+    
+#if 0
   if (mappable->get_mappable_kind() == Mappable::TASK_MAPPABLE)
     {
       const Task *task = mappable->as_mappable_task();
@@ -131,5 +133,6 @@ void SolverMapper::notify_mapping_result(const Mappable *mappable)
 		 task->regions[idx].selected_memory.id);
 	}
     }
+#endif
 }
 */

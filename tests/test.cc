@@ -257,7 +257,7 @@ void test_leaf_solve(Context ctx, HighLevelRuntime *runtime) {
   LMatrix K( nrow, ncol, level, ctx, runtime );
   LMatrix K_copy( nrow, ncol, level, ctx, runtime );
   K.init_dense_blocks(UMat, VMat, DVec, ctx, runtime);
-
+  /*
   K_copy.init_dense_blocks(UMat, VMat, DVec, ctx, runtime);
   
   LMatrix b(Rhs.rows(), 1, level, ctx, runtime);
@@ -280,7 +280,7 @@ void test_leaf_solve(Context ctx, HighLevelRuntime *runtime) {
   if (rnorm<1.0e-13) {
     std::cout << "Test for leave solve passed!" << std::endl;
   }
-
+*/
 }
 
 void test_gemm_reduce(Context ctx, HighLevelRuntime *runtime) {
@@ -512,8 +512,8 @@ void test_two_level_node_solve(Context ctx, HighLevelRuntime *runtime) {
 
 void test_one_level_solver(Context ctx, HighLevelRuntime *runtime) {
 
-  int level = 3;
-  int m = (1<<11)*pow(2,level), n = 100;
+  int level = 5;
+  int m = (1<<9)*pow(2,level), n = 100;
   int nProc = pow(2,level);
   assert(nProc==pow(2,level));
   Matrix VMat(m, n), UMat(m, n), Rhs(m, 1);
@@ -530,7 +530,7 @@ void test_one_level_solver(Context ctx, HighLevelRuntime *runtime) {
   assert(ncol >= UMat.cols());
   LMatrix K( nrow, ncol, level, ctx, runtime );
 
-  /*
+#if 0
   LMatrix b(m, 1, level, ctx, runtime);
   LMatrix U(m, n, level, ctx, runtime);
   b.init_data(Rhs, ctx, runtime);
@@ -543,7 +543,7 @@ void test_one_level_solver(Context ctx, HighLevelRuntime *runtime) {
   K.init_dense_blocks(UMat, VMat, DVec, ctx, runtime);
   K.solve( b, ctx, runtime );
   b.display("sln", ctx, runtime);
-  */
+#endif
     
   UTree uTree;
   VTree vTree;
@@ -586,14 +586,14 @@ void test_one_level_solver(Context ctx, HighLevelRuntime *runtime) {
     //VTu.display("VTu", ctx, runtime);
     //VTd.display("VTd", ctx, runtime);
 	
-    /*
+#if 0
     Matrix uMat = uTree.leaf().to_matrix(ctx, runtime);
     //uMat.display("uMat");
     Matrix vtu0 = VMat.row_block(0,4).T()*uMat.row_block(0,4);
     Matrix vtu1 = VMat.row_block(4,8).T()*uMat.row_block(4,8);
     vtu0.display("vtu0");
     vtu1.display("vtu1");
-    */
+#endif
 
     // form and solve the small linear system
     VTu.node_solve( VTd, ctx, runtime );
@@ -603,10 +603,12 @@ void test_one_level_solver(Context ctx, HighLevelRuntime *runtime) {
     LMatrix::gemmBro('n', 'n', -1.0, u, VTd, 1.0, d, ctx, runtime );
   }
 
+#if 0
   // compute residule
   Matrix x = uTree.solution(ctx, runtime);
   Matrix err = Rhs - ( UMat * (VMat.T() * x) + DVec.multiply(x) );
   //err.display("err");
-  std::cout << "Residual: " << err.norm() << std::endl;
-
+  std::cout << "Relative residual: " << err.norm() / Rhs.norm()
+	    << std::endl;
+#endif
 }
