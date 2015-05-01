@@ -171,20 +171,16 @@ prof1:
 	./test -ll:cpu 8 -ll:csize 3000 -level 2 -cat legion_prof
 	~/legion/tools/legion_prof.py -p node_0.log
 
-r2n:
-	mpiexec -n 2 -ppn 1	\
-	-env MV2_SHOW_CPU_BINDING=1 \
-	-env MV2_ENABLE_AFFINITY=0  \
-	-env GASNET_IB_SPAWNER=mpi  \
-	-env GASNET_BACKTRACE=1     \
-	./main			\
-	-np 2 			\
-	-level 5 		\
-	-ll:cpu    8		\
-	-ll:util   4 		\
-	-ll:csize  30000 	\
-	-hl:sched  8192  	\
-	-hl:window 8192
+prof2:
+	mpirun -H n0000,n0001 \
+	-bind-to none -report-bindings \
+	-x GASNET_IB_SPAWNER -x GASNET_BACKTRACE=1 \
+	./test \
+	-ll:cpu 11 -ll:util 1 \
+	-ll:csize 30000 \
+	-hl:sched 8192 \
+	-cat legion_prof -level 2
+
 
 # --- legion profile ---
 
@@ -224,19 +220,6 @@ prof:
 spy:
 	./test -ll:cpu 8 -ll:csize 3000 -level 2 -cat legion_spy
 	python ~/legion/tools/legion_spy.py -p node_0.log
-
-prof2:
-	mpirun -H n0001,n0002 \
-	-bind-to none -report-bindings \
-	-x GASNET_IB_SPAWNER -x GASNET_BACKTRACE=1 \
-	./multi_launch \
-	-leaf 1 \
-	-ll:cpu 11 -ll:util 1 \
-	-ll:csize 30000 \
-	-hl:sched 8192 \
-	-cat legion_prof -level 2 \
-#	-cat legion_spy -level 2
-#	-level 5
 
 # --- legion profiler ---
 

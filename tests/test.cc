@@ -239,7 +239,7 @@ void test_lmatrix_init(Context ctx, HighLevelRuntime *runtime) {
 
 void test_leaf_solve(Context ctx, HighLevelRuntime *runtime) {
 
-  int level = 2;
+  int level = 3;
   int m = (1<<10)*pow(2, level), n = 10;
   int nProc = pow(2, level);
   assert(nProc==pow(2, level));
@@ -513,7 +513,7 @@ void test_two_level_node_solve(Context ctx, HighLevelRuntime *runtime) {
 void test_one_level_solver(Context ctx, HighLevelRuntime *runtime) {
 
   int level = 5;
-  int m = (1<<9)*pow(2,level), n = 100;
+  int m = (1<<10)*pow(2,level), n = 30;
   int nProc = pow(2,level);
   assert(nProc==pow(2,level));
   Matrix VMat(m, n), UMat(m, n), Rhs(m, 1);

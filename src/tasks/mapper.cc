@@ -37,53 +37,92 @@ SolverMapper::SolverMapper
 
 void SolverMapper::select_task_options(Task *task) {
 
-  //  std::cout << "inside select_task()" << std::endl;
+  // top level task
+  if (! task->is_index_space) {
   
-  task->inline_task   = false;
-  task->spawn_task    = false;
-  task->map_locally   = false; // turn on remote mapping
-  task->profile_task  = false;
-  task->task_priority = 0;
+    task->inline_task   = false;
+    task->spawn_task    = false;
+    task->map_locally   = false;
+    task->profile_task  = false;
+    task->task_priority = 0;
+  
+    // pick the target memory idexed by task->tag
+    // note launch node tasks have negative tags
+    std::vector<Processor> procs = MemProc[ valid_mems[0] ];
+    // select valid processors
+    if ( !procs.empty() ) {
+      task->target_proc = procs[0];
+      //task->additional_procs.insert(procs.begin(),
+      //				  procs.end());
+    } else {
+      // no valid processor available
+      assert(false);
+    }
 
-  // pick the target memory idexed by task->tag
-  // note launch node tasks have negative tags
-  assert(valid_mems.size() == 1);
-  std::vector<Processor> procs = MemProc[ valid_mems[0] ];
-  // select valid processors
-  if ( !procs.empty() ) {
-    task->target_proc = procs[0];
-    task->additional_procs.insert(procs.begin(),
-    				  procs.end());
-  } else {
-    // no valid processor available
-    assert(false);
   }
+
+  // index space task
+  else {
+
+    //std::cout << "index space task" << std::endl;
+  
+    task->inline_task   = false;
+    task->spawn_task    = false;
+    task->map_locally   = true;//false; // turn on remote mapping
+    task->profile_task  = false;
+    task->task_priority = 0;
+  
+    // pick the target memory idexed by task->tag
+    // note launch node tasks have negative tags
+    std::vector<Processor> procs = MemProc[ valid_mems[0] ];
+    // select valid processors
+    if ( !procs.empty() ) {
+      task->target_proc = procs[0];
+      //task->additional_procs.insert(procs.begin(),
+      //				  procs.end());
+    } else {
+      // no valid processor available
+      assert(false);
+    }
+  }  
 }
 
 void SolverMapper::slice_domain(const Task *task, const Domain &domain,
 				std::vector<DomainSplit> &slices) {
 
-  //  std::cout << "inside slice_domain()" << std::endl;
-    
-  std::set<Processor> all_procs;
-  machine.get_all_processors(all_procs);
+#if 0
+  std::cout << "inside slice_domain()" << std::endl;
+  std::cout << "orign: " << task->orig_proc.id
+	    << ", current: " << task->current_proc.id
+	    << ", target: " << task->target_proc.id
+	    << std::endl;
+#endif
+  
+  //std::set<Processor> all_procs;
+  //machine.get_all_processors(all_procs);
+  assert(valid_mems.size()>1);
+  std::vector<Processor> procs = MemProc[ valid_mems[2] ];
+  //task->target_proc = procs[0];
+
   std::vector<Processor> split_set;
-  for (unsigned idx = 0; idx < 2; idx++)
-  {
-    split_set.push_back(DefaultMapper::select_random_processor(
-                        all_procs, Processor::LOC_PROC, machine));
+  for (unsigned idx = 0; idx < 2; idx++) {
+    //split_set.push_back(DefaultMapper::select_random_processor(
+    //                  all_procs, Processor::LOC_PROC, machine));
+    split_set.push_back( MemProc[ valid_mems[idx+1] ][0] );
   }
 
   DefaultMapper::decompose_index_space(domain, split_set, 
-                                        1/*splitting factor*/, slices);
+                                        1, slices);
 
-  //std::cout << "slice number: " << slices.size() << std::endl;
   for (std::vector<DomainSplit>::iterator it = slices.begin();
-        it != slices.end(); it++)
-  {
+        it != slices.end(); it++) {
+    
     Rect<1> rect = it->domain.get_rect<1>();
-    if (rect.volume() == 1)
+    if (rect.volume() == 1) {
       it->recurse = false;
+      Rect<1> rect = it->domain.get_rect<1>();
+      it->proc = MemProc[ valid_mems[ rect.lo[0]/8 ] ][0];
+    }
     else
       it->recurse = true;
   }
@@ -91,11 +130,22 @@ void SolverMapper::slice_domain(const Task *task, const Domain &domain,
 
 bool SolverMapper::map_task(Task *task) {
 
-  //  std::cout << "inside map_task()" << std::endl;
-    
+#if 0
+  std::cout << "Inside map_task() ..." << std::endl;
+  std::cout << "orign: " << task->orig_proc.id
+	    << ", current: " << task->current_proc.id
+	    << ", target: " << task->target_proc.id
+	    << std::endl;
+#endif
+
   // Put everything in the system memory
   Memory sys_mem = machine_interface.find_memory_kind
     (task->target_proc, Memory::SYSTEM_MEM);
+
+  std::vector<Processor> procs = MemProc[sys_mem];
+  task->additional_procs.insert(procs.begin(), procs.end());
+
+
   
   assert(sys_mem.exists());
   for (unsigned idx = 0; idx < task->regions.size(); idx++) {
