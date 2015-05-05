@@ -19,7 +19,7 @@ public:
 
 private:
   std::vector<Memory> valid_mems;
-  std::map<Memory, std::vector<Processor> > MemProc;
+  std::map<Memory, std::vector<Processor> > mem_proc;
 };
 
 #endif

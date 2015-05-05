@@ -3,7 +3,7 @@ $(error LG_RT_DIR variable is not defined, aborting build)
 endif
 
 #Flags for directing the runtime makefile what to include
-DEBUG=0                   # Include debugging symbols
+DEBUG=1                   # Include debugging symbols
 OUTPUT_LEVEL=LEVEL_DEBUG  # Compile time print level
 SHARED_LOWLEVEL=0	  # Use the shared low level
 USE_CUDA=0
@@ -165,7 +165,31 @@ cleanall:
 	@$(RM) -rf $(ALL_OBJS) *~
 
 tar:	
-	tar cvfz fastSolver.tgz
+	tar cvfz fastSolver.tgz Makefile \
+	test.cc \
+	../src/hmatrix.cc ../src/tree.cc \
+	../src/lmatrix.cc ../src/matrix.cc \
+	../src/tasks/leaf_solve.cc ../src/tasks/node_solve.cc \
+	../src/tasks/gemm_reduce.cc   ../src/tasks/gemm_broadcast.cc \
+	../src/tasks/projector.cc ../src/tasks/reduce_add.cc \
+	../src/tasks/init_matrix.cc ../src/tasks/clear_matrix.cc \
+	../src/tasks/solver_tasks.cc ../src/tasks/display_matrix.cc \
+	../src/tasks/dense_block.cc ../src/tasks/add_matrix.cc \
+	../src/ptr_matrix.cc ../src/utility.cc \
+	../src/tasks/scale_matrix.cc ../src/tasks/mapper.cc \
+	\
+	../include/hmatrix.hpp ../include/tree.hpp \
+	../include/lmatrix.hpp ../include/matrix.hpp \
+	../include/tasks/leaf_solve.hpp ../include/tasks/node_solve.hpp \
+	../include/tasks/gemm_reduce.hpp   ../include/tasks/gemm_broadcast.hpp \
+	../include/tasks/projector.hpp ../include/tasks/reduce_add.hpp \
+	../include/tasks/init_matrix.hpp ../include/tasks/clear_matrix.hpp \
+	../include/tasks/solver_tasks.hpp ../include/tasks/display_matrix.hpp \
+	../include/tasks/dense_block.hpp ../include/tasks/add_matrix.hpp \
+	../include/ptr_matrix.hpp ../include/utility.hpp \
+	../include/lapack_blas.hpp \
+	../include/tasks/scale_matrix.hpp ../include/tasks/mapper.hpp
+
 
 prof1:
 	./test -ll:cpu 8 -ll:csize 3000 -level 2 -cat legion_prof

@@ -506,7 +506,8 @@ void LMatrix::node_solve
 
   Domain domain = this->color_domain();
   NodeSolveTask::TaskArgs args = {rowBlk, mCols, b.cols()};
-  NodeSolveTask launcher(domain, TaskArgument(&args, sizeof(args)), ArgumentMap());
+  NodeSolveTask launcher(domain, TaskArgument(&args, sizeof(args)),
+			 ArgumentMap(), domain.get_volume());
   //RegionRequirement AReq(APart, 0, READ_ONLY,  EXCLUSIVE, ARegion);
   // bug here: have to use stronger previlige
   RegionRequirement AReq(APart, 0, READ_WRITE,  EXCLUSIVE, ARegion);

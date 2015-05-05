@@ -14,9 +14,6 @@ public:
   NodeSolveTask(Domain domain,
 		TaskArgument global_arg,
 		ArgumentMap arg_map,
-		Predicate pred = Predicate::TRUE_PRED,
-		bool must = false,
-		MapperID id = 0,
 		MappingTagID tag = 0);
   
   static int TASKID;

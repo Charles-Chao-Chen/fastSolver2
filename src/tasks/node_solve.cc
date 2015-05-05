@@ -7,13 +7,10 @@ int NodeSolveTask::TASKID;
 NodeSolveTask::NodeSolveTask(Domain domain,
 			     TaskArgument global_arg,
 			     ArgumentMap arg_map,
-			     Predicate pred,
-			     bool must,
-			     MapperID id,
 			     MappingTagID tag)
   
-  : IndexLauncher(TASKID, domain, global_arg,
-		  arg_map, pred, must, id, tag) {}
+  : IndexLauncher(TASKID, domain, global_arg, arg_map,
+		  Predicate::TRUE_PRED, false, 0, tag) {}
 
 void NodeSolveTask::register_tasks(void)
 {
