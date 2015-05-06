@@ -374,7 +374,7 @@ IndexPartition LMatrix::UniformRowPartition
 }
 
 Vector LMatrix::to_vector() {
-  // inline launcher
+  assert(false);
   return Vector();
 }
 
@@ -524,7 +524,7 @@ void LMatrix::node_solve
     fm.wait_all_results();
   }
 }
-
+/*
 template <typename SolveTask>
 void LMatrix::solve
 (LMatrix& b, Context ctx, HighLevelRuntime *runtime, bool wait) {
@@ -554,7 +554,7 @@ void LMatrix::solve
     fm.wait_all_results();
   }
 }
-
+*/
 void LMatrix::add
 (double alpha, const LMatrix& A,
  double beta, const LMatrix& B, LMatrix& C,

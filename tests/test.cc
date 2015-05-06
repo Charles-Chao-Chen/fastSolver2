@@ -257,6 +257,7 @@ void test_leaf_solve(Context ctx, HighLevelRuntime *runtime) {
   LMatrix K( nrow, ncol, level, ctx, runtime );
   LMatrix K_copy( nrow, ncol, level, ctx, runtime );
   K.init_dense_blocks(UMat, VMat, DVec, ctx, runtime);
+
   /*
   K_copy.init_dense_blocks(UMat, VMat, DVec, ctx, runtime);
   
@@ -280,7 +281,7 @@ void test_leaf_solve(Context ctx, HighLevelRuntime *runtime) {
   if (rnorm<1.0e-13) {
     std::cout << "Test for leave solve passed!" << std::endl;
   }
-*/
+  */
 }
 
 void test_gemm_reduce(Context ctx, HighLevelRuntime *runtime) {

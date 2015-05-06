@@ -164,12 +164,14 @@ private:
   
   IndexPartition UniformRowPartition
   (int num_subregions, int, int, Context ctx, HighLevelRuntime *runtime);
-  
+
+  /*
   template <typename T>
   void solve
   (LMatrix& b, Context ctx, HighLevelRuntime *runtime,
    bool wait=WAIT_DEFAULT);
-
+  */
+  
   // ******************
   // private variables
   // ******************

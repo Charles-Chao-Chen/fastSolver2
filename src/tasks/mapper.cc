@@ -23,17 +23,21 @@ SolverMapper::SolverMapper
       }
 
       // map this memory to correspoind processors
-      mem_proc[*it_mem] = valid_procs;
+      mem_procs[*it_mem] = valid_procs;
     }    
   }
+  this->num_mems = valid_mems.size();
   assert( ! valid_mems.empty() );
 
-  std::cout << "There are " << valid_mems.size()
-	    << " machines" << std::endl;
-  for (size_t i=0; i<valid_mems.size(); i++) {
-    std::cout << "Machine " << i << " has "
-	      << mem_proc[ valid_mems[i] ].size()
-	      << " cores." << std::endl;
+  // print machine information
+  if ( local_proc == mem_procs[valid_mems[0]][0] ) {
+    std::cout << "There are " << valid_mems.size()
+	      << " machines" << std::endl;
+    for (size_t i=0; i<valid_mems.size(); i++) {
+      std::cout << "Machine " << i << " has "
+		<< mem_procs[ valid_mems[i] ].size()
+		<< " cores." << std::endl;
+    }
   }
 }
 
@@ -49,7 +53,7 @@ void SolverMapper::select_task_options(Task *task) {
     task->task_priority = 0;
 
     // top level task run on machine 0
-    std::vector<Processor> procs = mem_proc[ valid_mems[0] ];
+    std::vector<Processor> procs = mem_procs[ valid_mems[0] ];
     assert( !procs.empty() );  
     task->target_proc = procs[0];
   }
@@ -60,12 +64,12 @@ void SolverMapper::select_task_options(Task *task) {
     std::cout << "index space task" << std::endl;  
     task->inline_task   = false;
     task->spawn_task    = false;
-    task->map_locally   = false;
+    task->map_locally   = true;
     task->profile_task  = false;
     task->task_priority = 0;
   
-    // assign a processor from on machine 0
-    std::vector<Processor> procs = mem_proc[ valid_mems[0] ];
+    // assign a dummy processor
+    std::vector<Processor> procs = mem_procs[ valid_mems[0] ];
     assert( !procs.empty() );
     task->target_proc = procs[0];
   }  
@@ -83,12 +87,25 @@ void SolverMapper::slice_domain(const Task *task, const Domain &domain,
 #endif
 
   // pick processors from machine 1
-  std::vector<Processor> procs = mem_proc[ valid_mems[1] ];
+  assert(valid_mems.size()==4);
+  Rect<1> r = domain.get_rect<1>();
+  int i0 = r.lo[0];
+  int i1 = r.lo[0] + r.dim_size(0)/2;
+  std::cout << "memory indices: " << i0 << ", "
+	    << i1 << std::endl;
+  std::vector<Processor> split_set;
+  split_set.push_back( mem_procs[ valid_mems[i0] ][0] );
+  split_set.push_back( mem_procs[ valid_mems[i1] ][0] );
+  
+  
+  /*
+  std::vector<Processor> procs = mem_procs[ valid_mems[1] ];
   std::vector<Processor> split_set;
   for (unsigned idx = 0; idx < 2; idx++) {
     split_set.push_back( procs[0] );
   }
-
+*/
+    
   DefaultMapper::decompose_index_space(domain, split_set, 
                                         1, slices);
 

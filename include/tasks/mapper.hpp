@@ -18,8 +18,9 @@ public:
   virtual void notify_mapping_failed(const Mappable *mappable);
 
 private:
+  int num_mems;
   std::vector<Memory> valid_mems;
-  std::map<Memory, std::vector<Processor> > mem_proc;
+  std::map<Memory, std::vector<Processor> > mem_procs;
 };
 
 #endif
