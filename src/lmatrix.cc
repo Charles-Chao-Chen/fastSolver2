@@ -136,7 +136,8 @@ void LMatrix::init_data
   assert(this->nPart == mat.num_partition());
   ArgumentMap seeds = MapSeed(mat);  
   InitMatrixTask::TaskArgs args = {rblock, mat.cols(), col0, col1};
-  InitMatrixTask launcher(colDom, TaskArgument(&args, sizeof(args)), seeds);
+  TaskArgument tArg(&args, sizeof(args));
+  InitMatrixTask launcher(colDom, tArg, seeds);
   RegionRequirement req(lpart, 0, WRITE_DISCARD, EXCLUSIVE, region);
   req.add_field(FIELDID_V);
   launcher.add_region_requirement(req);
@@ -253,7 +254,8 @@ void LMatrix::init_dense_blocks
   ArgumentMap seeds = MapSeed(U, V, D);
   int rank = U.cols();
   DenseBlockTask::TaskArgs args = {rblock, rank, D.offset()};
-  DenseBlockTask launcher(colDom, TaskArgument(&args, sizeof(args)), seeds);
+  TaskArgument tArg(&args, sizeof(args));
+  DenseBlockTask launcher(colDom, tArg, seeds, this->nPart);
   RegionRequirement req(lpart, 0, WRITE_DISCARD, EXCLUSIVE, region);
   req.add_field(FIELDID_V);
   launcher.add_region_requirement(req);
@@ -423,7 +425,8 @@ void LMatrix::solve
 
   Domain domain = this->color_domain();
   LeafSolveTask::TaskArgs args = {this->rblock, b.cols()};
-  LeafSolveTask launcher(domain, TaskArgument(&args, sizeof(args)), ArgumentMap());
+  TaskArgument tArg(&args, sizeof(args));
+  LeafSolveTask launcher(domain, tArg, ArgumentMap());
   RegionRequirement AReq(APart, 0, READ_ONLY,  EXCLUSIVE, ARegion);
   RegionRequirement bReq(bPart, 0, READ_WRITE, EXCLUSIVE, bRegion);
   AReq.add_field(FIELDID_V);

@@ -60,8 +60,7 @@ void SolverMapper::select_task_options(Task *task) {
 
   // index space tasks
   else {
-
-    std::cout << "index space task" << std::endl;  
+    //std::cout << "index space task" << std::endl;
     task->inline_task   = false;
     task->spawn_task    = false;
     task->map_locally   = true;
@@ -86,37 +85,27 @@ void SolverMapper::slice_domain(const Task *task, const Domain &domain,
 	    << std::endl;
 #endif
 
-  // pick processors from machine 1
-  assert(valid_mems.size()==4);
-  Rect<1> r = domain.get_rect<1>();
-  int i0 = r.lo[0];
-  int i1 = r.lo[0] + r.dim_size(0)/2;
-  std::cout << "memory indices: " << i0 << ", "
-	    << i1 << std::endl;
-  std::vector<Processor> split_set;
-  split_set.push_back( mem_procs[ valid_mems[i0] ][0] );
-  split_set.push_back( mem_procs[ valid_mems[i1] ][0] );
-  
-  
-  /*
-  std::vector<Processor> procs = mem_procs[ valid_mems[1] ];
-  std::vector<Processor> split_set;
-  for (unsigned idx = 0; idx < 2; idx++) {
-    split_set.push_back( procs[0] );
-  }
-*/
-    
-  DefaultMapper::decompose_index_space(domain, split_set, 
-                                        1, slices);
+  assert(domain.get_dim() == 1);
+  Rect<1> rect = domain.get_rect<1>();
+  int num_elmts = rect.volume();
 
-  for (std::vector<DomainSplit>::iterator it = slices.begin();
-        it != slices.end(); it++) {
-    
-    Rect<1> rect = it->domain.get_rect<1>();
-    if (rect.volume() == 1)
-      it->recurse = false;
-    else
-      it->recurse = true;
+  // assume evenly split
+  if (num_elmts > num_mems) 
+    assert(num_elmts % num_mems == 0);
+  else
+    assert(num_mems % num_elmts == 0);
+  
+  for (int i=0; i<num_elmts; i++) {
+    Point<1> lo(i);
+    Point<1> hi(i);
+    Rect<1> chunk(lo, hi);
+    int mem_idx = i * num_mems / num_elmts;
+    Processor target = mem_procs[valid_mems[mem_idx]][0];
+    DomainSplit ds(Domain::from_rect<1>(chunk), target, false, false);
+    slices.push_back(ds);
+
+    std::cout << "Point: " << i << " is assigned to machine: "
+	      << mem_idx << std::endl;
   }
 }
 
@@ -129,20 +118,23 @@ bool SolverMapper::map_task(Task *task) {
 	    << ", target: " << task->target_proc.id
 	    << std::endl;
 #endif
-
-  // Put everything in the system memory
+  
+  // find the memory associated with the target processor
   Memory sys_mem = machine_interface.find_memory_kind
     (task->target_proc, Memory::SYSTEM_MEM); 
   assert(sys_mem.exists());
+
+  // assign additional processors
+  std::vector<Processor>& procs = mem_procs[sys_mem];
+  task->additional_procs.insert(procs.begin(), procs.end());
+
+  // map the regions
   for (unsigned idx = 0; idx < task->regions.size(); idx++) {
     task->regions[idx].target_ranking.push_back(sys_mem);
     task->regions[idx].virtual_map = false;
     task->regions[idx].enable_WAR_optimization = war_enabled;
     task->regions[idx].reduction_list = false;
-      		
-    // make everything SOA
     task->regions[idx].blocking_factor = 1;
-    //task->regions[idx].max_blocking_factor;
   } 
   return true;
 }

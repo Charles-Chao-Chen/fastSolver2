@@ -31,14 +31,14 @@ void top_level_task(const Task *task,
   //test_vector();
   //test_matrix();
   //test_lmatrix_init(ctx, runtime);
-  test_leaf_solve(ctx, runtime);  
+  //test_leaf_solve(ctx, runtime);  
   //test_gemm_reduce(ctx, runtime);
   //test_gemm_broadcast(ctx, runtime);
   //test_node_solve(ctx, runtime);
   //test_two_level_reduce(ctx, runtime);
   //test_two_level_broadcast(ctx, runtime);
   //test_two_level_node_solve(ctx, runtime);
-  //test_one_level_solver(ctx, runtime);
+  test_one_level_solver(ctx, runtime);
 
     
   /*
@@ -513,7 +513,7 @@ void test_two_level_node_solve(Context ctx, HighLevelRuntime *runtime) {
 
 void test_one_level_solver(Context ctx, HighLevelRuntime *runtime) {
 
-  int level = 5;
+  int level = 2;
   int m = (1<<10)*pow(2,level), n = 30;
   int nProc = pow(2,level);
   assert(nProc==pow(2,level));
