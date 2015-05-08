@@ -7,10 +7,10 @@ int LeafSolveTask::TASKID;
 LeafSolveTask::LeafSolveTask(Domain domain,
 			     TaskArgument global_arg,
 			     ArgumentMap arg_map,
+			     MappingTagID tag,
 			     Predicate pred,
 			     bool must,
-			     MapperID id,
-			     MappingTagID tag)
+			     MapperID id)
   
   : IndexLauncher(TASKID, domain, global_arg,
 		  arg_map, pred, must, id, tag) {}

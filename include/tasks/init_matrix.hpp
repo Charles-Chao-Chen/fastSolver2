@@ -16,10 +16,10 @@ public:
   InitMatrixTask(Domain domain,
 		 TaskArgument global_arg,
 		 ArgumentMap arg_map,
+		 MappingTagID tag = 0,
 		 Predicate pred = Predicate::TRUE_PRED,
 		 bool must = false,
-		 MapperID id = 0,
-		 MappingTagID tag = 0);
+		 MapperID id = 0);
   
   static int TASKID;
 

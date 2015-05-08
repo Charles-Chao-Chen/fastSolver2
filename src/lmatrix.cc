@@ -107,7 +107,8 @@ void LMatrix::scale
   // if alpha = 1.0, do nothing
   if ( fabs(alpha - 1.0) < 1e-10) return;
   ScaleMatrixTask::TaskArgs args = {this->rblock * plevel, mCols, alpha};
-  ScaleMatrixTask launcher(colDom, TaskArgument(&args, sizeof(args)), ArgumentMap());
+  TaskArgument tArg(&args, sizeof(args));
+  ScaleMatrixTask launcher(colDom, tArg, ArgumentMap(), colDom.get_volume());
   RegionRequirement req(lpart, 0, READ_WRITE, EXCLUSIVE, region);
   req.add_field(FIELDID_V);
   launcher.add_region_requirement(req);
@@ -137,7 +138,7 @@ void LMatrix::init_data
   ArgumentMap seeds = MapSeed(mat);  
   InitMatrixTask::TaskArgs args = {rblock, mat.cols(), col0, col1};
   TaskArgument tArg(&args, sizeof(args));
-  InitMatrixTask launcher(colDom, tArg, seeds);
+  InitMatrixTask launcher(colDom, tArg, seeds, nPart);
   RegionRequirement req(lpart, 0, WRITE_DISCARD, EXCLUSIVE, region);
   req.add_field(FIELDID_V);
   launcher.add_region_requirement(req);
@@ -415,7 +416,7 @@ void LMatrix::solve
 
   //solve<LeafSolveTask>(b, ctx, runtime, wait);
   // A and b have the same number of partition
-  assert( this->num_partition() == b.num_partition() );
+  assert( this->nPart == b.num_partition() );
 
   LogicalPartition APart = this->logical_partition();
   LogicalPartition bPart = b.logical_partition();
@@ -426,7 +427,7 @@ void LMatrix::solve
   Domain domain = this->color_domain();
   LeafSolveTask::TaskArgs args = {this->rblock, b.cols()};
   TaskArgument tArg(&args, sizeof(args));
-  LeafSolveTask launcher(domain, tArg, ArgumentMap());
+  LeafSolveTask launcher(domain, tArg, ArgumentMap(), nPart);
   RegionRequirement AReq(APart, 0, READ_ONLY,  EXCLUSIVE, ARegion);
   RegionRequirement bReq(bPart, 0, READ_WRITE, EXCLUSIVE, bRegion);
   AReq.add_field(FIELDID_V);
@@ -629,7 +630,7 @@ void LMatrix::gemmRed // static method
 			      A.column_begin(), B.column_begin(), C.column_begin()};
   TaskArgument tArgs(&args, sizeof(args));
   Domain domain = A.color_domain();
-  GemmRedTask launcher(domain, tArgs, ArgumentMap());
+  GemmRedTask launcher(domain, tArgs, ArgumentMap(), A.nPart);
   
   RegionRequirement AReq(APart, 0,           READ_ONLY, EXCLUSIVE, AReg);
   RegionRequirement BReq(BPart, 0,           READ_ONLY, EXCLUSIVE, BReg);
@@ -682,7 +683,7 @@ void LMatrix::gemmBro // static method
 				A.column_begin()};
   TaskArgument tArgs(&args, sizeof(args));
   Domain domain = A.color_domain();
-  GemmBroTask launcher(domain, tArgs, ArgumentMap());
+  GemmBroTask launcher(domain, tArgs, ArgumentMap(), A.nPart);
   
   //RegionRequirement AReq(AP, 0,           READ_ONLY,  EXCLUSIVE, AReg);
   RegionRequirement AReq(AP, 0,           READ_WRITE,  EXCLUSIVE, AReg);

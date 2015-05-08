@@ -239,7 +239,7 @@ void test_lmatrix_init(Context ctx, HighLevelRuntime *runtime) {
 
 void test_leaf_solve(Context ctx, HighLevelRuntime *runtime) {
 
-  int level = 2;
+  int level = 3;
   int m = (1<<10)*pow(2, level), n = 10;
   int nProc = pow(2, level);
   assert(nProc==pow(2, level));
@@ -586,7 +586,7 @@ void test_one_level_solver(Context ctx, HighLevelRuntime *runtime) {
     LMatrix::gemmRed('t', 'n', 1.0, V, d, 0.0, VTd, ctx, runtime );
     //VTu.display("VTu", ctx, runtime);
     //VTd.display("VTd", ctx, runtime);
-	
+
 #if 0
     Matrix uMat = uTree.leaf().to_matrix(ctx, runtime);
     //uMat.display("uMat");

@@ -5,12 +5,12 @@
 int ScaleMatrixTask::TASKID;
 
 ScaleMatrixTask::ScaleMatrixTask(Domain domain,
-			       TaskArgument global_arg,
-			       ArgumentMap arg_map,
-			       Predicate pred,
-			       bool must,
-			       MapperID id,
-			       MappingTagID tag)
+				 TaskArgument global_arg,
+				 ArgumentMap arg_map,
+				 MappingTagID tag,
+				 Predicate pred,
+				 bool must,
+				 MapperID id)
   
   : IndexLauncher(TASKID, domain, global_arg,
 		  arg_map, pred, must, id, tag) {}
