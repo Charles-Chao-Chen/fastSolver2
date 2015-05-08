@@ -102,7 +102,7 @@ void DistMapper::slice_domain(const Task *task, const Domain &domain,
   // the number of node solve tasks decreases from leaf to root,
   // which may be smaller than the number of machines
   if (num_tasks <= num_mems) {
-    std::cout << "There are " << num_tasks << " tasks" << std::endl;
+    //std::cout << "There are " << num_tasks << " tasks" << std::endl;
     // send every point to the target machine
     for (int i=0; i<num_tasks; i++) {
       int mem_idx = i * num_mems / num_tasks;
@@ -111,8 +111,8 @@ void DistMapper::slice_domain(const Task *task, const Domain &domain,
       Rect<1> chunk(lo, hi);
       DomainSplit ds(Domain::from_rect<1>(chunk), target, false, false);
       slices.push_back(ds);
-      std::cout << "Point: " << i << " is assigned to machine: "
-		<< mem_idx << std::endl;
+      //std::cout << "Point: " << i << " is assigned to machine: "
+      //	<< mem_idx << std::endl;
     }
     return;
   }
@@ -142,9 +142,9 @@ void DistMapper::slice_domain(const Task *task, const Domain &domain,
     // create a domain slice
     DomainSplit ds(dom, target, recurse, false);
     slices.push_back(ds);
-    std::cout << "domain (" << lo.x[0] << ", " << hi.x[0] << ")"
-	      << " is assigned to machine: "
-	      << mem_idx << std::endl;
+    //std::cout << "domain (" << lo.x[0] << ", " << hi.x[0] << ")"
+    //	      << " is assigned to machine: "
+    //	      << mem_idx << std::endl;
   }
 }
 

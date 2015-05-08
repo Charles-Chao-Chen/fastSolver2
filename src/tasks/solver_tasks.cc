@@ -5,10 +5,13 @@ void registration_callback(Machine machine, HighLevelRuntime *rt,
   
   std::set<Processor>::const_iterator it = local_procs.begin();
   for (; it != local_procs.end(); it++) {
-    //rt->replace_default_mapper
-    //(new SolverMapper(machine, rt, *it),*it);
+#if 1
+    rt->replace_default_mapper
+      (new SolverMapper(machine, rt, *it),*it);
+#else
     rt->replace_default_mapper
       (new DistMapper(machine, rt, *it), *it);
+#endif
   }
 
   rt->register_projection_functor

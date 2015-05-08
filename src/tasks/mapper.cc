@@ -73,11 +73,11 @@ void SolverMapper::select_task_options(Task *task) {
     task->target_proc = procs[0];
   }  
 }
-
+/*
 void SolverMapper::slice_domain(const Task *task, const Domain &domain,
 				std::vector<DomainSplit> &slices) {
   
-#if 1
+#if 0
   std::cout << "inside slice_domain()" << std::endl;
   std::cout << "orign: " << task->orig_proc.id
 	    << ", current: " << task->current_proc.id
@@ -104,14 +104,52 @@ void SolverMapper::slice_domain(const Task *task, const Domain &domain,
     DomainSplit ds(Domain::from_rect<1>(chunk), target, false, false);
     slices.push_back(ds);
 
-    std::cout << "Point: " << i << " is assigned to machine: "
-	      << mem_idx << std::endl;
+    //std::cout << "Point: " << i << " is assigned to machine: "
+    //	      << mem_idx << std::endl;
+  }
+}
+*/
+void SolverMapper::slice_domain(const Task *task, const Domain &domain,
+				std::vector<DomainSplit> &slices) {
+  
+#if 0
+  std::cout << "inside slice_domain()" << std::endl;
+  std::cout << "orign: " << task->orig_proc.id
+	    << ", current: " << task->current_proc.id
+	    << ", target: " << task->target_proc.id
+	    << std::endl;
+#endif
+
+  std::set<Processor> all_procs;
+  machine.get_all_processors(all_procs);
+  std::vector<Processor> split_set;
+  for (unsigned idx = 0; idx < 2; idx++)
+  {
+    split_set.push_back(DefaultMapper::select_random_processor(
+                        all_procs, Processor::LOC_PROC, machine));
+  }
+
+  DefaultMapper::decompose_index_space(domain, split_set, 
+                                        1/*splitting factor*/, slices);
+
+  for (std::vector<DomainSplit>::iterator it = slices.begin();
+        it != slices.end(); it++)
+  {
+    Rect<1> rect = it->domain.get_rect<1>();
+    if (rect.volume() == 1) {
+      it->recurse = false;
+      int num_elmts = task->tag;
+      int mem_idx = rect.lo.x[0] * num_mems / num_elmts;
+      it->proc = mem_procs[valid_mems[mem_idx]][0];
+    }
+    else
+      it->recurse = true;
   }
 }
 
 bool SolverMapper::map_task(Task *task) {
 
-#if 1
+#if 0
   std::cout << "Inside map_task() ..." << std::endl;
   std::cout << "orign: " << task->orig_proc.id
 	    << ", current: " << task->current_proc.id
