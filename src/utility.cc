@@ -8,7 +8,8 @@ double* region_pointer
   bounds.lo.x[1] = clo;
   bounds.hi.x[1] = chi-1;
   ByteOffset offsets[2];
-  double *base = region.get_field_accessor(FIELDID_V).template typeify<double>().template raw_rect_ptr<2>(bounds, subrect, offsets);
+  //double *base = region.get_field_accessor(FIELDID_V).template typeify<double>().template raw_rect_ptr<2>(bounds, subrect, offsets);
+  double *base = region.get_field_accessor(FIELDID_V).typeify<double>().raw_rect_ptr<2>(bounds, subrect, offsets);
   assert(subrect == bounds);
   assert(offsets[0].offset == sizeof(double));
   assert(size_t(rhi-rlo) == offsets[1].offset/sizeof(double));
@@ -26,7 +27,8 @@ PtrMatrix get_raw_pointer
   bounds.lo.x[1] = clo;
   bounds.hi.x[1] = chi-1;
   ByteOffset offsets[2];
-  double *base = region.get_field_accessor(FIELDID_V).template typeify<double>().template raw_rect_ptr<2>(bounds, subrect, offsets);
+  //double *base = region.get_field_accessor(FIELDID_V).template typeify<double>().template raw_rect_ptr<2>(bounds, subrect, offsets);
+  double *base = region.get_field_accessor(FIELDID_V).typeify<double>().raw_rect_ptr<2>(bounds, subrect, offsets);
   assert(subrect == bounds);
   assert(offsets[0].offset == sizeof(double));
 #ifdef DEBUG_POINTERS
@@ -45,7 +47,8 @@ PtrMatrix reduction_pointer
   bounds.lo.x[1] = clo;
   bounds.hi.x[1] = chi-1;
   ByteOffset offsets[2];
-  double *base = region.get_accessor().template typeify<double>().template raw_rect_ptr<2>(bounds, subrect, offsets);
+  //double *base = region.get_accessor().template typeify<double>().template raw_rect_ptr<2>(bounds, subrect, offsets);
+  double *base = region.get_accessor().typeify<double>().raw_rect_ptr<2>(bounds, subrect, offsets);
   assert(subrect == bounds);
   assert(offsets[0].offset == sizeof(double));
   //assert(size_t(rhi-rlo) == offsets[1].offset/sizeof(double));

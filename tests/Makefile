@@ -221,13 +221,9 @@ prof:
 	-env MV2_ENABLE_AFFINITY=0  \
 	-env GASNET_IB_SPAWNER=mpi  \
 	-env GASNET_BACKTRACE=1     \
-	./multi_launch			\
-	-test $(test)		\
-	-np $(nproc) 		\
-	-leaf $(leaf)		\
+	./test			\
 	-ll:cpu    $(ncpu)	\
-	-ll:util   $(nutil)	\
-	-ll:csize  20000 	\
+	-ll:csize  30000 	\
 	-hl:sched  8192  	\
 	-hl:window 8192		\
 	-level 2 		\
@@ -237,7 +233,7 @@ prof:
 #	numactl			\
 	-m 0 -N 0		\
 	$(numa) 		\
-
+	-ll:util   $(nutil)	\
 
 # --- Sapling commands ---
 
