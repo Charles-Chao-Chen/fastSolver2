@@ -5,7 +5,7 @@ void registration_callback(Machine machine, HighLevelRuntime *rt,
   
   std::set<Processor>::const_iterator it = local_procs.begin();
   for (; it != local_procs.end(); it++) {
-#if 1
+#if 0
     rt->replace_default_mapper
       (new SolverMapper(machine, rt, *it),*it);
 #else
