@@ -73,7 +73,8 @@ void SolverMapper::select_task_options(Task *task) {
     task->target_proc = procs[0];
   }  
 }
-/*
+
+#if 1
 void SolverMapper::slice_domain(const Task *task, const Domain &domain,
 				std::vector<DomainSplit> &slices) {
   
@@ -108,7 +109,8 @@ void SolverMapper::slice_domain(const Task *task, const Domain &domain,
     //	      << mem_idx << std::endl;
   }
 }
-*/
+
+#else
 void SolverMapper::slice_domain(const Task *task, const Domain &domain,
 				std::vector<DomainSplit> &slices) {
   
@@ -146,6 +148,8 @@ void SolverMapper::slice_domain(const Task *task, const Domain &domain,
       it->recurse = true;
   }
 }
+#endif
+
 
 bool SolverMapper::map_task(Task *task) {
 

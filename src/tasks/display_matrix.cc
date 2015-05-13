@@ -29,9 +29,9 @@ void DisplayMatrixTask::register_tasks(void)
 				  TaskConfigOptions(true/*leaf*/),
 				  "Display_Matrix");
 
-  //#ifndef SHOW_REGISTER_TASKS
+#ifdef SHOW_REGISTER_TASKS
   printf("Register task %d : Display_Matrix\n", TASKID);
-  //#endif
+#endif
 }
 
 void DisplayMatrixTask::cpu_task

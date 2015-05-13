@@ -28,9 +28,9 @@ void DenseBlockTask::register_tasks(void)
 			       TaskConfigOptions(true/*leaf*/),
 			       "Dense_Block");
 
-  //#ifndef SHOW_REGISTER_TASKS
+#ifdef SHOW_REGISTER_TASKS
   printf("Register task %d : Dense_Block\n", TASKID);
-  //#endif
+#endif
 }
 
 void DenseBlockTask::cpu_task(const Task *task,

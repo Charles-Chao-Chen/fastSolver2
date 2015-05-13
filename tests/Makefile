@@ -196,15 +196,15 @@ prof1:
 	./test -ll:cpu 8 -ll:csize 3000 -level 2 -cat legion_prof
 	~/legion/tools/legion_prof.py -p node_0.log
 
-prof2:
-	mpirun -H n0000,n0001 \
+prof4:
+	mpirun -H n0000,n0001,n0002,n0003 \
 	-bind-to none -report-bindings \
 	-x GASNET_IB_SPAWNER -x GASNET_BACKTRACE=1 \
 	./test \
-	-ll:cpu 11 -ll:util 1 \
+	-ll:cpu 8 -ll:util 1 \
 	-ll:csize 30000 \
 	-hl:sched 8192 \
-	-cat legion_prof -level 2
+	-level 2 #-cat legion_prof
 
 
 # --- legion profile ---

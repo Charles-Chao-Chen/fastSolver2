@@ -139,7 +139,8 @@ void LMatrix::init_data
   InitMatrixTask::TaskArgs args = {rblock, mat.cols(), col0, col1};
   TaskArgument tArg(&args, sizeof(args));
   InitMatrixTask launcher(colDom, tArg, seeds, nPart);
-  RegionRequirement req(lpart, 0, WRITE_DISCARD, EXCLUSIVE, region);
+  //RegionRequirement req(lpart, 0, WRITE_DISCARD, EXCLUSIVE, region);
+  RegionRequirement req(lpart, 0, READ_WRITE, EXCLUSIVE, region);
   req.add_field(FIELDID_V);
   launcher.add_region_requirement(req);
   FutureMap fm = runtime->execute_index_space(ctx, launcher);

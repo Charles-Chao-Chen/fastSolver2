@@ -142,9 +142,11 @@ void DistMapper::slice_domain(const Task *task, const Domain &domain,
     // create a domain slice
     DomainSplit ds(dom, target, recurse, false);
     slices.push_back(ds);
-    //std::cout << "domain (" << lo.x[0] << ", " << hi.x[0] << ")"
-    //	      << " is assigned to machine: "
-    //	      << mem_idx << std::endl;
+    /*
+    std::cout << "domain (" << lo.x[0] << ", " << hi.x[0] << ")"
+    	      << " is assigned to machine: "
+    	      << mem_idx << std::endl;
+    */
   }
 }
 

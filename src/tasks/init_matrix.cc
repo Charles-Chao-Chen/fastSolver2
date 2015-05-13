@@ -28,9 +28,9 @@ void InitMatrixTask::register_tasks(void)
 			       TaskConfigOptions(true/*leaf*/),
 			       "Init_Matrix");
 
-  //#ifndef SHOW_REGISTER_TASKS
+#ifdef SHOW_REGISTER_TASKS
   printf("Register task %d : Init_Matrix\n", TASKID);
-  //#endif
+#endif
 }
 
 void InitMatrixTask::cpu_task(const Task *task,

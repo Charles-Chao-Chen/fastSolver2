@@ -2,7 +2,7 @@
 
 void registration_callback(Machine machine, HighLevelRuntime *rt,
 			   const std::set<Processor> &local_procs) {
-  
+
   std::set<Processor>::const_iterator it = local_procs.begin();
   for (; it != local_procs.end(); it++) {
 #if 0
@@ -13,7 +13,7 @@ void registration_callback(Machine machine, HighLevelRuntime *rt,
       (new DistMapper(machine, rt, *it), *it);
 #endif
   }
-
+    
   rt->register_projection_functor
     (CONTRACTION, new Contraction(rt));
 }
