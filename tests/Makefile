@@ -3,7 +3,7 @@ $(error LG_RT_DIR variable is not defined, aborting build)
 endif
 
 #Flags for directing the runtime makefile what to include
-DEBUG=0                   # Include debugging symbols
+DEBUG=1                   # Include debugging symbols
 OUTPUT_LEVEL=LEVEL_DEBUG  # Compile time print level
 SHARED_LOWLEVEL=0	  # Use the shared low level
 USE_CUDA=0
@@ -204,7 +204,7 @@ prof4:
 	-ll:cpu 8 -ll:util 1 \
 	-ll:csize 30000 \
 	-hl:sched 8192 \
-	-level 2 #-cat legion_prof
+	-level 2 -cat legion_prof
 
 
 # --- legion profile ---
