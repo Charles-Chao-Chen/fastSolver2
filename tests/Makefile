@@ -222,7 +222,7 @@ prof:
 	-env GASNET_IB_SPAWNER=mpi  \
 	-env GASNET_BACKTRACE=1     \
 	./test			\
-	-ll:cpu    $(ncpu)	\
+	-ll:cpu    8		\
 	-ll:csize  30000 	\
 	-hl:sched  8192  	\
 	-hl:window 8192		\
@@ -234,6 +234,7 @@ prof:
 	-m 0 -N 0		\
 	$(numa) 		\
 	-ll:util   $(nutil)	\
+	-ll:cpu    $(ncpu)	\
 
 # --- Sapling commands ---
 

@@ -513,11 +513,11 @@ void test_two_level_node_solve(Context ctx, HighLevelRuntime *runtime) {
 
 void test_one_level_solver(Context ctx, HighLevelRuntime *runtime) {
 
-  int level = 2;
+  int level = 3;
   int m = (1<<10)*pow(2,level), n = 30;
   int nProc = pow(2,level);
   assert(nProc==pow(2,level));
-  Matrix VMat(m, n), UMat(m, n), Rhs(m, 1);
+  Matrix VMat(m, n, false), UMat(m, n, false), Rhs(m, 1, false);
   VMat.rand(nProc);
   UMat.rand(nProc);
   Rhs.rand(nProc);

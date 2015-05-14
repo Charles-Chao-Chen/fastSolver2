@@ -74,7 +74,61 @@ void SolverMapper::select_task_options(Task *task) {
   }  
 }
 
-#if 1
+void SolverMapper::slice_domain(const Task *task, const Domain &domain,
+				std::vector<DomainSplit> &slices) {
+  
+#if 0
+  std::cout << "inside slice_domain()" << std::endl;
+  std::cout << "orign: " << task->orig_proc.id
+	    << ", current: " << task->current_proc.id
+	    << ", target: " << task->target_proc.id
+	    << std::endl;
+#endif
+
+  assert(domain.get_dim() == 1);
+  Rect<1> rect = domain.get_rect<1>();
+  int num_elmts = rect.volume();
+    
+  int nbucket;
+  int bucket_size;
+  if (num_elmts < num_mems) {
+    assert(num_mems % num_elmts == 0);
+    nbucket = num_elmts;
+    bucket_size = num_mems / num_elmts;
+    for (int i=0; i<nbucket; i++) {
+      Point<1> lo(i);
+      Point<1> hi(i);
+      Rect<1> chunk(lo, hi);
+      int mem_idx = i*bucket_size;
+      Processor target = mem_procs[valid_mems[mem_idx]][0];
+      DomainSplit ds(Domain::from_rect<1>(chunk), target, false, false);
+      slices.push_back(ds);
+      std::cout << "domain (" << lo.x[0] << ", " << hi.x[0] << ")"
+		<< " is assigned to machine: "
+		<< mem_idx << std::endl;
+    }
+  }
+
+  if (num_elmts >= num_mems) {
+    assert(num_elmts % num_mems == 0);
+    nbucket = num_mems;
+    bucket_size = num_elmts / num_mems;
+    for (int i=0; i<nbucket; i++) {
+      Point<1> lo(i*bucket_size);
+      Point<1> hi((i+1)*bucket_size-1);
+      Rect<1> chunk(lo, hi);
+      int mem_idx = i;
+      Processor target = mem_procs[valid_mems[mem_idx]][0];
+      DomainSplit ds(Domain::from_rect<1>(chunk), target, false, false);
+      slices.push_back(ds);
+      std::cout << "domain (" << lo.x[0] << ", " << hi.x[0] << ")"
+		<< " is assigned to machine: "
+		<< mem_idx << std::endl;
+    }
+  }
+}
+
+/*
 void SolverMapper::slice_domain(const Task *task, const Domain &domain,
 				std::vector<DomainSplit> &slices) {
   
@@ -109,8 +163,8 @@ void SolverMapper::slice_domain(const Task *task, const Domain &domain,
     //	      << mem_idx << std::endl;
   }
 }
-
-#else
+*/
+/*
 void SolverMapper::slice_domain(const Task *task, const Domain &domain,
 				std::vector<DomainSplit> &slices) {
   
@@ -148,8 +202,7 @@ void SolverMapper::slice_domain(const Task *task, const Domain &domain,
       it->recurse = true;
   }
 }
-#endif
-
+*/
 
 bool SolverMapper::map_task(Task *task) {
 
