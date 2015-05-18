@@ -117,6 +117,7 @@ void LMatrix::scale
   if(wait) {
     std::cout << "Wait for scaling matrix..." << std::endl;
     fm.wait_all_results();
+    std::cout << "Done for scaling matrix..." << std::endl;
   }
 }
 
@@ -148,6 +149,7 @@ void LMatrix::init_data
   if(wait) {
     std::cout << "Wait for init tree..." << std::endl;
     fm.wait_all_results();
+    std::cout << "Done for init tree..." << std::endl;
   }
 }
 
@@ -241,6 +243,7 @@ void LMatrix::init_data
   if(wait) {
     std::cout << "Wait for init tree..." << std::endl;
     fm.wait_all_results();
+    std::cout << "Done for init tree..." << std::endl;
   }
 }
 
@@ -264,8 +267,9 @@ void LMatrix::init_dense_blocks
   FutureMap fm = runtime->execute_index_space(ctx, launcher);
     
   if(wait) {
-    std::cout << "Wait for init..." << std::endl;
+    std::cout << "Wait for init dense blocks..." << std::endl;
     fm.wait_all_results();
+    std::cout << "Done for init dense blocks..." << std::endl;
   }
 }
 
@@ -291,8 +295,9 @@ void LMatrix::init_dense_blocks
   FutureMap fm = runtime->execute_index_space(ctx, launcher);
     
   if(wait) {
-    std::cout << "Wait for init..." << std::endl;
+    std::cout << "Wait for init dense blocks..." << std::endl;
     fm.wait_all_results();
+    std::cout << "Done for init dense blocks..." << std::endl;
   }
 }
 
@@ -439,8 +444,9 @@ void LMatrix::solve
   FutureMap fm = runtime->execute_index_space(ctx, launcher);
 
   if(wait) {
-    std::cout << "Wait for solve..." << std::endl;
+    std::cout << "Wait for leaf solve..." << std::endl;
     fm.wait_all_results();
+    std::cout << "Done for leaf solve..." << std::endl;
   }
 }
 
@@ -525,8 +531,9 @@ void LMatrix::node_solve
   FutureMap fm = runtime->execute_index_space(ctx, launcher);
 
   if(wait) {
-    std::cout << "Wait for solve..." << std::endl;
+    std::cout << "Wait for node solve..." << std::endl;
     fm.wait_all_results();
+    std::cout << "Done for node solve..." << std::endl;
   }
 }
 /*
@@ -600,6 +607,7 @@ void LMatrix::add
   if(wait) {
     std::cout << "Wait for adding matrix..." << std::endl;
     fm.wait_all_results();
+    std::cout << "Done for adding matrix..." << std::endl;
   }  
 }
 
@@ -648,6 +656,7 @@ void LMatrix::gemmRed // static method
   if(wait) {
     std::cout << "Wait for gemm reduce..." << std::endl;
     fm.wait_all_results();
+    std::cout << "Done for gemm reduce..." << std::endl;
   }  
 }
 
@@ -703,6 +712,7 @@ void LMatrix::gemmBro // static method
   if(wait) {
     std::cout << "Wait for gemm broadcast..." << std::endl;
     fm.wait_all_results();
+    std::cout << "Done for gemm broadcast..." << std::endl;
   }  
 }
   

@@ -33,11 +33,9 @@ SolverMapper::SolverMapper
   if ( local_proc == mem_procs[valid_mems[0]][0] ) {
     std::cout << "There are " << valid_mems.size()
 	      << " machines" << std::endl;
-    for (size_t i=0; i<valid_mems.size(); i++) {
-      std::cout << "Machine " << i << " has "
-		<< mem_procs[ valid_mems[i] ].size()
-		<< " cores." << std::endl;
-    }
+    std::cout << "Every machine has "
+	      << mem_procs[ valid_mems[0] ].size()
+	      << " cores." << std::endl;
   }
 }
 
@@ -74,7 +72,7 @@ void SolverMapper::select_task_options(Task *task) {
   }  
 }
 
-#if 1
+#if 0
 void SolverMapper::slice_domain(const Task *task, const Domain &domain,
 				std::vector<DomainSplit> &slices) {
   
@@ -165,7 +163,7 @@ void SolverMapper::slice_domain(const Task *task, const Domain &domain,
     slices.push_back(ds);
 
     //std::cout << "Point: " << i << " is assigned to machine: "
-    //	      << mem_idx << std::endl;
+      //<< mem_idx << std::endl;
   }
 }
 #endif
@@ -211,7 +209,7 @@ void SolverMapper::slice_domain(const Task *task, const Domain &domain,
 */
 
 bool SolverMapper::map_task(Task *task) {
-
+    
 #if 0
   std::cout << "Inside map_task() ..." << std::endl;
   std::cout << "orign: " << task->orig_proc.id

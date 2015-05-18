@@ -33,22 +33,14 @@ INC_FLAGS	:= -I ../include/ -I ../include/tasks/
 CC_FLAGS	:= -g \
 		-DBOUNDS_CHECKS -DPRIVILEGE_CHECKS \
 		-DLEGION_PROF -DLEGION_SPY \
-		-DNODE_LOGGING
-#-DLEGION_SPY
+		-DLEGION_IDS_ARE_64BIT 
 
+#-DNODE_LOGGING 
 #-g  \
-			$(INC_FLAGS)  \
-			-DLEGION_PROF  \
-#			-DSERIAL  \
+#			$(INC_FLAGS)  \
 #			-DDEBUG
-#			-DLEGION_BACKTRACE  \
-
 #		   -DSHOW_REGISTER_TASKS \
-#		   -g		\
 
-#		   -DNDEBUG	  \
-#		   -DDEBUG_GEMM
-#		   -DDEBUG_NODE_SOLVE
 
 NVCC_FLAGS	:=
 GASNET_FLAGS	:=
@@ -223,13 +215,18 @@ prof:
 	-env GASNET_BACKTRACE=1     \
 	./test			\
 	-ll:cpu    8		\
-	-ll:csize  30000 	\
+	-ll:csize  20000 	\
+	-hl:prof   1		\
 	-hl:sched  8192  	\
 	-hl:window 8192		\
-	-level 2 		\
+	-level     2 		\
 	-cat legion_prof	\
 
-#	-hl:prof   1		\
+
+#&> node_0.log
+
+#	-hl:sched  8192  	\
+	-hl:window 8192		\
 #	numactl			\
 	-m 0 -N 0		\
 	$(numa) 		\

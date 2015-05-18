@@ -34,6 +34,7 @@ void ScaleMatrixTask::register_tasks(void)
 void ScaleMatrixTask::cpu_task(const Task *task,
 			      const std::vector<PhysicalRegion> &regions,
 			      Context ctx, HighLevelRuntime *runtime) {
+
   assert(regions.size() == 1);
   assert(task->regions.size() == 1);
   assert(task->arglen == sizeof(TaskArgs));
