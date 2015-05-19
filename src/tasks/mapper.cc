@@ -162,8 +162,8 @@ void SolverMapper::slice_domain(const Task *task, const Domain &domain,
     DomainSplit ds(Domain::from_rect<1>(chunk), target, false, false);
     slices.push_back(ds);
 
-    //std::cout << "Point: " << i << " is assigned to machine: "
-      //<< mem_idx << std::endl;
+    std::cout << "Point: " << i << " is assigned to machine: "
+	      << mem_idx << std::endl;
   }
 }
 #endif
@@ -209,7 +209,9 @@ void SolverMapper::slice_domain(const Task *task, const Domain &domain,
 */
 
 bool SolverMapper::map_task(Task *task) {
-    
+
+  std::cout << "Inside map_task() ..." << std::endl;
+  
 #if 0
   std::cout << "Inside map_task() ..." << std::endl;
   std::cout << "orign: " << task->orig_proc.id
@@ -225,6 +227,7 @@ bool SolverMapper::map_task(Task *task) {
 
   // assign additional processors
   std::vector<Processor>& procs = mem_procs[sys_mem];
+  assert(!procs.empty());
   task->additional_procs.insert(procs.begin(), procs.end());
 
   // map the regions
