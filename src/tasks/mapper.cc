@@ -72,7 +72,8 @@ void SolverMapper::select_task_options(Task *task) {
   }  
 }
 
-#if 0
+#if 1
+// assign chunk of points to different processors
 void SolverMapper::slice_domain(const Task *task, const Domain &domain,
 				std::vector<DomainSplit> &slices) {
   
@@ -132,6 +133,7 @@ void SolverMapper::slice_domain(const Task *task, const Domain &domain,
 }
 
 #else
+// assign every point in the launch domain to different processors
 void SolverMapper::slice_domain(const Task *task, const Domain &domain,
 				std::vector<DomainSplit> &slices) {
   
