@@ -513,8 +513,8 @@ void test_two_level_node_solve(Context ctx, HighLevelRuntime *runtime) {
 
 void test_one_level_solver(Context ctx, HighLevelRuntime *runtime) {
 
-  int level = 5;
-  int m = (1<<10)*pow(2,level), n = 30;
+  int level = 9;
+  int m = (1<<11)*pow(2,level), n = 30;
   int nProc = pow(2,level);
   assert(nProc==pow(2,level));
   Matrix VMat(m, n, false), UMat(m, n, false), Rhs(m, 1, false);
@@ -561,7 +561,7 @@ void test_one_level_solver(Context ctx, HighLevelRuntime *runtime) {
   kTree.partition( level, ctx, runtime );
 
   // init rhs
-  uTree.init_rhs(Rhs, ctx, runtime);
+  uTree.init_rhs(Rhs, ctx, runtime, true/*wait*/);
   
   // leaf solve: U = dense \ U
   kTree.solve( uTree.leaf(), ctx, runtime );  

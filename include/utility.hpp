@@ -12,7 +12,7 @@ enum {
   FIELDID_V,
 };
 
-const bool WAIT_DEFAULT = true; // waiting for tasks
+const bool WAIT_DEFAULT = false; //true; // waiting for tasks
 
 double* region_pointer(const PhysicalRegion &region, int, int, int, int);
 

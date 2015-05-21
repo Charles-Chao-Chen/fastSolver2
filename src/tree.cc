@@ -16,9 +16,10 @@ void UTree::init_rhs
 }
 
 void UTree::init_rhs
-(const Matrix& b, Context ctx, HighLevelRuntime *runtime) {
+(const Matrix& b, Context ctx, HighLevelRuntime *runtime,
+ bool wait) {
   assert(b.cols()==1);
-  U.init_data(b, ctx, runtime);
+  U.init_data(b, ctx, runtime, wait);
 }
 
 Vector UTree::rhs() {

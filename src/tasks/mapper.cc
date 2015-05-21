@@ -72,7 +72,7 @@ void SolverMapper::select_task_options(Task *task) {
   }  
 }
 
-#if 1
+#if 0
 // assign chunk of points to different processors
 void SolverMapper::slice_domain(const Task *task, const Domain &domain,
 				std::vector<DomainSplit> &slices) {
@@ -104,10 +104,11 @@ void SolverMapper::slice_domain(const Task *task, const Domain &domain,
       DomainSplit ds(Domain::from_rect<1>(chunk), target, false, false);
       slices.push_back(ds);
 
+      /*
       std::cout << "domain (" << lo.x[0] << ", " << hi.x[0] << ")"
 		<< " is assigned to machine: "
 		<< mem_idx << std::endl;
-
+      */
     }
   }
 
@@ -124,10 +125,11 @@ void SolverMapper::slice_domain(const Task *task, const Domain &domain,
       DomainSplit ds(Domain::from_rect<1>(chunk), target, false, false);
       slices.push_back(ds);
 
+      /*
       std::cout << "domain (" << lo.x[0] << ", " << hi.x[0] << ")"
 		<< " is assigned to machine: "
 		<< mem_idx << std::endl;
-
+      */
     }
   }
 }
@@ -164,8 +166,8 @@ void SolverMapper::slice_domain(const Task *task, const Domain &domain,
     DomainSplit ds(Domain::from_rect<1>(chunk), target, false, false);
     slices.push_back(ds);
 
-    std::cout << "Point: " << i << " is assigned to machine: "
-	      << mem_idx << std::endl;
+    //std::cout << "Point: " << i << " is assigned to machine: "
+    //	      << mem_idx << std::endl;
   }
 }
 #endif
@@ -211,8 +213,6 @@ void SolverMapper::slice_domain(const Task *task, const Domain &domain,
 */
 
 bool SolverMapper::map_task(Task *task) {
-
-  std::cout << "Inside map_task() ..." << std::endl;
   
 #if 0
   std::cout << "Inside map_task() ..." << std::endl;

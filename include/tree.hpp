@@ -13,8 +13,10 @@ public:
   
   // initialize problem right hand side
   void init_rhs(const Vector&, Context ctx, HighLevelRuntime *runtime);
+
   void init_rhs
-  (const Matrix&, Context ctx, HighLevelRuntime *runtime);
+  (const Matrix&, Context ctx, HighLevelRuntime *runtime,
+   bool wait=false);
   
   // return right hand side (overwritten by solution)
   Vector rhs();
