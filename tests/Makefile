@@ -31,8 +31,8 @@ GEN_GPU_SRC	:=				# .cu files
 # You can modify these variables, some will be appended to by the runtime makefile
 INC_FLAGS	:= -I ../include/ -I ../include/tasks/
 CC_FLAGS	:= \
-		-DLEGION_PROF \
 		-DNODE_LOGGING \
+		-DLEGION_PROF \
 		-DLEGION_IDS_ARE_64BIT \
 		-DMAX_FIELDS=64 \
 
@@ -220,13 +220,13 @@ prof:
 	-ll:csize  20000 	\
 	-hl:sched  8192  	\
 	-hl:window 8192		\
+	-hl:prof   1		\
 	-cat legion_prof	\
 	-level     2 		\
 
 
-
 #&> node_0.log
-#	-hl:prof   1		\
+
 #	-hl:sched  8192  	\
 	-hl:window 8192		\
 #	numactl			\
