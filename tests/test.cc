@@ -513,7 +513,7 @@ void test_two_level_node_solve(Context ctx, HighLevelRuntime *runtime) {
 
 void test_one_level_solver(Context ctx, HighLevelRuntime *runtime) {
 
-  int level = 3;
+  int level = 8;
   int m = (1<<11)*pow(2,level), n = 30;
   int nProc = pow(2,level);
   assert(nProc==pow(2,level));
