@@ -221,12 +221,12 @@ prof:
 	-hl:sched  8192  	\
 	-hl:window 8192		\
 	-hl:prof   1		\
-	-cat legion_prof	\
 	-level     2 		\
 
 
+#	-cat task,dma
 #&> node_0.log
-
+#	-cat legion_prof	\
 #	-hl:sched  8192  	\
 	-hl:window 8192		\
 #	numactl			\
