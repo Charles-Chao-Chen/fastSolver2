@@ -172,6 +172,7 @@ tar:
 	../src/tasks/dense_block.cc ../src/tasks/add_matrix.cc \
 	../src/ptr_matrix.cc ../src/utility.cc \
 	../src/tasks/scale_matrix.cc ../src/tasks/mapper.cc \
+	../src/tasks/dist_mapper.cc \
 	\
 	../include/hmatrix.hpp ../include/tree.hpp \
 	../include/lmatrix.hpp ../include/matrix.hpp \
@@ -183,7 +184,8 @@ tar:
 	../include/tasks/dense_block.hpp ../include/tasks/add_matrix.hpp \
 	../include/ptr_matrix.hpp ../include/utility.hpp \
 	../include/lapack_blas.hpp \
-	../include/tasks/scale_matrix.hpp ../include/tasks/mapper.hpp
+	../include/tasks/scale_matrix.hpp ../include/tasks/mapper.hpp \
+	../include/tasks/dist_mapper.hpp
 
 
 prof1:
