@@ -71,87 +71,11 @@ LD_FLAGS	:= -L /usr/lib/	-llapack -lblas -lm
 #   
 ###########################################################################
 
-# All these variables will be filled in by the runtime makefile
-LOW_RUNTIME_SRC	:=
-HIGH_RUNTIME_SRC:=
-GPU_RUNTIME_SRC	:=
-MAPPER_SRC	:=
-
 include $(LG_RT_DIR)/runtime.mk
 
-# General shell commands
-SHELL	:= /bin/sh
-SH	:= sh
-RM	:= rm -f
-LS	:= ls
-MKDIR	:= mkdir
-MV	:= mv
-CP	:= cp
-SED	:= sed
-ECHO	:= echo
-TOUCH	:= touch
-MAKE	:= make
-ifndef GCC
-GCC	:= g++
-endif
-ifndef NVCC
-NVCC	:= $(CUDA)/bin/nvcc
-endif
-SSH	:= ssh
-SCP	:= scp
 
-common_all : all
-
-.PHONY	: common_all
-
-GEN_OBJS	:= $(GEN_SRC:.cc=.o)
-LOW_RUNTIME_OBJS:= $(LOW_RUNTIME_SRC:.cc=.o)
-HIGH_RUNTIME_OBJS:=$(HIGH_RUNTIME_SRC:.cc=.o)
-MAPPER_OBJS	:= $(MAPPER_SRC:.cc=.o)
-# Only compile the gpu objects if we need to 
-ifndef SHARED_LOWLEVEL
-GEN_GPU_OBJS	:= $(GEN_GPU_SRC:.cu=.o)
-GPU_RUNTIME_OBJS:= $(GPU_RUNTIME_SRC:.cu=.o)
-else
-GEN_GPU_OBJS	:=
-GPU_RUNTIME_OBJS:=
-endif
-
-ALL_OBJS	:= $(GEN_OBJS) $(GEN_GPU_OBJS) $(LOW_RUNTIME_OBJS) $(HIGH_RUNTIME_OBJS) $(GPU_RUNTIME_OBJS) $(MAPPER_OBJS)
-
-all:
-	$(MAKE) $(OUTFILE)
-
-# If we're using the general low-level runtime we have to link with nvcc
-$(OUTFILE) : $(ALL_OBJS)
-	@echo "*********** Linking GNU ***********"
-	@echo "---> Linking objects into one binary: $(OUTFILE)"
-ifdef SHARED_LOWLEVEL
-	$(GCC) -o $(OUTFILE) $(ALL_OBJS) $(LD_FLAGS) $(GASNET_FLAGS)
-else
-	$(NVCC) -o $(OUTFILE) $(ALL_OBJS) $(LD_FLAGS) $(GASNET_FLAGS)
-endif
-
-$(GEN_OBJS) : %.o : %.cc
-	$(GCC) -o $@ -c $< $(INC_FLAGS) $(CC_FLAGS)
-
-$(LOW_RUNTIME_OBJS) : %.o : %.cc
-	$(GCC) -o $@ -c $< $(INC_FLAGS) $(CC_FLAGS)
-
-$(HIGH_RUNTIME_OBJS) : %.o : %.cc
-	$(GCC) -o $@ -c $< $(INC_FLAGS) $(CC_FLAGS)
-
-$(MAPPER_OBJS) : %.o : %.cc
-	$(GCC) -o $@ -c $< $(INC_FLAGS) $(CC_FLAGS)
-
-$(GEN_GPU_OBJS) : %.o : %.cu
-	$(NVCC) -o $@ -c $< $(INC_FLAGS) $(NVCC_FLAGS)
-
-$(GPU_RUNTIME_OBJS): %.o : %.cu
-	$(NVCC) -o $@ -c $< $(INC_FLAGS) $(NVCC_FLAGS)
-
-clean:
-	@$(RM) -rf $(OUTFILE) $(GEN_OBJS)  \
+#clean:
+#	@$(RM) -rf $(OUTFILE) $(GEN_OBJS)  \
 	*~  \
 	../include/*~ ../src/*~ \
 	../include/tasks/*~ ../src/tasks/*~
@@ -205,14 +129,14 @@ prof4:
 
 # --- legion profile ---
 
-# nproc : the number of processes, and there should be one
+# node  : the number of processes, and there should be one
 #  process for every node
 # numa  : can be set to 'numactl -m 0 -N 0' to use numa node
 # ncpu  :
 # nutil :
 # leaf  : legion leaf size
 prof:
-	mpiexec -n $(nproc) -ppn 1  \
+	mpiexec -n $(node) -ppn 1  \
 	-env MV2_SHOW_CPU_BINDING=1 \
 	-env MV2_ENABLE_AFFINITY=0  \
 	-env GASNET_IB_SPAWNER=mpi  \
