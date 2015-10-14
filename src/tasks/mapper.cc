@@ -161,6 +161,12 @@ void SolverMapper::slice_domain(const Task *task, const Domain &domain,
     Point<1> lo(i);
     Point<1> hi(i);
     Rect<1> chunk(lo, hi);
+    // if num_mems > num_elmts, e.g.,
+    //  num_mems = 8, num_elmts = 4,
+    //  the assignment is {0, 2, 4, 6}
+    // if num_mems < num_elmts, e.g.,
+    //  num_mems = 4, num_elmts = 8,
+    //  the assignment is {0, 0, 1, 1, ..., 8, 8}
     int mem_idx = i * num_mems / num_elmts;
     Processor target = mem_procs[valid_mems[mem_idx]][0];
     DomainSplit ds(Domain::from_rect<1>(chunk), target, false, false);

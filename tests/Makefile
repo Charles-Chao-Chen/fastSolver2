@@ -31,13 +31,11 @@ GEN_GPU_SRC	:=				# .cu files
 # You can modify these variables, some will be appended to by the runtime makefile
 INC_FLAGS	:= -I ../include/ -I ../include/tasks/
 CC_FLAGS	:= \
-		-DNODE_LOGGING \
-		-DLEGION_PROF \
-		-DLEGION_IDS_ARE_64BIT \
-		-DMAX_FIELDS=64 \
+		-DLEGION_IDS_ARE_64BIT 
 
 
 #-g  \
+		-DNODE_LOGGING \
 		-DBOUNDS_CHECKS -DPRIVILEGE_CHECKS \
 #			$(INC_FLAGS)  \
 #			-DDEBUG
@@ -143,23 +141,28 @@ prof:
 	-env GASNET_BACKTRACE=1     \
 	./test			\
 	-ll:cpu    8		\
-	-ll:csize  20000 	\
-	-hl:sched  8192  	\
-	-hl:window 8192		\
 	-hl:prof   1		\
-	-level     2 		\
+	-cat legion_prof	\
+	-level     2		\
+	-logfile node_%.log
 
 
 #	-cat task,dma
 #&> node_0.log
 #	-cat legion_prof	\
+
+#	-ll:csize  1000 	\
 #	-hl:sched  8192  	\
 	-hl:window 8192		\
+	-cat legion_prof -level 2 \
 #	numactl			\
 	-m 0 -N 0		\
 	$(numa) 		\
 	-ll:util   $(nutil)	\
 	-ll:cpu    $(ncpu)	\
+	-hl:prof   1		\
+	-hl:sched  8192  	\
+	-hl:window 8192		\
 
 # --- Sapling commands ---
 

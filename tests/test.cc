@@ -28,6 +28,8 @@ void top_level_task(const Task *task,
 		    const std::vector<PhysicalRegion> &regions,
 		    Context ctx, HighLevelRuntime *runtime) {  
 
+  std::cout<<"In top_level_task()"<<std::endl;
+    
   //test_vector();
   //test_matrix();
   //test_lmatrix_init(ctx, runtime);
@@ -91,7 +93,7 @@ int main(int argc, char *argv[]) {
 
   // register mapper
   HighLevelRuntime::set_registration_callback(registration_callback);
-  
+
   // start legion master task
   return HighLevelRuntime::start(argc, argv);
 }
@@ -513,17 +515,18 @@ void test_two_level_node_solve(Context ctx, HighLevelRuntime *runtime) {
 
 void test_one_level_solver(Context ctx, HighLevelRuntime *runtime) {
 
-  int level = 3+0; // assume using 8 cores every node
+  int level = 3+1; // assume using 8 cores every node
   int m = (1<<10)*pow(2,level), n = 30;
   int nProc = pow(2,level);
   assert(nProc==pow(2,level));
-  Matrix VMat(m, n, false), UMat(m, n, false), Rhs(m, 1, false);
+  bool has_entry = false; //true;
+  Matrix VMat(m, n, has_entry), UMat(m, n, has_entry), Rhs(m, 1, has_entry);
   VMat.rand(nProc);
   UMat.rand(nProc);
   Rhs.rand(nProc);
 
   Vector DVec(m);
-  DVec.rand(nProc, 1000);
+  DVec.rand(nProc, 1e3);
   int nrow = DVec.rows();
   int nblk = pow(2, level);
   int ncol = DVec.rows() / nblk;
