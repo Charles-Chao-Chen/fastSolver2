@@ -571,7 +571,6 @@ void test_one_level_solver(Context ctx, HighLevelRuntime *runtime) {
   //uTree.leaf().display("leaf solve", ctx, runtime);
 
   for (int i=level; i>0; i--) {
-
     LMatrix& V = vTree.level(i);
     LMatrix& u = uTree.uMat_level(i);
     LMatrix& d = uTree.dMat_level(i);    
@@ -605,6 +604,7 @@ void test_one_level_solver(Context ctx, HighLevelRuntime *runtime) {
     // broadcast operation
     // d -= u * VTd
     LMatrix::gemmBro('n', 'n', -1.0, u, VTd, 1.0, d, ctx, runtime );
+    std::cout<<"Solved level: "<<i<<std::endl;
   }
 
 #if 0
@@ -615,4 +615,6 @@ void test_one_level_solver(Context ctx, HighLevelRuntime *runtime) {
   std::cout << "Relative residual: " << err.norm() / Rhs.norm()
 	    << std::endl;
 #endif
+
+  std::cout<<"Solver complete."<<std::endl;
 }

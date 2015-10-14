@@ -3,7 +3,7 @@ $(error LG_RT_DIR variable is not defined, aborting build)
 endif
 
 #Flags for directing the runtime makefile what to include
-DEBUG=0                   # Include debugging symbols
+DEBUG=1                   # Include debugging symbols
 OUTPUT_LEVEL=LEVEL_DEBUG  # Compile time print level
 SHARED_LOWLEVEL=0	  # Use the shared low level
 USE_CUDA=0
@@ -78,8 +78,8 @@ include $(LG_RT_DIR)/runtime.mk
 	../include/*~ ../src/*~ \
 	../include/tasks/*~ ../src/tasks/*~
 
-cleanall:
-	@$(RM) -rf $(ALL_OBJS) *~
+#cleanall:
+#	@$(RM) -rf $(ALL_OBJS) *~
 
 tar:	
 	tar cvfz fastSolver.tgz Makefile \
@@ -109,10 +109,25 @@ tar:
 	../include/tasks/scale_matrix.hpp ../include/tasks/mapper.hpp \
 	../include/tasks/dist_mapper.hpp
 
-
 prof1:
-	./test -ll:cpu 8 -ll:csize 3000 -level 2 -cat legion_prof
-	~/legion/tools/legion_prof.py -p node_0.log
+	mpirun -H n0000 \
+	-bind-to none -report-bindings \
+	-x GASNET_IB_SPAWNER -x GASNET_BACKTRACE=1 \
+	./test \
+	-ll:cpu 8 -ll:util 1 \
+	-hl:prof   1		\
+	-cat legion_prof -level 2 \
+	-logfile node_%.log
+
+prof2:
+	mpirun -H n0000,n0001 \
+	-bind-to none -report-bindings \
+	-x GASNET_IB_SPAWNER -x GASNET_BACKTRACE=1 \
+	./test \
+	-ll:cpu 8 -ll:util 1 \
+	-hl:prof   1		\
+	-cat legion_prof -level 2 \
+	-logfile node_%.log
 
 prof4:
 	mpirun -H n0000,n0001,n0002,n0003 \
@@ -120,9 +135,9 @@ prof4:
 	-x GASNET_IB_SPAWNER -x GASNET_BACKTRACE=1 \
 	./test \
 	-ll:cpu 8 -ll:util 1 \
-	-ll:csize 30000 \
-	-hl:sched 8192 \
-	-level 2 -cat legion_prof
+	-hl:prof   1		\
+	-cat legion_prof -level 2\
+	-logfile node_%.log
 
 
 # --- legion profile ---

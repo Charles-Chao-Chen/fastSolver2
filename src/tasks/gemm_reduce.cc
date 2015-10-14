@@ -34,7 +34,8 @@ void GemmRedTask::register_tasks(void)
 void GemmRedTask::cpu_task(const Task *task,
 			   const std::vector<PhysicalRegion> &regions,
 			   Context ctx, HighLevelRuntime *runtime) {
-  
+
+  //std::cout<<"In gemm reduction task."<<std::endl;
   assert(regions.size() == 3);
   assert(task->regions.size() == 3);
   assert(task->arglen == sizeof(TaskArgs));

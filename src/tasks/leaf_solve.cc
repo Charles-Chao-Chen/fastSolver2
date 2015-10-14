@@ -34,7 +34,8 @@ void LeafSolveTask::register_tasks(void)
 void LeafSolveTask::cpu_task(const Task *task,
 			     const std::vector<PhysicalRegion> &regions,
 			     Context ctx, HighLevelRuntime *runtime) {
-  
+
+  //std::cout<<"In leaf solve task."<<std::endl;
   assert(regions.size() == 2);
   assert(task->regions.size() == 2);
   assert(task->arglen == sizeof(TaskArgs));

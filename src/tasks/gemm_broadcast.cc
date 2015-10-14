@@ -34,7 +34,8 @@ void GemmBroTask::register_tasks(void)
 void GemmBroTask::cpu_task(const Task *task,
 			   const std::vector<PhysicalRegion> &regions,
 			   Context ctx, HighLevelRuntime *runtime) {
-  
+
+  //std::cout<<"In gemm broadcast task."<<std::endl;
   //assert(regions.size() == 3);
   //assert(task->regions.size() == 3);
   assert(regions.size() == 2);

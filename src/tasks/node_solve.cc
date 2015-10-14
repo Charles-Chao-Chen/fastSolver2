@@ -39,6 +39,7 @@ void NodeSolveTask::cpu_task(const Task *task,
 			     const std::vector<PhysicalRegion> &regions,
 			     Context ctx, HighLevelRuntime *runtime) {
 
+  //std::cout<<"In node solve task."<<std::endl;
   assert(regions.size() == 2);
   assert(task->regions.size() == 2);
   assert(task->arglen == sizeof(TaskArgs));
