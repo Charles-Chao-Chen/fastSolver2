@@ -22,7 +22,7 @@ void test_node_solve(Context, HighLevelRuntime*);
 void test_two_level_reduce(Context, HighLevelRuntime*);
 void test_two_level_broadcast(Context, HighLevelRuntime*);
 void test_two_level_node_solve(Context, HighLevelRuntime*);
-void test_one_level_solver(Context, HighLevelRuntime*);
+void test_solver(int, Context, HighLevelRuntime*);
 
 void top_level_task(const Task *task,
 		    const std::vector<PhysicalRegion> &regions,
@@ -40,7 +40,17 @@ void top_level_task(const Task *task,
   //test_two_level_reduce(ctx, runtime);
   //test_two_level_broadcast(ctx, runtime);
   //test_two_level_node_solve(ctx, runtime);
-  test_one_level_solver(ctx, runtime);
+  int level = 3; // assume 8 cores on every machine
+  const InputArgs &command_args = HighLevelRuntime::get_input_args();
+  if (command_args.argc > 1) {
+    for (int i = 1; i < command_args.argc; i++) {
+      if (!strcmp(command_args.argv[i],"-l"))
+	level = atoi(command_args.argv[++i]);
+    }
+    assert(level > 0);
+  }
+  printf("Running fast solver for %d level, %d leaves...\n", level, (int)pow(2,level));
+  test_solver(level, ctx, runtime);
 
     
   /*
@@ -513,9 +523,9 @@ void test_two_level_node_solve(Context ctx, HighLevelRuntime *runtime) {
     std::cout << "Test for node solve passed!" << std::endl;
 }
 
-void test_one_level_solver(Context ctx, HighLevelRuntime *runtime) {
+void test_solver(int level, Context ctx, HighLevelRuntime *runtime) {
 
-  int level = 3+1; // assume using 8 cores every node
+  //int level = 3+?; // assume using 8 cores every node
   int m = (1<<10)*pow(2,level), n = 30;
   int nProc = pow(2,level);
   assert(nProc==pow(2,level));

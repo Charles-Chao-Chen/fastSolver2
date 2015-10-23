@@ -3,7 +3,7 @@ $(error LG_RT_DIR variable is not defined, aborting build)
 endif
 
 #Flags for directing the runtime makefile what to include
-DEBUG=1                   # Include debugging symbols
+DEBUG=0                   # Include debugging symbols
 OUTPUT_LEVEL=LEVEL_DEBUG  # Compile time print level
 SHARED_LOWLEVEL=0	  # Use the shared low level
 USE_CUDA=0
@@ -31,7 +31,9 @@ GEN_GPU_SRC	:=				# .cu files
 # You can modify these variables, some will be appended to by the runtime makefile
 INC_FLAGS	:= -I ../include/ -I ../include/tasks/
 CC_FLAGS	:= \
-		-DLEGION_IDS_ARE_64BIT 
+		-DLEGION_IDS_ARE_64BIT \
+		-DPRIVILEGE_CHECKS \
+		-DBOUNDS_CHECKS \
 
 
 #-g  \
@@ -156,28 +158,23 @@ prof:
 	-env GASNET_BACKTRACE=1     \
 	./test			\
 	-ll:cpu    8		\
+	-ll:csize  10000 	\
+	-hl:disjointness	\
 	-hl:prof   1		\
-	-cat legion_prof	\
+	-cat task,dma,solver_mapper,solver_tasks	\
 	-level     2		\
 	-logfile node_%.log
 
-
 #	-cat task,dma
-#&> node_0.log
 #	-cat legion_prof	\
-
 #	-ll:csize  1000 	\
 #	-hl:sched  8192  	\
 	-hl:window 8192		\
-	-cat legion_prof -level 2 \
 #	numactl			\
 	-m 0 -N 0		\
 	$(numa) 		\
 	-ll:util   $(nutil)	\
 	-ll:cpu    $(ncpu)	\
-	-hl:prof   1		\
-	-hl:sched  8192  	\
-	-hl:window 8192		\
 
 # --- Sapling commands ---
 

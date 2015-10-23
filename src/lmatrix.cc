@@ -1,6 +1,8 @@
 #include "lmatrix.hpp"
 #include <math.h> // for pow()
 
+Realm::Logger log_solver_tasks("solver_tasks");
+
 LMatrix::LMatrix() : nPart(-1) {}
 
 LMatrix::LMatrix
@@ -110,14 +112,15 @@ void LMatrix::scale
   TaskArgument tArg(&args, sizeof(args));
   ScaleMatrixTask launcher(colDom, tArg, ArgumentMap(), colDom.get_volume());
   RegionRequirement req(lpart, 0, READ_WRITE, EXCLUSIVE, region);
+  //RegionRequirement req(lpart, 0, WRITE_DISCARD, EXCLUSIVE, region);
   req.add_field(FIELDID_V);
   launcher.add_region_requirement(req);
   FutureMap fm = runtime->execute_index_space(ctx, launcher);
   
   if(wait) {
-    std::cout << "Wait for scaling matrix..." << std::endl;
+    log_solver_tasks.print("Wait for scaling matrix...");
     fm.wait_all_results();
-    std::cout << "Done for scaling matrix..." << std::endl;
+    log_solver_tasks.print("Done for scaling matrix...");
   }
 }
 
@@ -147,9 +150,9 @@ void LMatrix::init_data
   FutureMap fm = runtime->execute_index_space(ctx, launcher);
     
   if(wait) {
-    std::cout << "Wait for init tree..." << std::endl;
+    log_solver_tasks.print("Wait for init tree...");
     fm.wait_all_results();
-    std::cout << "Done for init tree..." << std::endl;
+    log_solver_tasks.print("Done for init tree...");
   }
 }
 
@@ -267,9 +270,9 @@ void LMatrix::init_dense_blocks
   FutureMap fm = runtime->execute_index_space(ctx, launcher);
     
   if(wait) {
-    std::cout << "Wait for init dense blocks..." << std::endl;
+    log_solver_tasks.print("Wait for init dense blocks...");
     fm.wait_all_results();
-    std::cout << "Done for init dense blocks..." << std::endl;
+    log_solver_tasks.print("Done for init dense blocks...");
   }
 }
 
@@ -444,9 +447,9 @@ void LMatrix::solve
   FutureMap fm = runtime->execute_index_space(ctx, launcher);
 
   if(wait) {
-    std::cout << "Wait for leaf solve..." << std::endl;
+    log_solver_tasks.print("Wait for leaf solve...");
     fm.wait_all_results();
-    std::cout << "Done for leaf solve..." << std::endl;
+    log_solver_tasks.print("Done for leaf solve...");
   }
 }
 
@@ -531,9 +534,9 @@ void LMatrix::node_solve
   FutureMap fm = runtime->execute_index_space(ctx, launcher);
 
   if(wait) {
-    std::cout << "Wait for node solve..." << std::endl;
+    log_solver_tasks.print("Wait for node solve...");
     fm.wait_all_results();
-    std::cout << "Done for node solve..." << std::endl;
+    log_solver_tasks.print("Done for node solve...");
   }
 }
 /*
@@ -617,6 +620,7 @@ void LMatrix::gemmRed // static method
  double beta, LMatrix& C,
  Context ctx, HighLevelRuntime *runtime, bool wait) {
 
+  assert( fabs(beta - 0.0) < 1e-10);
   C.scale(beta, ctx, runtime);
   
   // A and B have the same number of partition
@@ -654,9 +658,9 @@ void LMatrix::gemmRed // static method
   FutureMap fm = runtime->execute_index_space(ctx, launcher);
 
   if(wait) {
-    std::cout << "Wait for gemm reduce..." << std::endl;
+    log_solver_tasks.print("Wait for gemm reduce...");
     fm.wait_all_results();
-    std::cout << "Done for gemm reduce..." << std::endl;
+    log_solver_tasks.print("Done for gemm reduce...");
   }  
 }
 
@@ -710,9 +714,9 @@ void LMatrix::gemmBro // static method
   FutureMap fm = runtime->execute_index_space(ctx, launcher);
 
   if(wait) {
-    std::cout << "Wait for gemm broadcast..." << std::endl;
+    log_solver_tasks.print("Wait for gemm broadcast...");
     fm.wait_all_results();
-    std::cout << "Done for gemm broadcast..." << std::endl;
+    log_solver_tasks.print("Done for gemm broadcast...");
   }  
 }
   

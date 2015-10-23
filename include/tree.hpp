@@ -12,7 +12,8 @@ public:
   void init(int, const Matrix&);
   
   // initialize problem right hand side
-  void init_rhs(const Vector&, Context ctx, HighLevelRuntime *runtime);
+  void init_rhs
+  (const Vector&, Context ctx, HighLevelRuntime *runtime);
 
   void init_rhs
   (const Matrix&, Context ctx, HighLevelRuntime *runtime,

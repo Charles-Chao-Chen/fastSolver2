@@ -44,10 +44,12 @@ public:
   void create(int, int, Context, HighLevelRuntime*);
 
   // set the matrix to value
-  void clear(double, Context, HighLevelRuntime*, bool wait=WAIT_DEFAULT);
+  void clear
+  (double, Context, HighLevelRuntime*, bool wait=WAIT_DEFAULT);
 
   // scale all the entries
-  void scale(double, Context, HighLevelRuntime*, bool wait=WAIT_DEFAULT);
+  void scale
+  (double, Context, HighLevelRuntime*, bool wait=WAIT_DEFAULT);
 
   // initialize data from Matrix object
   void init_data
@@ -120,8 +122,9 @@ public:
 
   // print the values on screen
   // for debugging
-  void display(const std::string&,
-	       Context, HighLevelRuntime*, bool wait=WAIT_DEFAULT);
+  void display
+  (const std::string&, Context, HighLevelRuntime*,
+   bool wait=WAIT_DEFAULT);
 
   // static methods
   // matrix subtraction
