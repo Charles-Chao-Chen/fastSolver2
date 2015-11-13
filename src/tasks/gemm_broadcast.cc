@@ -2,6 +2,8 @@
 #include "ptr_matrix.hpp"
 #include "utility.hpp"
 
+static Realm::Logger log_solver_tasks("solver_tasks");
+
 int GemmBroTask::TASKID;
 
 GemmBroTask::GemmBroTask(Domain domain,
@@ -35,7 +37,6 @@ void GemmBroTask::cpu_task(const Task *task,
 			   const std::vector<PhysicalRegion> &regions,
 			   Context ctx, HighLevelRuntime *runtime) {
 
-  //std::cout<<"In gemm broadcast task."<<std::endl;
   //assert(regions.size() == 3);
   //assert(task->regions.size() == 3);
   assert(regions.size() == 2);
@@ -43,6 +44,8 @@ void GemmBroTask::cpu_task(const Task *task,
   assert(task->arglen == sizeof(TaskArgs));
   Point<1> p = task->index_point.get_point<1>();
   //printf("point = %d\n", p[0]);
+
+  log_solver_tasks.print("Inside gemm broadcast tasks.");
 
   const TaskArgs args = *((const TaskArgs*)task->args);
   int Arblk = args.Arblk;

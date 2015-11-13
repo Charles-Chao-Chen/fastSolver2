@@ -2,6 +2,8 @@
 #include "ptr_matrix.hpp"
 #include "utility.hpp"
 
+static Realm::Logger log_solver_tasks("solver_tasks");
+
 int ScaleMatrixTask::TASKID;
 
 ScaleMatrixTask::ScaleMatrixTask(Domain domain,
@@ -41,6 +43,8 @@ void ScaleMatrixTask::cpu_task(const Task *task,
 
   Point<1> p = task->index_point.get_point<1>();
   //printf("point = %d\n", p[0]);
+
+  log_solver_tasks.print("Inside scale matrix tasks.");
 
   const TaskArgs args = *((const TaskArgs*)task->args);
   int rblk  = args.rblock;

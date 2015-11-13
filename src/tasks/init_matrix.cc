@@ -4,6 +4,8 @@
 #include "utility.hpp" // for FIELDID_V
 #include <assert.h>
 
+static Realm::Logger log_solver_tasks("solver_tasks");
+
 int InitMatrixTask::TASKID;
 
 InitMatrixTask::InitMatrixTask(Domain domain,
@@ -39,28 +41,36 @@ void InitMatrixTask::cpu_task(const Task *task,
   assert(regions.size() == 1);
   assert(task->regions.size() == 1);
   assert(task->arglen == sizeof(TaskArgs));
-  assert(task->local_arglen == sizeof(long));
+  //assert(task->local_arglen == sizeof(long));
+  log_solver_tasks.print("Inside init tasks.");
 
   Point<1> p = task->index_point.get_point<1>();
   //printf("point = %d\n", p[0]);
 
-  const long seed = *((const long*)task->local_args);
-  //  printf("random seed = %lu \n", seed);
+  const long nPart = *((const long*)task->local_args);
+  //printf("nPart = %lu \n", nPart);
 
   const TaskArgs blockSize = *((const TaskArgs*)task->args);
   int rblk  = blockSize.rblk;
   int cblk  = blockSize.cblk;
-  int clo   = blockSize.clo;
   int chi   = blockSize.chi;
   //printf("block row size = %i\n", rows);
   //printf("block col size = %i\n", cols);
 
   int rlo = p[0]*rblk;
-  int rhi = (p[0] + 1) * rblk;
+  //int rhi = (p[0] + 1) * rblk;
 
-  while (clo+cblk <= chi) {
-    PtrMatrix A = get_raw_pointer(regions[0], rlo, rhi, clo, clo+cblk);
-    A.rand(seed);
-    clo += cblk;
+  int blksmall = rblk / nPart;
+  for (int i=0; i<nPart; i++) {
+    const long seed = *((const long*)task->local_args + i + 1);
+    //printf(" seed = %lu \n", seed);
+    int clo   = blockSize.clo;
+    while (clo+cblk <= chi) {
+      PtrMatrix A = get_raw_pointer(regions[0], rlo+i*blksmall, rlo+(i+1)*blksmall, clo, clo+cblk);
+      A.rand(seed);
+      //A.display("sub-mat");
+      //std::cout<<"LD:"<<A.LD()<<std::endl;
+      clo += cblk;
+    }
   }
 }

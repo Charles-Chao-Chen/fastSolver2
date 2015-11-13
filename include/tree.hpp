@@ -66,6 +66,7 @@ public:
   (int level, Context ctx, HighLevelRuntime *runtime);
 
   // return the legion matrix for one level
+  LMatrix& leaf();
   LMatrix& level(int);
   
 private:
@@ -93,7 +94,7 @@ public:
 
   // wrapper for legion matrix solve
   // leaf solve task
-  void solve(LMatrix&, Context ctx, HighLevelRuntime *runtime);
+  void solve(LMatrix&, LMatrix&, Context ctx, HighLevelRuntime *runtime);
   
 private:
   int nProc;

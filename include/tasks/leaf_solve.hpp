@@ -9,6 +9,8 @@ public:
   struct TaskArgs {
     int nrow;
     int nRhs;
+    int rank;
+    int nPart;
   };
   LeafSolveTask(Domain domain,
 		TaskArgument global_arg,

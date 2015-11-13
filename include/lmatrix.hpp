@@ -33,7 +33,8 @@ public:
   LogicalRegion logical_region() const;
   IndexPartition index_partition() const;
   LogicalPartition logical_partition() const;
-
+  int small_block_parts() const;
+  
   void set_column_size(int);
   void set_column_begin(int);
   void set_logical_region(LogicalRegion);
@@ -113,7 +114,7 @@ public:
   // solve linear system
   // for KTree::solve()
   void solve
-  (LMatrix&, Context, HighLevelRuntime*, bool wait=WAIT_DEFAULT);
+  (LMatrix&, LMatrix&, Context, HighLevelRuntime*, bool wait=WAIT_DEFAULT);
 
   // solve node system
   // for HMatrix::solve()
@@ -182,7 +183,9 @@ private:
   // matrix and block size
   int mRows;
   int mCols;
-  int colIdx; // starting column index in the region
+  int colIdx;   // starting column index in the region
+  int smallblk; // number of blocks in every partition,
+                //  used when treelvel != launchlvl
   
   // number of ranks
   // used to init data

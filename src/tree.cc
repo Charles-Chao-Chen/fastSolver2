@@ -34,7 +34,7 @@ void UTree::partition
   assert( UMat.rows() > 0 );
   assert( UMat.cols() > 0 );
   // create region
-  int cols = nRhs + level*UMat.cols();
+  int cols = nRhs + UMat.cols()*UMat.levels();
   U.create(UMat.rows(), cols, ctx, runtime);
   // partition the big region
   // this is the only partition we will use
@@ -51,7 +51,7 @@ void UTree::partition
   // In particular, we need to set the column begin
   // for u matrices.
   for (int i=0; i<mLevel; i++) {
-    int ncol = nRhs + i*rank;
+    int ncol = nRhs + rank*i;
     LMatrix dMat = U;
     dMat.set_column_size(ncol);
     dMat_vec.push_back(dMat);
@@ -59,7 +59,7 @@ void UTree::partition
     uMat.set_column_size(rank);
     uMat.set_column_begin(ncol);
     uMat_vec.push_back(uMat);
-  }  
+  }
   assert(uMat_vec.size() == size_t(mLevel));
   assert(dMat_vec.size() == size_t(mLevel));
 }
@@ -115,6 +115,10 @@ void VTree::partition
   V.init_data(VMat, ctx, runtime);
 }
 
+LMatrix& VTree::leaf() {
+  return V;
+}
+
 LMatrix& VTree::level(int i) {
   assert( 0 < i && i <= mLevel );
   return V;
@@ -127,9 +131,9 @@ void KTree::init
   this->UMat  = UMat_;
   this->VMat  = VMat_;
   this->DVec  = DVec_;
-  assert(nProc == UMat.num_partition());
-  assert(nProc == VMat.num_partition());
-  assert(nProc == DVec.num_partition());
+  assert(UMat.num_partition()%nProc==0);
+  assert(VMat.num_partition()%nProc==0);
+  assert(DVec.num_partition()%nProc==0);
   assert(UMat.rows() == VMat.rows());
   assert(UMat.cols() == VMat.cols());
   assert(UMat.rows() == DVec.rows());
@@ -139,11 +143,9 @@ void KTree::partition
 (int level, Context ctx, HighLevelRuntime *runtime) {
   // create region
   int nrow = DVec.rows();
-  int nblk = pow(2, level);
+  int nblk = pow(2, UMat.levels());
   int ncol = DVec.rows() / nblk;
-  assert(nblk >= nProc);
-  assert(ncol >= UMat.cols());
-  // create region
+  assert(ncol>0);
   K.create( nrow, ncol, ctx, runtime );
   // partition region
   this->mLevel = level;
@@ -153,6 +155,6 @@ void KTree::partition
 }
 
 void KTree::solve
-(LMatrix& U, Context ctx, HighLevelRuntime *runtime) {
-  K.solve(U, ctx, runtime);
+(LMatrix& U, LMatrix& V, Context ctx, HighLevelRuntime *runtime) {
+  K.solve(U, V, ctx, runtime);
 }

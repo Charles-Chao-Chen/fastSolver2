@@ -12,7 +12,9 @@ enum {
   FIELDID_V,
 };
 
-const bool WAIT_DEFAULT = true; //false; // waiting for tasks
+//Realm::Logger log_solver_tasks("solver_tasks");
+
+const bool WAIT_DEFAULT = false; //true; // waiting for tasks
 
 double* region_pointer(const PhysicalRegion &region, int, int, int, int);
 

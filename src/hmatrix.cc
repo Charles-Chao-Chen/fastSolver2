@@ -57,7 +57,7 @@ Vector HMatrix::solve
   uTree.init_rhs(b, ctx, runtime);
   
   // leaf solve: U = dense \ U
-  kTree.solve( uTree.leaf(), ctx, runtime );
+  kTree.solve( uTree.leaf(), vTree.leaf(), ctx, runtime );
   
   // upward pass:
   // --             --  --    --     --      --

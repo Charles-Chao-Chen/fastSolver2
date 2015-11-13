@@ -1,7 +1,7 @@
 #include "lmatrix.hpp"
 #include <math.h> // for pow()
 
-Realm::Logger log_solver_tasks("solver_tasks");
+static Realm::Logger log_solver_tasks("solver_tasks");
 
 LMatrix::LMatrix() : nPart(-1) {}
 
@@ -138,8 +138,9 @@ void LMatrix::init_data
   assert(col1<=mCols);
   assert((col1-col0)>=mat.cols());
   assert((col1-col0)%mat.cols()==0);
-  assert(this->nPart == mat.num_partition());
-  ArgumentMap seeds = MapSeed(mat);  
+  assert(mat.num_partition()%nPart==0);
+  this->smallblk = mat.num_partition()/nPart;
+  ArgumentMap seeds = MapSeed(mat);
   InitMatrixTask::TaskArgs args = {rblock, mat.cols(), col0, col1};
   TaskArgument tArg(&args, sizeof(args));
   InitMatrixTask launcher(colDom, tArg, seeds, nPart);
@@ -215,6 +216,7 @@ Matrix LMatrix::to_matrix
 }
   
 // to be removed
+/*
 void LMatrix::init_data
 (int nProc_, const Matrix& mat,
  Context ctx, HighLevelRuntime *runtime, bool wait) {
@@ -249,13 +251,13 @@ void LMatrix::init_data
     std::cout << "Done for init tree..." << std::endl;
   }
 }
-
+*/
 void LMatrix::init_dense_blocks
 (const Matrix& U, const Matrix& V, const Vector& D,
  Context ctx, HighLevelRuntime *runtime, bool wait) {
-  assert(nPart==U.num_partition());
-  assert(nPart==V.num_partition());
-  assert(nPart==D.num_partition());
+  assert(U.num_partition()%nPart==0);
+  assert(V.num_partition()%nPart==0);
+  assert(D.num_partition()%nPart==0);
   assert(U.cols()==V.cols());
   assert(U.rows()==V.rows());
   assert(U.rows()==D.rows());
@@ -275,7 +277,7 @@ void LMatrix::init_dense_blocks
     log_solver_tasks.print("Done for init dense blocks...");
   }
 }
-
+/*
 void LMatrix::init_dense_blocks
 (int nProc_, int nblk, const Matrix& U, const Matrix& V, const Vector& D,
  Context ctx, HighLevelRuntime *runtime, bool wait) {
@@ -303,32 +305,42 @@ void LMatrix::init_dense_blocks
     std::cout << "Done for init dense blocks..." << std::endl;
   }
 }
-
+*/
 ArgumentMap LMatrix::MapSeed(const Matrix& matrix) {
-  assert(this->nPart == matrix.num_partition());
+  assert(matrix.num_partition()%nPart==0);
+  int blk = matrix.num_partition() / nPart;
   ArgumentMap argMap;
   for (int i = 0; i < nPart; i++) {
-    long s = matrix.rand_seed(i);
+    std::vector<long> vec;
+    vec.push_back(blk);
+    for (int j = 0; j < blk; j++) {
+      vec.push_back( matrix.rand_seed(i*blk+j) );
+    }
     argMap.set_point(DomainPoint::from_point<1>(Point<1>(i)),
-		     TaskArgument(&s,sizeof(s)));
+		     TaskArgument(&vec[0],sizeof(long)*(blk+1)));
   }
   return argMap;
 }
 
 ArgumentMap LMatrix::MapSeed
 (const Matrix& U, const Matrix& V, const Vector& D) {
-  int nPart = U.num_partition();
+  assert(U.num_partition()%nPart==0);
+  int blk = U.num_partition() / nPart;
   ArgumentMap argMap;
   for (int i = 0; i < nPart; i++) {
-    ThreeSeeds  threeSeeds = {U.rand_seed(i),
-			      V.rand_seed(i),
-			      D.rand_seed(i)};
+    std::vector<long> vec;
+    vec.push_back(blk);
+    for (int j = 0; j < blk; j++) {
+      vec.push_back(U.rand_seed(i*blk+j));
+      vec.push_back(V.rand_seed(i*blk+j));
+      vec.push_back(D.rand_seed(i*blk+j));
+    }
     argMap.set_point(DomainPoint::from_point<1>(Point<1>(i)),
-		     TaskArgument(&threeSeeds,sizeof(threeSeeds)));
+		     TaskArgument(&vec[0],sizeof(long)*(3*blk+1)));
   }
   return argMap;
 }
-
+/*
 ArgumentMap LMatrix::MapSeed(int nPart, const Matrix& matrix) {
   assert(nPart == matrix.num_partition());
   ArgumentMap argMap;
@@ -349,7 +361,7 @@ ArgumentMap LMatrix::MapSeed(int nPart, const Matrix& U, const Matrix& V, const 
   }
   return argMap;
 }
-
+*/
 IndexPartition LMatrix::UniformRowPartition
 (Context ctx, HighLevelRuntime *runtime) {
 
@@ -411,39 +423,48 @@ LMatrix LMatrix::partition
   return LMatrix(mRows, cols, num_subregions, ip, region, ctx, runtime); // interface to be modified
 }
 */
+
+int LMatrix::small_block_parts() const {return smallblk;}
+
 // solve A x = b for each partition
 //  b will be overwritten by x
 void LMatrix::solve
-(LMatrix& b, Context ctx, HighLevelRuntime* runtime, bool wait) {
+(LMatrix& b, LMatrix& V, Context ctx, HighLevelRuntime* runtime, bool wait) {
 
   // check if the matrix is square
-  assert( this->rblock == this->cols() );
+  //assert( this->rblock == this->cols() );
 
   // check if the dimensions match
-  assert( this->rows() == b.rows() );
+  assert( this->rows() == b.rows() &&
+	  this->rows() == V.rows() );
   assert( b.cols() > 0 );
 
   //solve<LeafSolveTask>(b, ctx, runtime, wait);
   // A and b have the same number of partition
-  assert( this->nPart == b.num_partition() );
-
+  assert( b.num_partition() == nPart );
+ 
   LogicalPartition APart = this->logical_partition();
   LogicalPartition bPart = b.logical_partition();
-
+  LogicalPartition VPart = V.logical_partition();
+  
   LogicalRegion ARegion = this->logical_region();
   LogicalRegion bRegion = b.logical_region();
-
+  LogicalRegion VRegion = V.logical_region();
+  
   Domain domain = this->color_domain();
-  LeafSolveTask::TaskArgs args = {this->rblock, b.cols()};
+  LeafSolveTask::TaskArgs args = {this->rblock, b.cols(), V.cols(), V.small_block_parts()};
   TaskArgument tArg(&args, sizeof(args));
   LeafSolveTask launcher(domain, tArg, ArgumentMap(), nPart);
   RegionRequirement AReq(APart, 0, READ_ONLY,  EXCLUSIVE, ARegion);
   RegionRequirement bReq(bPart, 0, READ_WRITE, EXCLUSIVE, bRegion);
+  RegionRequirement VReq(VPart, 0, READ_ONLY,  EXCLUSIVE, VRegion);
   AReq.add_field(FIELDID_V);
   bReq.add_field(FIELDID_V);
+  VReq.add_field(FIELDID_V);
   launcher.add_region_requirement(AReq);
   launcher.add_region_requirement(bReq);
-  
+  launcher.add_region_requirement(VReq);
+    
   FutureMap fm = runtime->execute_index_space(ctx, launcher);
 
   if(wait) {
@@ -509,6 +530,7 @@ void LMatrix::node_solve
   // so rowBlk = 2*rowBlk() when plevel=2,
   // or rowBlk = rowBlk() when plevel=1.
   int rowBlk = this->rowBlk()*plevel;
+  //std::cout<<"rowBlk:"<<rowBlk<<", mCols:"<<mCols<<std::endl;
   assert( rowBlk/2 == mCols );
   
   // first level stuff

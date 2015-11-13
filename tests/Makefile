@@ -3,7 +3,7 @@ $(error LG_RT_DIR variable is not defined, aborting build)
 endif
 
 #Flags for directing the runtime makefile what to include
-DEBUG=0                   # Include debugging symbols
+DEBUG=1                   # Include debugging symbols
 OUTPUT_LEVEL=LEVEL_DEBUG  # Compile time print level
 SHARED_LOWLEVEL=0	  # Use the shared low level
 USE_CUDA=0
@@ -74,14 +74,12 @@ LD_FLAGS	:= -L /usr/lib/	-llapack -lblas -lm
 include $(LG_RT_DIR)/runtime.mk
 
 
-#clean:
-#	@$(RM) -rf $(OUTFILE) $(GEN_OBJS)  \
+#clean solver related
+clsol:
+	@$(RM) -rf $(OUTFILE) $(GEN_OBJS)  \
 	*~  \
 	../include/*~ ../src/*~ \
 	../include/tasks/*~ ../src/tasks/*~
-
-#cleanall:
-#	@$(RM) -rf $(ALL_OBJS) *~
 
 tar:	
 	tar cvfz fastSolver.tgz Makefile \
@@ -157,16 +155,19 @@ prof:
 	-env GASNET_IB_SPAWNER=mpi  \
 	-env GASNET_BACKTRACE=1     \
 	./test			\
+	-launchlvl 2		\
+	-treelvl   5		\
 	-ll:cpu    8		\
-	-ll:csize  10000 	\
+	-ll:csize  1000 	\
 	-hl:disjointness	\
-	-hl:prof   1		\
-	-cat task,dma,solver_mapper,solver_tasks	\
+	-hl:prof   64		\
+	-cat legion_prof	\
 	-level     2		\
 	-logfile node_%.log
 
 #	-cat task,dma
 #	-cat legion_prof	\
+	-cat legion_spy	\
 #	-ll:csize  1000 	\
 #	-hl:sched  8192  	\
 	-hl:window 8192		\
@@ -175,6 +176,7 @@ prof:
 	$(numa) 		\
 	-ll:util   $(nutil)	\
 	-ll:cpu    $(ncpu)	\
+	-hl:prof   1		\
 
 # --- Sapling commands ---
 

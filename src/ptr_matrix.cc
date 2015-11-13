@@ -26,7 +26,7 @@ PtrMatrix::~PtrMatrix() {
   ptr = NULL;
 }
 
-// assume row major storage,
+// legion uses column major storage,
 //  which is consistant with blas and lapack layout
 double PtrMatrix::operator()(int r, int c) const {
   return ptr[r+c*leadD];

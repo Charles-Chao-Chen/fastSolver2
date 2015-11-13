@@ -2,6 +2,8 @@
 #include "ptr_matrix.hpp"
 #include "utility.hpp"
 
+static Realm::Logger log_solver_tasks("solver_tasks");
+
 int NodeSolveTask::TASKID;
 
 NodeSolveTask::NodeSolveTask(Domain domain,
@@ -39,12 +41,13 @@ void NodeSolveTask::cpu_task(const Task *task,
 			     const std::vector<PhysicalRegion> &regions,
 			     Context ctx, HighLevelRuntime *runtime) {
 
-  //std::cout<<"In node solve task."<<std::endl;
   assert(regions.size() == 2);
   assert(task->regions.size() == 2);
   assert(task->arglen == sizeof(TaskArgs));
   Point<1> p = task->index_point.get_point<1>();
   //  printf("point = %d\n", p[0]);
+
+  log_solver_tasks.print("Inside node solve tasks.");
 
   const TaskArgs args = *((const TaskArgs*)task->args);
   int rblk  = args.rblock;

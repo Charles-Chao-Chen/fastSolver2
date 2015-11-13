@@ -9,6 +9,7 @@ class Vector {
 public:
   Vector();
   Vector(int N, bool has_entry=true);
+  Vector(int base, int lvl, bool has_entry=true);
   
   // number of rows
   int rows() const;
@@ -23,8 +24,8 @@ public:
   double norm() const;
 
   // random entries
-  //void rand(int nPart, bool has_entry=true);
-  void rand(int nPart, int offset=0);
+  void rand(int, int offset);
+  void rand(int offset=0);
 
   // return the random seed
   long rand_seed(int) const;
@@ -68,12 +69,14 @@ class Matrix {
 public:
   Matrix();
   Matrix(int nRow, int nCol, bool has_entry=true);
+  Matrix(int base, int level, int nCol, bool has_entry=true);
   //  ~Matrix();
 
   // consistant with eigen routines
   int rows() const;
   int cols() const;
-
+  int levels() const;
+  
   // return the F norm
   double norm() const;
   
@@ -86,7 +89,8 @@ public:
   
   // random matrix with a random seed for each partition
   // the partition is horizontal
-  void rand(int nPart);
+  void rand(int);
+  void rand();
 
   // return the random seed
   long rand_seed(int) const;
@@ -127,6 +131,7 @@ public:
   static Matrix identity(int);
   
 private:
+  int  mLevel;
   int  nPart;
   int  mRows;
   int  mCols;

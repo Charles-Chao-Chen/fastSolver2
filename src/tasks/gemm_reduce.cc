@@ -2,6 +2,8 @@
 #include "ptr_matrix.hpp"
 #include "utility.hpp"
 
+static Realm::Logger log_solver_tasks("solver_tasks");
+
 int GemmRedTask::TASKID;
 
 GemmRedTask::GemmRedTask(Domain domain,
@@ -35,12 +37,13 @@ void GemmRedTask::cpu_task(const Task *task,
 			   const std::vector<PhysicalRegion> &regions,
 			   Context ctx, HighLevelRuntime *runtime) {
 
-  //std::cout<<"In gemm reduction task."<<std::endl;
   assert(regions.size() == 3);
   assert(task->regions.size() == 3);
   assert(task->arglen == sizeof(TaskArgs));
   Point<1> p = task->index_point.get_point<1>();
   //printf("point = %d\n", p[0]);
+
+  log_solver_tasks.print("Inside gemm reduction tasks.");
 
   const TaskArgs args = *((const TaskArgs*)task->args);
   int Arblk = args.Arblk;
@@ -72,8 +75,7 @@ void GemmRedTask::cpu_task(const Task *task,
   BMat.set_trans(args.transb);
   double alpha = args.alpha;
 
-  //printf("leading D: %d\n", CMat.LD());
-  
+  //printf("leading D: %d\n", CMat.LD());  
   PtrMatrix::gemm(alpha, AMat, BMat, CMat);
   /*
   std::cout << "gemm:" << std::endl;

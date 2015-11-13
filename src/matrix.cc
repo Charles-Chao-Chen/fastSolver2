@@ -10,8 +10,19 @@
 
 Vector::Vector() : nPart(-1), mRows(-1), has_entry(true) {}
 
-Vector::Vector(int N, bool has) : nPart(-1), mRows(N), has_entry(has) {
+Vector::Vector(int N, bool has)
+  : nPart(-1), mRows(N), has_entry(has) {
   assert(N>0);
+  if (has_entry) {
+    // allocate memory
+    data.resize(mRows);
+  }
+}
+
+Vector::Vector(int base, int lvl, bool has)
+  : nPart(pow(2,lvl)), mRows(base*nPart), has_entry(has) {
+  assert(nPart>0);
+  assert(mRows>0);
   if (has_entry) {
     // allocate memory
     data.resize(mRows);
@@ -58,6 +69,32 @@ void Vector::rand(int nPart_, int offset_) {
       for (int j=0; j<colorSize; j++) {
 	assert( drand48_r(&buffer, &data[count]) == 0 );
 	data[count] += offset_;
+	count++;
+      }
+    }
+  }
+}
+
+void Vector::rand(int offset_) {
+  assert(mRows>0 && nPart>0);
+  assert(mRows%nPart == 0);
+  this->mOffset = offset_;
+  struct drand48_data buffer;
+  assert( srand48_r( time(NULL)+2, &buffer ) == 0 );
+  for (int i=0; i<nPart; i++) {
+    long seed;
+    assert( lrand48_r(&buffer, &seed) == 0 );
+    seeds.push_back( seed );
+  }
+  // generating random numbers
+  if (has_entry) {
+    int count = 0;
+    int blkSize = mRows / nPart;
+    for (int i=0; i<nPart; i++) {
+      assert( srand48_r( seeds[i], &buffer ) == 0 );
+      for (int j=0; j<blkSize; j++) {
+	assert( drand48_r(&buffer, &data[count]) == 0 );
+	data[count] += mOffset;
 	count++;
       }
     }
@@ -169,9 +206,23 @@ Vector operator * (const double alpha,  const Vector& vec) {
 Matrix::Matrix() : nPart(-1), mRows(-1), mCols(-1), has_entry(true) {}
 
 Matrix::Matrix(int row, int col, bool has)
-  : nPart(-1), mRows(row), mCols(col), has_entry(has) {
-  
+  : nPart(-1), mRows(row), mCols(col), has_entry(has) {  
   assert( mRows>0 && mCols>0 );
+  if (has_entry) {
+    // allocate memory
+    data.resize(mRows*mCols);
+  }
+}
+
+Matrix::Matrix(int base, int level, int col, bool has)
+  : mLevel(level),
+    nPart(pow(2,level)),
+    mRows(nPart*base),
+    mCols(col),
+    has_entry(has) {
+  
+  assert( nPart>0 && mRows>0 && mCols>0 );
+  assert( base>col );
   if (has_entry) {
     // allocate memory
     data.resize(mRows*mCols);
@@ -181,6 +232,8 @@ Matrix::Matrix(int row, int col, bool has)
 int Matrix::rows() const {return mRows;}
 
 int Matrix::cols() const {return mCols;}
+
+int Matrix::levels() const {assert(mLevel>0); return mLevel;}
 
 double Matrix::norm() const {
   double sum = 0;
@@ -205,6 +258,34 @@ void Matrix::rand(int nPart_) {
     seeds.push_back( seed );
   }
     
+  // generating random numbers
+  if (has_entry) {
+    int nrow = mRows / nPart;
+    for (int k=0; k<nPart; k++) {
+      PtrMatrix pMat(nrow, mCols, mRows, &data[k*nrow]);
+      pMat.rand( seeds[k] );
+    }
+  }
+}
+
+void Matrix::rand() {
+  assert( nPart>0 && mRows>0 );
+  assert( mRows%nPart == 0 );
+  struct drand48_data buffer;
+  assert( srand48_r( time(NULL) + lrand48(), &buffer ) == 0 );
+  for (int i=0; i<nPart; i++) {
+    long seed;
+    assert( lrand48_r(&buffer, &seed) == 0 );
+    seeds.push_back( seed );
+  }
+
+#if 0
+  std::cout<<"Using the same random seed on every processor.\n";
+  for (int i=1; i<nPart; i++) {
+    seeds[i] = seeds[0];
+  }
+#endif
+  
   // generating random numbers
   if (has_entry) {
     int nrow = mRows / nPart;

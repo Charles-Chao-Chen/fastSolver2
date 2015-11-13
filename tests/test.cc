@@ -22,7 +22,7 @@ void test_node_solve(Context, HighLevelRuntime*);
 void test_two_level_reduce(Context, HighLevelRuntime*);
 void test_two_level_broadcast(Context, HighLevelRuntime*);
 void test_two_level_node_solve(Context, HighLevelRuntime*);
-void test_solver(int, Context, HighLevelRuntime*);
+void test_solver(int, int, Context, HighLevelRuntime*);
 
 void top_level_task(const Task *task,
 		    const std::vector<PhysicalRegion> &regions,
@@ -40,17 +40,24 @@ void top_level_task(const Task *task,
   //test_two_level_reduce(ctx, runtime);
   //test_two_level_broadcast(ctx, runtime);
   //test_two_level_node_solve(ctx, runtime);
-  int level = 3; // assume 8 cores on every machine
+  int treelvl = 3; // assume 8 cores on every machine
+  int launchlvl = 3;
   const InputArgs &command_args = HighLevelRuntime::get_input_args();
   if (command_args.argc > 1) {
     for (int i = 1; i < command_args.argc; i++) {
-      if (!strcmp(command_args.argv[i],"-l"))
-	level = atoi(command_args.argv[++i]);
+      if (!strcmp(command_args.argv[i],"-treelvl"))
+	treelvl = atoi(command_args.argv[++i]);
+      if (!strcmp(command_args.argv[i],"-launchlvl"))
+	launchlvl = atoi(command_args.argv[++i]);
     }
-    assert(level > 0);
+    assert(treelvl   > 0);
+    assert(launchlvl > 0);
   }
-  printf("Running fast solver for %d level, %d leaves...\n", level, (int)pow(2,level));
-  test_solver(level, ctx, runtime);
+  printf("Running fast solver for %d levels (%d leaves)...\n",
+	 launchlvl, (int)pow(2,launchlvl));
+	 
+  //test_lmatrix_init(ctx, runtime);
+  test_solver(treelvl, launchlvl, ctx, runtime);
 
     
   /*
@@ -92,7 +99,16 @@ void top_level_task(const Task *task,
   */
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[], char *envp[]) {
+  // list all environment variables
+  char** env;
+  for (env = envp; *env != 0; env++)
+  {
+    char* thisEnv = *env;
+    if (!strncmp(thisEnv,"GASNET_AM_CREDITS_PP",10))
+      printf("%s\n", thisEnv);    
+  }
+  
   // register top level task
   HighLevelRuntime::set_top_level_task_id(TOP_LEVEL_TASK_ID);
   HighLevelRuntime::register_legion_task<top_level_task>
@@ -123,7 +139,7 @@ void test_vector() {
     Error("wrong 2-norm");
   
   int nPart = 4;
-  vec2.rand(nPart); // random entries
+  vec2.rand(nPart,0); // random entries
   if (vec2.num_partition() != nPart)
     Error("wrong paritition number");
   //vec2.display("random vector");
@@ -139,7 +155,7 @@ void test_vector() {
     Error("entry-wise muliply");
 
   Vector no_entry(N, false);
-  no_entry.rand(nPart);
+  no_entry.rand(nPart,0);
   no_entry.display("no_entry");
   
   std::cout << "Test for Vector passed!" << std::endl;
@@ -193,29 +209,24 @@ void test_matrix() {
 }
 
 void test_lmatrix_init(Context ctx, HighLevelRuntime *runtime) {
-  
-  int m = 16, n = 2;
-  int nPart = 4;
-  Matrix mat0(m, n);
-  mat0.rand(nPart);
 
-  int nlevel = 2;
-  assert(nPart == pow(2,nlevel));
-  LMatrix lmat0(m, n, nlevel, ctx, runtime);
+  int treelvl = 5, launchlvl = 3;
+  int base = 3;
+  int m = base*pow(2,treelvl), n = 2;
+  Matrix mat0(base, treelvl, n); mat0.rand();
+  LMatrix lmat0(m, n, launchlvl, ctx, runtime);
   lmat0.init_data(mat0, ctx, runtime);
   lmat0.display("lmat0", ctx, runtime);
   Matrix check0 = lmat0.to_matrix(ctx, runtime) - mat0;
   check0.display("init data residule");  
 
-  Matrix UMat(m, n);
-  UMat.rand(nPart);
+  Matrix UMat(base, treelvl, n); UMat.rand();
   int nRhs = 1;
-  int cols = nRhs+nlevel*n;
-  LMatrix lgUmat(m, cols, nlevel, ctx, runtime);
+  int cols = nRhs+treelvl*n;
+  LMatrix lgUmat(m, cols, launchlvl, ctx, runtime);
   
   // right hand side
-  Matrix Rhs(m, nRhs);
-  Rhs.rand(nPart);
+  Matrix Rhs(base, treelvl, nRhs); Rhs.rand();
   lgUmat.init_data(Rhs, ctx, runtime);
   lgUmat.init_data(nRhs, cols, UMat, ctx, runtime);
   //Rhs.display("Rhs");
@@ -226,27 +237,28 @@ void test_lmatrix_init(Context ctx, HighLevelRuntime *runtime) {
   Matrix check2 = lgUmat.to_matrix(nRhs, nRhs+n, ctx, runtime) - UMat;
   check2.display("Umat residule");  
   
-  Matrix U(m, n), V(m, n);
-  Vector D(m);
-  U.rand(nPart);
-  V.rand(nPart);
-  D.rand(nPart);
+  Matrix U(base, treelvl, n); U.rand();
+  Matrix V(base, treelvl, n); V.rand();
+  Vector D(base, treelvl); D.rand(100);
   
   int nrow = D.rows();
-  int nblk = pow(2, nlevel);
+  int nblk = pow(2, treelvl);
   int ncol = D.rows() / nblk;
-  LMatrix lmat(nrow, ncol, nlevel, ctx, runtime);
+  LMatrix lmat(nrow, ncol, launchlvl, ctx, runtime);
   lmat.init_dense_blocks(U, V, D, ctx, runtime);
   lmat.display("dense blocks", ctx, runtime);
   Matrix KMat = (U * V.T()) + D.to_diag_matrix();
-  Matrix check3 = lmat.to_matrix(0,m/nPart,0,m/nPart,ctx,runtime)
-    - KMat.block(0,m/nPart,0,m/nPart);
+  Matrix check3 = lmat.to_matrix(0,n,0,n,ctx,runtime)
+    - KMat.block(0,n,0,n);
   check3.display("dense block residule");
   if (check0.norm()<1.0e-13 && check1.norm()<1.0e-13 &&
       check2.norm()<1.0e-13 && check3.norm()<1.0e-13 ) {
     std::cout << "Test for legion matrix initialization passed!"
 	      << std::endl;
   }
+  else
+    std::cout << "Test for legion matrix initialization failed!"
+	      << std::endl;
 }
 
 void test_leaf_solve(Context ctx, HighLevelRuntime *runtime) {
@@ -522,29 +534,31 @@ void test_two_level_node_solve(Context ctx, HighLevelRuntime *runtime) {
   if (r0.norm()<1.0e-13&&r1.norm()<1.0e-13)
     std::cout << "Test for node solve passed!" << std::endl;
 }
+//#endif
 
-void test_solver(int level, Context ctx, HighLevelRuntime *runtime) {
+void test_solver(int treelvl, int launchlvl, Context ctx, HighLevelRuntime *runtime) {
+  // The number of processors should be 8 * #machines, i.e., 2^launchlvl
+  // and the number of partitioning, i.e., the number of leaf nodes
+  // should be 2^treelvl
 
-  //int level = 3+?; // assume using 8 cores every node
-  int m = (1<<10)*pow(2,level), n = 30;
-  int nProc = pow(2,level);
-  assert(nProc==pow(2,level));
-  bool has_entry = false; //true;
-  Matrix VMat(m, n, has_entry), UMat(m, n, has_entry), Rhs(m, 1, has_entry);
-  VMat.rand(nProc);
-  UMat.rand(nProc);
-  Rhs.rand(nProc);
+  assert(treelvl >= launchlvl);
+  //int m = 400*pow(2,level), n = 30;
+  int    base = 1<<10, n = 100;
+  bool   has_entry = true; //false; //true;
+  Matrix VMat(base, treelvl, n, has_entry); VMat.rand();
+  Matrix UMat(base, treelvl, n, has_entry); UMat.rand();
+  Matrix Rhs(base, treelvl, 1, has_entry);  Rhs.rand();
+  Vector DVec(base, treelvl, has_entry);    DVec.rand(1e3);
 
-  Vector DVec(m);
-  DVec.rand(nProc, 1e3);
-  int nrow = DVec.rows();
+#if 0
+  int m     = base*nPart,     n     = 100;
+  int nrow = m;
   int nblk = pow(2, level);
   int ncol = DVec.rows() / nblk;
   assert(nblk >= nProc);
   assert(ncol >= UMat.cols());
-  LMatrix K( nrow, ncol, level, ctx, runtime );
+  LMatrix K(nrow, ncol, level, ctx, runtime );
 
-#if 0
   LMatrix b(m, 1, level, ctx, runtime);
   LMatrix U(m, n, level, ctx, runtime);
   b.init_data(Rhs, ctx, runtime);
@@ -558,29 +572,26 @@ void test_solver(int level, Context ctx, HighLevelRuntime *runtime) {
   K.solve( b, ctx, runtime );
   b.display("sln", ctx, runtime);
 #endif
-    
-  UTree uTree;
-  VTree vTree;
-  KTree kTree;
-  
-  // init trees
-  uTree.init( nProc, UMat );
-  vTree.init( nProc, VMat );
-  kTree.init( nProc, UMat, VMat, DVec );
+
+  // init tree
+  int   nProc = pow(2,launchlvl);
+  UTree uTree; uTree.init( nProc, UMat );
+  VTree vTree; vTree.init( nProc, VMat );
+  KTree kTree; kTree.init( nProc, UMat, VMat, DVec );
 
   // data partition
-  uTree.partition( level, ctx, runtime );
-  vTree.partition( level, ctx, runtime );
-  kTree.partition( level, ctx, runtime );
-
+  uTree.partition( launchlvl, ctx, runtime );
+  vTree.partition( launchlvl, ctx, runtime );
+  kTree.partition( launchlvl, ctx, runtime );
+  
   // init rhs
   uTree.init_rhs(Rhs, ctx, runtime, true/*wait*/);
   
   // leaf solve: U = dense \ U
-  kTree.solve( uTree.leaf(), ctx, runtime );  
+  kTree.solve( uTree.leaf(), vTree.leaf(), ctx, runtime );  
   //uTree.leaf().display("leaf solve", ctx, runtime);
 
-  for (int i=level; i>0; i--) {
+  for (int i=launchlvl; i>0; i--) {
     LMatrix& V = vTree.level(i);
     LMatrix& u = uTree.uMat_level(i);
     LMatrix& d = uTree.dMat_level(i);    
@@ -617,7 +628,7 @@ void test_solver(int level, Context ctx, HighLevelRuntime *runtime) {
     std::cout<<"Solved level: "<<i<<std::endl;
   }
 
-#if 0
+#if 1
   // compute residule
   Matrix x = uTree.solution(ctx, runtime);
   Matrix err = Rhs - ( UMat * (VMat.T() * x) + DVec.multiply(x) );
