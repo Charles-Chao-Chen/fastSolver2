@@ -64,9 +64,11 @@ void LeafSolveTask::cpu_task(const Task *task,
   assert(KMat.LD() == VMat.LD());
   //std::cout<<"nPart:"<<nPart<<", level:"<<level<<std::endl;
   assert(nPart==(int)pow(2,level));
+#ifdef DEBUG_SOLVER
   std::cout<<"point:"<<p[0]<<std::endl;
   std::cout<<"nrow:"<<rblk<<", nRhs:"<<nRhs<<", rank:"<<rank
 	   <<", nPart:"<<nPart<<", LD:"<<KMat.LD()<<std::endl;
+#endif
   hsolve(rblk, nRhs-level*rank, rank, nPart, KMat.LD(),
   	 KMat.pointer(), UMat.pointer(), VMat.pointer());
 }
@@ -74,8 +76,10 @@ void LeafSolveTask::cpu_task(const Task *task,
 void hsolve
 (int nrow, int nrhs, int rank, int nPart, int LD,
  double *K, double *U, double *V) {
+#ifdef DEBUG_SOLVER
   std::cout<<"nrow:"<<nrow<<", nRhs:"<<nrhs<<", rank:"<<rank
 	   <<", nPart:"<<nPart<<", LD:"<<LD<<std::endl;
+#endif
   if (nPart==1) {
     int     N    = nrow;
     int     NRHS = nrhs;

@@ -2,8 +2,6 @@
 #include "utilities.h"
 #include "mapper.hpp"
 
-//using namespace MappingUtilities;
-
 Realm::Logger log_solver_mapper("solver_mapper");
 
 SolverMapper::SolverMapper
@@ -42,7 +40,14 @@ SolverMapper::SolverMapper
     std::cout << "Every machine has "
 	      << mem_procs[ valid_mems[0] ].size()
 	      << " cores." << std::endl;
+#ifdef DEBUG_SOLVER_MAPPER
+    std::cout << "Use the first " << num_mems-1 << " machines for"
+      " running tasks and the last one for top-level task.\n";
+#endif
   }
+#ifdef DEBUG_SOLVER_MAPPER
+  num_mems--;
+#endif
 }
 
 void SolverMapper::select_task_options(Task *task) {
@@ -57,7 +62,11 @@ void SolverMapper::select_task_options(Task *task) {
     task->task_priority = 0;
 
     // top level task run on machine 0
+#ifdef DEBUG_SOLVER_MAPPER
+    std::vector<Processor> procs = mem_procs[ valid_mems[num_mems] ];
+#else
     std::vector<Processor> procs = mem_procs[ valid_mems[0] ];
+#endif
     assert( !procs.empty() );  
     task->target_proc = procs[0];
   }
@@ -73,6 +82,7 @@ void SolverMapper::select_task_options(Task *task) {
   
     // assign a dummy processor
     std::vector<Processor> procs = mem_procs[ valid_mems[0] ];
+    //std::vector<Processor> procs = mem_procs[ valid_mems[num_mems] ];
     assert( !procs.empty() );
     task->target_proc = procs[0];
   }  

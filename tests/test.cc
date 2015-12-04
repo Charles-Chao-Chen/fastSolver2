@@ -542,9 +542,10 @@ void test_solver(int treelvl, int launchlvl, Context ctx, HighLevelRuntime *runt
   // should be 2^treelvl
 
   assert(treelvl >= launchlvl);
-  //int m = 400*pow(2,level), n = 30;
-  int    base = 1<<10, n = 100;
-  bool   has_entry = true; //false; //true;
+  //int m = 400*pow(2,13), n = 300;
+  //int    base = 400, n = 100;
+  int    base = 400, n = 100;
+  bool   has_entry = false; //true;
   Matrix VMat(base, treelvl, n, has_entry); VMat.rand();
   Matrix UMat(base, treelvl, n, has_entry); UMat.rand();
   Matrix Rhs(base, treelvl, 1, has_entry);  Rhs.rand();
@@ -628,7 +629,7 @@ void test_solver(int treelvl, int launchlvl, Context ctx, HighLevelRuntime *runt
     std::cout<<"Solved level: "<<i<<std::endl;
   }
 
-#if 1
+#if 0
   // compute residule
   Matrix x = uTree.solution(ctx, runtime);
   Matrix err = Rhs - ( UMat * (VMat.T() * x) + DVec.multiply(x) );

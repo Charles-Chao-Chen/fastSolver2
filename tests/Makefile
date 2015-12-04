@@ -3,7 +3,7 @@ $(error LG_RT_DIR variable is not defined, aborting build)
 endif
 
 #Flags for directing the runtime makefile what to include
-DEBUG=1                   # Include debugging symbols
+DEBUG=0                   # Include debugging symbols
 OUTPUT_LEVEL=LEVEL_DEBUG  # Compile time print level
 SHARED_LOWLEVEL=0	  # Use the shared low level
 USE_CUDA=0
@@ -32,7 +32,7 @@ GEN_GPU_SRC	:=				# .cu files
 INC_FLAGS	:= -I ../include/ -I ../include/tasks/
 CC_FLAGS	:= \
 		-DLEGION_IDS_ARE_64BIT \
-		-DPRIVILEGE_CHECKS \
+#		-DPRIVILEGE_CHECKS \
 		-DBOUNDS_CHECKS \
 
 
@@ -155,8 +155,9 @@ prof:
 	-env GASNET_IB_SPAWNER=mpi  \
 	-env GASNET_BACKTRACE=1     \
 	./test			\
-	-launchlvl 2		\
-	-treelvl   5		\
+	-launchlvl 7		\
+	-treelvl   7		\
+	-ll:lmbsize 8192	\
 	-ll:cpu    8		\
 	-ll:csize  1000 	\
 	-hl:disjointness	\
