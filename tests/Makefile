@@ -3,7 +3,7 @@ $(error LG_RT_DIR variable is not defined, aborting build)
 endif
 
 #Flags for directing the runtime makefile what to include
-DEBUG=1                   # Include debugging symbols
+DEBUG=0                   # Include debugging symbols
 OUTPUT_LEVEL=LEVEL_DEBUG  # Compile time print level
 SHARED_LOWLEVEL=0	  # Use the shared low level
 USE_CUDA=0
@@ -49,7 +49,7 @@ NVCC_FLAGS	:=
 GASNET_FLAGS	:=
 
 # gnu blas and lapack
-LD_FLAGS	:= -L /usr/lib/	-llapack -lblas -lm
+LD_FLAGS	:= -dynamic # for daint
 
 # mkl linking flags
 #LD_FLAGS := -L/share/apps/intel/intel-14/mkl/lib/intel64/ \
@@ -162,7 +162,7 @@ prof4:
 # nutil :
 # leaf  : legion leaf size
 prof:
-	mpiexec -n $(node) -ppn 1  \
+	mpirun -n $(node) -ppn 1  \
 	-env MV2_SHOW_CPU_BINDING=1 \
 	-env MV2_ENABLE_AFFINITY=0  \
 	-env GASNET_IB_SPAWNER=mpi  \

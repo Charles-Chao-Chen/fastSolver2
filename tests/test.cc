@@ -22,7 +22,7 @@ void test_node_solve(Context, HighLevelRuntime*);
 void test_two_level_reduce(Context, HighLevelRuntime*);
 void test_two_level_broadcast(Context, HighLevelRuntime*);
 void test_two_level_node_solve(Context, HighLevelRuntime*);
-void test_solver(int, int, Context, HighLevelRuntime*);
+void test_solver(int, int, int, Context, HighLevelRuntime*);
 
 void top_level_task(const Task *task,
 		    const std::vector<PhysicalRegion> &regions,
@@ -40,24 +40,29 @@ void top_level_task(const Task *task,
   //test_two_level_reduce(ctx, runtime);
   //test_two_level_broadcast(ctx, runtime);
   //test_two_level_node_solve(ctx, runtime);
+
+  int rank = 100;
   int treelvl = 3; // assume 8 cores on every machine
   int launchlvl = 3;
   const InputArgs &command_args = HighLevelRuntime::get_input_args();
   if (command_args.argc > 1) {
     for (int i = 1; i < command_args.argc; i++) {
+      if (!strcmp(command_args.argv[i],"-rank"))
+	rank = atoi(command_args.argv[++i]);
       if (!strcmp(command_args.argv[i],"-treelvl"))
 	treelvl = atoi(command_args.argv[++i]);
       if (!strcmp(command_args.argv[i],"-launchlvl"))
 	launchlvl = atoi(command_args.argv[++i]);
     }
+    assert(rank      > 0);
     assert(treelvl   > 0);
     assert(launchlvl > 0);
   }
-  printf("Running fast solver for %d levels (%d leaves)...\n",
-	 launchlvl, (int)pow(2,launchlvl));
+  printf("Running fast solver with rank %d, for %d levels (%d leaves)...\n",
+	 rank, launchlvl, (int)pow(2,launchlvl));
 	 
   //test_lmatrix_init(ctx, runtime);
-  test_solver(treelvl, launchlvl, ctx, runtime);
+  test_solver(rank, treelvl, launchlvl, ctx, runtime);
 
     
   /*
@@ -536,7 +541,7 @@ void test_two_level_node_solve(Context ctx, HighLevelRuntime *runtime) {
 }
 //#endif
 
-void test_solver(int treelvl, int launchlvl, Context ctx, HighLevelRuntime *runtime) {
+void test_solver(int rank, int treelvl, int launchlvl, Context ctx, HighLevelRuntime *runtime) {
   // The number of processors should be 8 * #machines, i.e., 2^launchlvl
   // and the number of partitioning, i.e., the number of leaf nodes
   // should be 2^treelvl
@@ -544,7 +549,7 @@ void test_solver(int treelvl, int launchlvl, Context ctx, HighLevelRuntime *runt
   assert(treelvl >= launchlvl);
   //int m = 400*pow(2,13), n = 300;
   //int    base = 400, n = 100;
-  int    base = 400, n = 100;
+  int    base = 400, n = rank;
   bool   has_entry = false; //true;
   Matrix VMat(base, treelvl, n, has_entry); VMat.rand();
   Matrix UMat(base, treelvl, n, has_entry); UMat.rand();
