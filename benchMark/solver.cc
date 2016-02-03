@@ -146,7 +146,7 @@ void top_level_task(const Task *task,
 	   <<"\ntask-tree level: "<<tasklvl
 	   <<"\nmatrix level: "<<matrixlvl
 	   <<"\niteration number: "<<niter
-	   <<"\nlegion tracing: "<<std::noboolalpha<<tracing
+	   <<"\nlegion tracing: "<<std::boolalpha<<tracing
 	   <<std::endl;
 
   launch_solver_tasks(rank,matrixlvl,tasklvl,niter,tracing,ctx,runtime);

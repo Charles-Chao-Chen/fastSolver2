@@ -145,9 +145,11 @@ prof4:
 	./solver \
 	-tasklvl 5 \
 	-matrixlvl 8 \
+	-niter 3 \
+	-tracing \
 	-ll:cpu 8 \
 	-hl:prof   4 \
-	-hl:sched  1024 \
+	-hl:sched  8192 \
 	-cat legion_prof \
 	-level 2 \
 	-logfile 4node_%.log
