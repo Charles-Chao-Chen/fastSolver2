@@ -124,8 +124,7 @@ prof1:
 	-ll:cpu 8 \
 	-hl:prof   1 \
 	-hl:sched  128 \
-	-cat legion_prof \
-	-level 2 \
+	-level 4,legion_prof=2 \
 	-logfile 1node_%.log
 
 prof2:
@@ -138,8 +137,7 @@ prof2:
 	-ll:cpu 8 \
 	-hl:prof   2 \
 	-hl:sched  128 \
-	-cat legion_prof \
-	-level 2 \
+	-level 4,legion_prof=2 \
 	-logfile 2node_%.log
 
 prof4:
@@ -154,8 +152,7 @@ prof4:
 	-ll:cpu 8 \
 	-hl:prof   4 \
 	-hl:sched  8192 \
-	-cat legion_prof \
-	-level 2 \
+	-level 4,legion_prof=2 \
 	-logfile 4node_%.log
 
 
@@ -181,8 +178,7 @@ prof:
 	-ll:csize  1000 	\
 	-hl:disjointness	\
 	-hl:prof   64		\
-	-cat legion_prof	\
-	-level     2		\
+	-level 4,legion_prof=2 \
 	-logfile node_%.log
 
 #	-cat task,dma
