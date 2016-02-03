@@ -19,36 +19,37 @@ GEN_SRC	:= 	solver.cc \
 		../src/tasks/leaf_solve.cc ../src/tasks/node_solve.cc \
 		../src/tasks/gemm_reduce.cc   ../src/tasks/gemm_broadcast.cc \
 		../src/tasks/projector.cc ../src/tasks/reduce_add.cc \
-		../src/tasks/init_matrix.cc ../src/tasks/zero_matrix.cc \
-		../src/tasks/solver_tasks.cc
+		../src/tasks/init_matrix.cc ../src/tasks/clear_matrix.cc \
+		../src/tasks/solver_tasks.cc ../src/tasks/display_matrix.cc \
+		../src/tasks/dense_block.cc ../src/tasks/add_matrix.cc \
+		../src/ptr_matrix.cc ../src/utility.cc \
+		../src/tasks/scale_matrix.cc ../src/tasks/mapper.cc \
+		../src/tasks/dist_mapper.cc
 
 GEN_GPU_SRC	:=				# .cu files
 
 # You can modify these variables, some will be appended to by the runtime makefile
 INC_FLAGS	:= -I ../include/ -I ../include/tasks/
-CC_FLAGS	:=
+CC_FLAGS	:= \
+		-DLEGION_IDS_ARE_64BIT \
+#		-DLEGION_SPY
+#		-DPRIVILEGE_CHECKS \
+		-DBOUNDS_CHECKS \
+
 
 #-g  \
-			$(INC_FLAGS)  \
-			-DLEGION_PROF  \
-			-DLEGION_SPY   \
-			-DNODE_LOGGING \
-#			-DSERIAL  \
+		-DNODE_LOGGING \
+		-DBOUNDS_CHECKS -DPRIVILEGE_CHECKS \
+#			$(INC_FLAGS)  \
 #			-DDEBUG
-#			-DLEGION_BACKTRACE  \
-
 #		   -DSHOW_REGISTER_TASKS \
-#		   -g		\
 
-#		   -DNDEBUG	  \
-#		   -DDEBUG_GEMM
-#		   -DDEBUG_NODE_SOLVE
 
 NVCC_FLAGS	:=
 GASNET_FLAGS	:=
 
 # gnu blas and lapack
-LD_FLAGS	:= -L /usr/lib/	-llapack -lblas -lm
+LD_FLAGS	:= -llapack -lblas #-dynamic # for daint
 
 # mkl linking flags
 #LD_FLAGS := -L/share/apps/intel/intel-14/mkl/lib/intel64/ \
@@ -71,183 +72,132 @@ LD_FLAGS	:= -L /usr/lib/	-llapack -lblas -lm
 #   
 ###########################################################################
 
-# All these variables will be filled in by the runtime makefile
-LOW_RUNTIME_SRC	:=
-HIGH_RUNTIME_SRC:=
-GPU_RUNTIME_SRC	:=
-MAPPER_SRC	:=
-
 include $(LG_RT_DIR)/runtime.mk
 
-# General shell commands
-SHELL	:= /bin/sh
-SH	:= sh
-RM	:= rm -f
-LS	:= ls
-MKDIR	:= mkdir
-MV	:= mv
-CP	:= cp
-SED	:= sed
-ECHO	:= echo
-TOUCH	:= touch
-MAKE	:= make
-ifndef GCC
-GCC	:= g++
-endif
-ifndef NVCC
-NVCC	:= $(CUDA)/bin/nvcc
-endif
-SSH	:= ssh
-SCP	:= scp
 
-common_all : all
-
-.PHONY	: common_all
-
-GEN_OBJS	:= $(GEN_SRC:.cc=.o)
-LOW_RUNTIME_OBJS:= $(LOW_RUNTIME_SRC:.cc=.o)
-HIGH_RUNTIME_OBJS:=$(HIGH_RUNTIME_SRC:.cc=.o)
-MAPPER_OBJS	:= $(MAPPER_SRC:.cc=.o)
-# Only compile the gpu objects if we need to 
-ifndef SHARED_LOWLEVEL
-GEN_GPU_OBJS	:= $(GEN_GPU_SRC:.cu=.o)
-GPU_RUNTIME_OBJS:= $(GPU_RUNTIME_SRC:.cu=.o)
-else
-GEN_GPU_OBJS	:=
-GPU_RUNTIME_OBJS:=
-endif
-
-ALL_OBJS	:= $(GEN_OBJS) $(GEN_GPU_OBJS) $(LOW_RUNTIME_OBJS) $(HIGH_RUNTIME_OBJS) $(GPU_RUNTIME_OBJS) $(MAPPER_OBJS)
-
-all:
-	$(MAKE) $(OUTFILE)
-
-# If we're using the general low-level runtime we have to link with nvcc
-$(OUTFILE) : $(ALL_OBJS)
-	@echo "*********** Linking GNU ***********"
-	@echo "---> Linking objects into one binary: $(OUTFILE)"
-ifdef SHARED_LOWLEVEL
-	$(GCC) -o $(OUTFILE) $(ALL_OBJS) $(LD_FLAGS) $(GASNET_FLAGS)
-else
-	$(NVCC) -o $(OUTFILE) $(ALL_OBJS) $(LD_FLAGS) $(GASNET_FLAGS)
-endif
-
-$(GEN_OBJS) : %.o : %.cc
-	$(GCC) -o $@ -c $< $(INC_FLAGS) $(CC_FLAGS)
-
-$(LOW_RUNTIME_OBJS) : %.o : %.cc
-	$(GCC) -o $@ -c $< $(INC_FLAGS) $(CC_FLAGS)
-
-$(HIGH_RUNTIME_OBJS) : %.o : %.cc
-	$(GCC) -o $@ -c $< $(INC_FLAGS) $(CC_FLAGS)
-
-$(MAPPER_OBJS) : %.o : %.cc
-	$(GCC) -o $@ -c $< $(INC_FLAGS) $(CC_FLAGS)
-
-$(GEN_GPU_OBJS) : %.o : %.cu
-	$(NVCC) -o $@ -c $< $(INC_FLAGS) $(NVCC_FLAGS)
-
-$(GPU_RUNTIME_OBJS): %.o : %.cu
-	$(NVCC) -o $@ -c $< $(INC_FLAGS) $(NVCC_FLAGS)
-
-clean:
+#clean solver related
+clsol:
 	@$(RM) -rf $(OUTFILE) $(GEN_OBJS)  \
 	*~  \
 	../include/*~ ../src/*~ \
 	../include/tasks/*~ ../src/tasks/*~
 
-cleanall:
-	@$(RM) -rf $(ALL_OBJS) *~
-
 tar:	
-	tar cvfz fastSolver.tgz
+	tar cvfz fastSolver.tgz Makefile \
+	solver.cc \
+	../src/hmatrix.cc ../src/tree.cc \
+	../src/lmatrix.cc ../src/matrix.cc \
+	../src/tasks/leaf_solve.cc ../src/tasks/node_solve.cc \
+	../src/tasks/gemm_reduce.cc   ../src/tasks/gemm_broadcast.cc \
+	../src/tasks/projector.cc ../src/tasks/reduce_add.cc \
+	../src/tasks/init_matrix.cc ../src/tasks/clear_matrix.cc \
+	../src/tasks/solver_tasks.cc ../src/tasks/display_matrix.cc \
+	../src/tasks/dense_block.cc ../src/tasks/add_matrix.cc \
+	../src/ptr_matrix.cc ../src/utility.cc \
+	../src/tasks/scale_matrix.cc ../src/tasks/mapper.cc \
+	../src/tasks/dist_mapper.cc \
+	\
+	../include/hmatrix.hpp ../include/tree.hpp \
+	../include/lmatrix.hpp ../include/matrix.hpp \
+	../include/tasks/leaf_solve.hpp ../include/tasks/node_solve.hpp \
+	../include/tasks/gemm_reduce.hpp   ../include/tasks/gemm_broadcast.hpp \
+	../include/tasks/projector.hpp ../include/tasks/reduce_add.hpp \
+	../include/tasks/init_matrix.hpp ../include/tasks/clear_matrix.hpp \
+	../include/tasks/solver_tasks.hpp ../include/tasks/display_matrix.hpp \
+	../include/tasks/dense_block.hpp ../include/tasks/add_matrix.hpp \
+	../include/ptr_matrix.hpp ../include/utility.hpp \
+	../include/lapack_blas.hpp \
+	../include/tasks/scale_matrix.hpp ../include/tasks/mapper.hpp \
+	../include/tasks/dist_mapper.hpp
 
-r2n:
-	mpiexec -n 2 -ppn 1	\
-	-env MV2_SHOW_CPU_BINDING=1 \
-	-env MV2_ENABLE_AFFINITY=0  \
-	-env GASNET_IB_SPAWNER=mpi  \
-	-env GASNET_BACKTRACE=1     \
-	./main			\
-	-np 2 			\
-	-level 5 		\
-	-ll:cpu    8		\
-	-ll:util   4 		\
-	-ll:csize  30000 	\
-	-hl:sched  8192  	\
-	-hl:window 8192
+prof1:
+	mpirun -H n0000 \
+	-bind-to none -report-bindings \
+	-x GASNET_IB_SPAWNER -x GASNET_BACKTRACE=1 \
+	./solver \
+	-tasklvl 3 \
+	-matrixlvl 5 \
+	-ll:cpu 8 \
+	-hl:prof   1 \
+	-hl:sched  128 \
+	-cat legion_prof \
+	-level 2 \
+	-logfile 1node_%.log
+
+prof2:
+	mpirun -H n0000,n0001 \
+	-bind-to none -report-bindings \
+	-x GASNET_IB_SPAWNER -x GASNET_BACKTRACE=1 \
+	./solver \
+	-tasklvl 4 \
+	-matrixlvl 4 \
+	-ll:cpu 8 \
+	-hl:prof   2 \
+	-hl:sched  128 \
+	-cat legion_prof \
+	-level 2 \
+	-logfile 2node_%.log
+
+prof4:
+	mpirun -H n0000,n0001,n0002,n0003 \
+	-bind-to none -report-bindings \
+	-x GASNET_IB_SPAWNER -x GASNET_BACKTRACE=1 \
+	./solver \
+	-tasklvl 5 \
+	-matrixlvl 8 \
+	-ll:cpu 8 \
+	-hl:prof   4 \
+	-hl:sched  1024 \
+	-cat legion_prof \
+	-level 2 \
+	-logfile 4node_%.log
+
 
 # --- legion profile ---
 
-# nproc : the number of processes, and there should be one
+# node  : the number of processes, and there should be one
 #  process for every node
 # numa  : can be set to 'numactl -m 0 -N 0' to use numa node
 # ncpu  :
 # nutil :
 # leaf  : legion leaf size
 prof:
-	mpiexec -n $(nproc) -ppn 1  \
+	mpirun -n $(node) -ppn 1  \
 	-env MV2_SHOW_CPU_BINDING=1 \
 	-env MV2_ENABLE_AFFINITY=0  \
 	-env GASNET_IB_SPAWNER=mpi  \
 	-env GASNET_BACKTRACE=1     \
-	./multi_launch			\
-	-test $(test)		\
-	-np $(nproc) 		\
-	-leaf $(leaf)		\
-	-ll:cpu    $(ncpu)	\
-	-ll:util   $(nutil)	\
-	-ll:csize  20000 	\
-	-hl:sched  8192  	\
-	-hl:window 8192		\
-	-level 2 		\
+	./solver		\
+	-tasklvl 7		\
+	-matrixlvl   7		\
+	-ll:lmbsize 8192	\
+	-ll:cpu    8		\
+	-ll:csize  1000 	\
+	-hl:disjointness	\
+	-hl:prof   64		\
 	-cat legion_prof	\
+	-level     2		\
+	-logfile node_%.log
 
-#	-hl:prof   1		\
+#	-cat task,dma
+#	-cat legion_prof	\
+	-cat legion_spy	\
+#	-ll:csize  1000 	\
+#	-hl:sched  8192  	\
+	-hl:window 8192		\
 #	numactl			\
 	-m 0 -N 0		\
 	$(numa) 		\
-
-
-# --- legion spy ---
-#spy2:\
-	mpiexec -n 2 -ppn 1	\
-	-env OMP_NUM_THREADS=1	\
-	-env MV2_SHOW_CPU_BINDING=1 \
-	-env MV2_ENABLE_AFFINITY=0  \
-	-env GASNET_IB_SPAWNER=mpi  \
-	-env GASNET_BACKTRACE=1     \
-	./main -cat legion_spy -level 2 \
-	-ll:cpu 12 -ll:csize 30000 \
-	-hl:sched 8192 -hl:window 8192
+	-ll:util   $(nutil)	\
+	-ll:cpu    $(ncpu)	\
+	-hl:prof   1		\
 
 # --- Sapling commands ---
 
 # check task execution (data movement)
-spy2:
-	mpirun -H n0001,n0002 \
-	-bind-to none \
-	-x GASNET_IB_SPAWNER -x GASNET_BACKTRACE=1 \
-	./main \
-	-np 2 -leaf 1 \
-	-cat legion_spy -level 2 \
-	-ll:cpu 11 -ll:util 1 \
-	-ll:csize 30000 \
-	-hl:sched 8192
-#	python ~/legion/tools/legion_spy.py -p node_0.log
-
-prof2:
-	mpirun -H n0001,n0002 \
-	-bind-to none -report-bindings \
-	-x GASNET_IB_SPAWNER -x GASNET_BACKTRACE=1 \
-	./multi_launch \
-	-leaf 1 \
-	-ll:cpu 11 -ll:util 1 \
-	-ll:csize 30000 \
-	-hl:sched 8192 \
-	-cat legion_prof -level 2 \
-#	-cat legion_spy -level 2
-#	-level 5
+spy:
+	./test -ll:cpu 8 -ll:csize 3000 -level 2 -cat legion_spy
+	python ~/legion/tools/legion_spy.py -p node_0.log
 
 # --- legion profiler ---
 
