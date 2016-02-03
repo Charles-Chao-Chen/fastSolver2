@@ -89,7 +89,7 @@ void launch_solver_tasks
       
       // broadcast operation
       // d -= u * VTd
-      if (tracing && it==0 && i==1) {
+      if (it==0 && i==1) {
 	LMatrix::gemmBro('n', 'n', -1.0, u, VTd, 1.0, d, ctx, runtime,
 			 true/*wait*/ );
       } else {
@@ -134,19 +134,22 @@ void top_level_task(const Task *task,
       if (!strcmp(command_args.argv[i],"-niter"))
 	niter = atoi(command_args.argv[++i]);
       if (!strcmp(command_args.argv[i],"-tracing"))
-	tracing = true;
+	if (atoi(command_args.argv[++i]) != 0)
+	  tracing = true;
     }
     assert(niter     > 0);
     assert(rank      > 0);
     assert(tasklvl   > 0);
     assert(matrixlvl >= tasklvl);
   }
-  std::cout<<"Running fast solver..."
+  std::cout<<"\n========================"
+           <<"\nRunning fast solver..."
 	   <<"\noff-diagonal rank: "<<rank
 	   <<"\ntask-tree level: "<<tasklvl
 	   <<"\nmatrix level: "<<matrixlvl
 	   <<"\niteration number: "<<niter
 	   <<"\nlegion tracing: "<<std::boolalpha<<tracing
+           <<"\n========================\n"
 	   <<std::endl;
 
   launch_solver_tasks(rank,matrixlvl,tasklvl,niter,tracing,ctx,runtime);

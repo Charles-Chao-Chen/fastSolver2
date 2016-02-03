@@ -49,7 +49,11 @@ NVCC_FLAGS	:=
 GASNET_FLAGS	:=
 
 # gnu blas and lapack
-LD_FLAGS	:= -llapack -lblas #-dynamic # for daint
+LD_FLAGS 	:= -llapack -lblas
+
+ifeq ($(findstring daint,$(shell uname -n)),daint)
+LD_FLAGS = -dynamic
+endif
 
 # mkl linking flags
 #LD_FLAGS := -L/share/apps/intel/intel-14/mkl/lib/intel64/ \
