@@ -295,22 +295,32 @@ void spmd_detrend(const Task *task,
     runtime->execute_task(ctx, node_launcher);
   }
 
+  CopyLauncher copy_result_launcher;
+  copy_result_launcher.add_copy_requirements(
+          RegionRequirement(ghost_lr, READ_ONLY,
+                            EXCLUSIVE, ghost_lr),
+          RegionRequirement(sum_lr, WRITE_DISCARD,
+                            EXCLUSIVE, sum_lr));
+  copy_result_launcher.add_src_field(0, FID_GHOST);
+  copy_result_launcher.add_dst_field(0, FID_VAL);
+
+  args->node_finish = 
+      runtime->advance_phase_barrier(ctx, args->node_finish);
+  copy_result_launcher.add_wait_barrier(args->node_finish);
+  runtime->issue_copy_operation(ctx, copy_result_launcher);
+
+  
   TaskLauncher shift_launcher(SHIFT_TASK_ID,
 			      TaskArgument(NULL, 0));
   shift_launcher.add_region_requirement(
-      RegionRequirement(ghost_lr, READ_ONLY,
-			EXCLUSIVE, ghost_lr));
-  shift_launcher.add_field(0, FID_GHOST);
+      RegionRequirement(sum_lr, READ_ONLY,
+			EXCLUSIVE, sum_lr));
+  shift_launcher.add_field(0, FID_VAL);
   shift_launcher.add_region_requirement(
       RegionRequirement(local_lr, READ_WRITE,
 			EXCLUSIVE, local_lr));
   shift_launcher.add_field(1, FID_VAL);
-
-  args->node_finish = 
-      runtime->advance_phase_barrier(ctx, args->node_finish);
-  shift_launcher.add_wait_barrier(args->node_finish);
   runtime->execute_task(ctx, shift_launcher);
-
 
   TaskLauncher check_launcher(CHECK_FIELD_TASK_ID,
 			      TaskArgument(NULL, 0));
