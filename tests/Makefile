@@ -32,6 +32,7 @@ GEN_GPU_SRC	:=				# .cu files
 INC_FLAGS	:= -I ../include/ -I ../include/tasks/
 CC_FLAGS	:= \
 		-DLEGION_IDS_ARE_64BIT \
+		-DLEGION_SPY
 #		-DPRIVILEGE_CHECKS \
 		-DBOUNDS_CHECKS \
 
@@ -48,7 +49,7 @@ NVCC_FLAGS	:=
 GASNET_FLAGS	:=
 
 # gnu blas and lapack
-LD_FLAGS	:= -L /usr/lib/	-llapack -lblas -lm
+LD_FLAGS	:= -dynamic # for daint
 
 # mkl linking flags
 #LD_FLAGS := -L/share/apps/intel/intel-14/mkl/lib/intel64/ \
@@ -114,30 +115,42 @@ prof1:
 	-bind-to none -report-bindings \
 	-x GASNET_IB_SPAWNER -x GASNET_BACKTRACE=1 \
 	./test \
-	-ll:cpu 8 -ll:util 1 \
-	-hl:prof   1		\
-	-cat legion_prof -level 2 \
-	-logfile node_%.log
+	-launchlvl 2 \
+	-treelvl 7 \
+	-ll:cpu 8 \
+	-hl:prof   1 \
+	-hl:sched  128 \
+	-cat legion_prof,legion_spy \
+	-level 2 \
+	-logfile 1node_%.log
 
 prof2:
 	mpirun -H n0000,n0001 \
 	-bind-to none -report-bindings \
 	-x GASNET_IB_SPAWNER -x GASNET_BACKTRACE=1 \
 	./test \
-	-ll:cpu 8 -ll:util 1 \
-	-hl:prof   1		\
-	-cat legion_prof -level 2 \
-	-logfile node_%.log
+	-launchlvl 4 \
+	-treelvl 7 \
+	-ll:cpu 8 \
+	-hl:prof   2 \
+	-hl:sched  128 \
+	-cat legion_prof \
+	-level 2 \
+	-logfile 2node_%.log
 
 prof4:
 	mpirun -H n0000,n0001,n0002,n0003 \
 	-bind-to none -report-bindings \
 	-x GASNET_IB_SPAWNER -x GASNET_BACKTRACE=1 \
 	./test \
-	-ll:cpu 8 -ll:util 1 \
-	-hl:prof   1		\
-	-cat legion_prof -level 2\
-	-logfile node_%.log
+	-launchlvl 5 \
+	-treelvl 7 \
+	-ll:cpu 8 \
+	-hl:prof   4 \
+	-hl:sched  1024 \
+	-cat legion_prof \
+	-level 2 \
+	-logfile 4node_%.log
 
 
 # --- legion profile ---
@@ -149,7 +162,7 @@ prof4:
 # nutil :
 # leaf  : legion leaf size
 prof:
-	mpiexec -n $(node) -ppn 1  \
+	mpirun -n $(node) -ppn 1  \
 	-env MV2_SHOW_CPU_BINDING=1 \
 	-env MV2_ENABLE_AFFINITY=0  \
 	-env GASNET_IB_SPAWNER=mpi  \
