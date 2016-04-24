@@ -149,12 +149,19 @@ void LMatrix::init_data
   req.add_field(FIELDID_V);
   launcher.add_region_requirement(req);
   FutureMap fm = runtime->execute_index_space(ctx, launcher);
-    
+
+  // wait for initialization
+  //fm.wait_all_results();
+  
+  /*
   if(wait) {
     log_solver_tasks.print("Wait for init tree...");
+    std::cout<<"Wait for init tree..."<<std::endl;
     fm.wait_all_results();
     log_solver_tasks.print("Done for init tree...");
+    std::cout<<"Done for init tree..."<<std::endl;
   }
+  */
 }
 
 Matrix LMatrix::to_matrix(Context ctx, HighLevelRuntime *runtime) {

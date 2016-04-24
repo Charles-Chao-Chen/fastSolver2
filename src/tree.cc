@@ -151,7 +151,7 @@ void KTree::partition
   this->mLevel = level;
   K.partition(mLevel, ctx, runtime);
   // initialize region
-  K.init_dense_blocks(UMat, VMat, DVec, ctx, runtime);
+  K.init_dense_blocks(UMat, VMat, DVec, ctx, runtime, true /*wait*/);
 }
 
 void KTree::solve

@@ -42,9 +42,9 @@ void launch_solver_tasks
   DVec.rand(mean);
 
   // ========================================================
-  // fast solver for a simple matrix U * V' + D
+  // use the fast solver for a simple matrix U * V' + D,
   //  where the off-diagonal blocks are exactly low rank,
-  //  so the solve should be accurate (with round-off errors)
+  //  so the solve should be accurate (up to round-off errors).
   // ========================================================
 
   // init tree
