@@ -1,5 +1,9 @@
 #include "utility.hpp"
 
+bool is_power_of_two(int x) {
+  return (x > 0) && !(x & (x-1));
+}
+
 double* region_pointer
 (const PhysicalRegion &region, int rlo, int rhi, int clo, int chi) {
   Rect<2> bounds, subrect;

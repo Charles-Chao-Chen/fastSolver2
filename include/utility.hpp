@@ -10,11 +10,14 @@ using namespace LegionRuntime::Accessor;
 
 enum {
   FIELDID_V,
+  FID_GHOST,
 };
 
 //Realm::Logger log_solver_tasks("solver_tasks");
 
 const bool WAIT_DEFAULT = false; //true; // waiting for tasks
+
+bool is_power_of_two(int x);
 
 double* region_pointer(const PhysicalRegion &region, int, int, int, int);
 
