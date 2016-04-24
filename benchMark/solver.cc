@@ -26,10 +26,10 @@ void launch_solver_tasks
   // =====================================
   int    base = 400, n = rank;
   bool   has_entry = false; //true;
-  Matrix VMat(base, treelvl, n, has_entry); VMat.rand();
-  Matrix UMat(base, treelvl, n, has_entry); UMat.rand();
-  Matrix Rhs(base, treelvl, 1, has_entry);  Rhs.rand();
-  Vector DVec(base, treelvl, has_entry);    DVec.rand(1e3);
+  Matrix VMat(base, treelvl, n, has_entry);
+  Matrix UMat(base, treelvl, n, has_entry);
+  Matrix Rhs(base, treelvl, 1, has_entry);
+  Vector DVec(base, treelvl, has_entry);
 
   // ================================================
   // generate random matrices, which is
