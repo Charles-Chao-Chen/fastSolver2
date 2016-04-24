@@ -41,7 +41,7 @@ void top_level_task(const Task *task,
   //test_two_level_broadcast(ctx, runtime);
   //test_two_level_node_solve(ctx, runtime);
 
-  int rank = 100;
+  int rank = 50;
   int treelvl = 3; // assume 8 cores on every machine
   int launchlvl = 3;
   const InputArgs &command_args = HighLevelRuntime::get_input_args();
@@ -55,8 +55,8 @@ void top_level_task(const Task *task,
 	launchlvl = atoi(command_args.argv[++i]);
     }
     assert(rank      > 0);
-    assert(treelvl   > 0);
     assert(launchlvl > 0);
+    assert(treelvl   >= launchlvl);
   }
   printf("Running fast solver with rank %d, for %d levels (%d leaves)...\n",
 	 rank, launchlvl, (int)pow(2,launchlvl));

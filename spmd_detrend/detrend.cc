@@ -276,8 +276,6 @@ void spmd_detrend(const Task *task,
 
   release_launcher.add_arrival_barrier(args->redop_finish);
   runtime->issue_release(ctx, release_launcher);
-  args->redop_finish = 
-      runtime->advance_phase_barrier(ctx, args->redop_finish);
     
   /**************************************/
 
@@ -289,11 +287,13 @@ void spmd_detrend(const Task *task,
 			  EXCLUSIVE, ghost_lr));
     node_launcher.add_field(0, FID_GHOST);
 
+    args->redop_finish = 
+      runtime->advance_phase_barrier(ctx, args->redop_finish);
     node_launcher.add_wait_barrier(args->redop_finish);
-    
     node_launcher.add_arrival_barrier(args->node_finish);
     runtime->execute_task(ctx, node_launcher);
   }
+
 
   CopyLauncher copy_result_launcher;
   copy_result_launcher.add_copy_requirements(
@@ -309,7 +309,7 @@ void spmd_detrend(const Task *task,
   copy_result_launcher.add_wait_barrier(args->node_finish);
   runtime->issue_copy_operation(ctx, copy_result_launcher);
 
-  
+  /*
   TaskLauncher shift_launcher(SHIFT_TASK_ID,
 			      TaskArgument(NULL, 0));
   shift_launcher.add_region_requirement(
@@ -328,7 +328,8 @@ void spmd_detrend(const Task *task,
       RegionRequirement(local_lr, READ_ONLY,
 			EXCLUSIVE, local_lr));
   check_launcher.add_field(0, FID_VAL);
-  runtime->execute_task(ctx, check_launcher);    
+  runtime->execute_task(ctx, check_launcher);
+*/
 }
 
 void init_field_task(const Task *task,
