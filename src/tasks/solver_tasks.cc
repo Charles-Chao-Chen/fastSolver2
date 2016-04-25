@@ -3,6 +3,7 @@
 void registration_callback(Machine machine, HighLevelRuntime *rt,
 			   const std::set<Processor> &local_procs) {
 
+  /*
   std::set<Processor>::const_iterator it = local_procs.begin();
   for (; it != local_procs.end(); it++) {
 #if 1
@@ -13,7 +14,14 @@ void registration_callback(Machine machine, HighLevelRuntime *rt,
       (new DistMapper(machine, rt, *it), *it);
 #endif
   }
+  */
     
+  rt->register_projection_functor
+    (CONTRACTION, new Contraction(rt));
+}
+
+void register_projector(Machine machine, HighLevelRuntime *rt,
+			   const std::set<Processor> &local_procs) {    
   rt->register_projection_functor
     (CONTRACTION, new Contraction(rt));
 }
@@ -31,5 +39,5 @@ void register_solver_tasks() {
   GemmRedTask::register_tasks();
   GemmBroTask::register_tasks();
   Add::register_operator();
-  //HighLevelRuntime::set_registration_callback(registration_callback);
+  HighLevelRuntime::set_registration_callback(register_projector);
 }

@@ -9,10 +9,11 @@ void UTree::init(const Matrix& UMat_) {
   this->nRhs  = 1; // hard code the number of rhs
 }
 
-void UTree::init(int level, const Matrix& UMat,
+void UTree::init(int level, const Matrix& UMat_,
 		 Context ctx, HighLevelRuntime *runtime) {
-  assert(UMat.rows()>0 && UMat.cols()>0);
+  assert(UMat_.rows()>0 && UMat_.cols()>0);
   this->mLevel = level;
+  this->UMat   = UMat_;
   this->nRhs   = 1; // hard code the number of rhs
   this->rank   = UMat.cols();
   // create the region 
@@ -135,11 +136,12 @@ void VTree::init(const Matrix& VMat_) {
   this->VMat  = VMat_;  
 }
 
-void VTree::init(int level, const Matrix& VMat,
+void VTree::init(int level, const Matrix& VMat_,
 		 Context ctx, HighLevelRuntime *runtime) {
   // make sure VMat is valid
-  assert( VMat.rows() > 0 && VMat.cols() > 0);
+  assert( VMat_.rows() > 0 && VMat_.cols() > 0);
   this->mLevel = level;
+  this->VMat   = VMat_;  
   // create region
   V.create(VMat.rows(), VMat.cols(), ctx, runtime);
 }
@@ -187,9 +189,12 @@ void KTree::init
 }
 
 void KTree::init
-(int level, const Matrix& UMat, const Matrix& VMat,  const Vector& DVec,
+(int level, const Matrix& UMat_, const Matrix& VMat_,  const Vector& DVec_,
  Context ctx, HighLevelRuntime *runtime) {
   this->mLevel = level;
+  this->UMat  = UMat_;
+  this->VMat  = VMat_;
+  this->DVec  = DVec_;
   // check consistancy
   assert(UMat.rows() == VMat.rows());
   assert(UMat.cols() == VMat.cols());

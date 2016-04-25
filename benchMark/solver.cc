@@ -18,7 +18,7 @@ struct SPMDargs {
   std::vector<PhaseBarrier> node_solve;
   int leaf_size;
   int rank;
-  int spmd_tree_level;
+  int spmd_level;
   int my_matrix_level;
   int my_task_level;
 };
@@ -34,7 +34,7 @@ void spmd_fast_solver(const Task *task,
   const SPMDargs *args = (SPMDargs*)task->args;
   int leaf_size        = args->leaf_size;
   int rank             = args->rank;
-  int spmd_tree_level  = args->spmd_tree_level;
+  int spmd_level       = args->spmd_level;
   int matrix_level     = args->my_matrix_level;
   int task_level       = args->my_task_level;
   
@@ -55,11 +55,11 @@ void spmd_fast_solver(const Task *task,
   DVec.rand(mean);
 
   // init tree
-  int global_tree_level = spmd_tree_level+matrix_level;
+  int global_tree_level = spmd_level+matrix_level;
   UTree uTree; uTree.init( global_tree_level, UMat, ctx, runtime );
   VTree vTree; vTree.init( global_tree_level, VMat, ctx, runtime );
   KTree kTree; kTree.init( matrix_level, UMat, VMat, DVec, ctx, runtime );
-
+  
   // data partition
   uTree.partition_new( task_level, ctx, runtime );
   vTree.partition_new( task_level, ctx, runtime );
@@ -68,21 +68,19 @@ void spmd_fast_solver(const Task *task,
   // init rhs
   uTree.init_rhs(Rhs, ctx, runtime, true/*wait*/);
 
-        
-#if 0
-
   // leaf solve: U = dense \ U
   kTree.solve( uTree.leaf(), vTree.leaf(), ctx, runtime );  
 
   // solve on every machine
-  for (int i=spmd_tree_level+task_level; i>spmd_tree_level; i--) {
+  for (int i=spmd_level+task_level; i>spmd_level; i--) {
     LMatrix& V = vTree.level(i);
     LMatrix& u = uTree.uMat_level(i);
     LMatrix& d = uTree.dMat_level(i);    
     
     // reduction operation
-    int local_level = i-spmd_tree_level;
+    int local_level = i-spmd_level;
     int rows = pow(2, local_level)*V.cols();
+    
     LMatrix VTu(rows, u.cols(), local_level-1, ctx, runtime);
     LMatrix VTd(rows, d.cols(), local_level-1, ctx, runtime);
     VTu.two_level_partition(ctx, runtime);
@@ -100,10 +98,9 @@ void spmd_fast_solver(const Task *task,
     std::cout<<"launched solver tasks at level: "<<i<<std::endl;
   }
 
-  for (int l=spmd_tree_level-1; l>=0; l--) {
+  for (int l=spmd_level-1; l>=0; l--) {
     
   }
-#endif
   
 }
 
@@ -114,13 +111,13 @@ void top_level_task(const Task *task,
   // machine configuration
   int num_machines = 1;
   int num_cores_per_machine = 1;
-  int spmd_tree_level = (int)log2(num_machines);
+  int spmd_level = (int)log2(num_machines);
   int task_level = (int)log2(num_cores_per_machine);
   
   // HODLR configuration
   int rank = 100;
   int leaf_size = 400;
-  int matrix_level = task_level+spmd_tree_level;
+  int matrix_level = task_level+spmd_level;
 
   // parse input arguments
   const InputArgs &command_args = HighLevelRuntime::get_input_args();
@@ -128,13 +125,13 @@ void top_level_task(const Task *task,
     for (int i = 1; i < command_args.argc; i++) {
       if (!strcmp(command_args.argv[i],"-machine")) {
 	num_machines = atoi(command_args.argv[++i]);
-	spmd_tree_level = (int)log2(num_machines);
-	matrix_level = task_level+spmd_tree_level;
+	spmd_level = (int)log2(num_machines);
+	matrix_level = task_level+spmd_level;
       }
       if (!strcmp(command_args.argv[i],"-core")) {
 	num_cores_per_machine = atoi(command_args.argv[++i]);
 	task_level = (int)log2(num_cores_per_machine);
-	matrix_level = task_level+spmd_tree_level;
+	matrix_level = task_level+spmd_level;
       }
       if (!strcmp(command_args.argv[i],"-rank"))
 	rank = atoi(command_args.argv[++i]);
@@ -145,14 +142,17 @@ void top_level_task(const Task *task,
     }
     assert(is_power_of_two(num_machines));
     assert(is_power_of_two(num_cores_per_machine));
-    assert(rank      > 0);
-    assert(leaf_size > 0);
+    assert(rank         > 0);
+    assert(leaf_size    > 0);
+    assert(matrix_level >= task_level+spmd_level);
   }
   std::cout<<"\n========================"
            <<"\nRunning fast solver..."
            <<"\n---------------------"
 	   <<"\n# machines: "<<num_machines
+	   <<", level: "<<spmd_level
 	   <<"\n# cores/machine: "<<num_cores_per_machine
+    	   <<", level: "<<task_level
            <<"\n---------------------"
 	   <<"\noff-diagonal rank: "<<rank
 	   <<"\nleaf size: "<<leaf_size
@@ -164,13 +164,13 @@ void top_level_task(const Task *task,
   SPMDargs arg;
   arg.leaf_size = leaf_size;
   arg.rank = rank;
-  arg.spmd_tree_level = spmd_tree_level;
-  arg.my_matrix_level = matrix_level - spmd_tree_level;
+  arg.spmd_level = spmd_level;
+  arg.my_matrix_level = matrix_level - spmd_level;
   arg.my_task_level = task_level;
   std::vector<SPMDargs> args(num_machines, arg);
-  for (int l=0; l<spmd_tree_level; l++) {
+  for (int l=0; l<spmd_level; l++) {
     int num_barriers = (int)pow(2, l); 
-    int num_shards_per_barrier = (int)pow(2, spmd_tree_level-l);
+    int num_shards_per_barrier = (int)pow(2, spmd_level-l);
     PhaseBarrier pb_reduction = runtime->create_phase_barrier(ctx, num_shards_per_barrier);
     PhaseBarrier pb_node_solve = runtime->create_phase_barrier(ctx, 1);
     std::vector<PhaseBarrier> barrier_reduction(num_barriers, pb_reduction);
@@ -204,9 +204,9 @@ void top_level_task(const Task *task,
     runtime->attach_name(fs, FID_GHOST, "GHOST");
   }
 
-  for (int l=0; l<spmd_tree_level; l++) {
+  for (int l=0; l<spmd_level; l++) {
     int num_ghosts = (int)pow(2, l);
-    int num_shards_per_ghost = (int)pow(2, spmd_tree_level-l);
+    int num_shards_per_ghost = (int)pow(2, spmd_level-l);
     std::vector<LogicalRegion> ghosts;
     for (int i=0; i<num_ghosts; i++) {
       ghosts.push_back(runtime->create_logical_region(ctx, is, fs));
