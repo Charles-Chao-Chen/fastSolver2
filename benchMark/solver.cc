@@ -16,7 +16,251 @@ enum {
 struct SPMDargs {
   std::vector<PhaseBarrier> reduction;
   std::vector<PhaseBarrier> node_solve;
+  int leaf_size;
+  int rank;
+  int spmd_tree_level;
+  int my_matrix_level;
+  int my_task_level;
 };
+
+void spmd_fast_solver(const Task *task,
+		      const std::vector<PhysicalRegion> &regions,
+		      Context ctx, HighLevelRuntime *runtime) {
+
+  int point = task->index_point.get_index();
+  std::cout<<"Inside spmd_task["<<point<<"]\n";
+
+  runtime->unmap_all_regions(ctx);
+  const SPMDargs *args = (SPMDargs*)task->args;
+  int leaf_size        = args->leaf_size;
+  int rank             = args->rank;
+  int spmd_tree_level  = args->spmd_tree_level;
+  int matrix_level     = args->my_matrix_level;
+  int task_level       = args->my_task_level;
+  
+  // ======= Problem configuration =======
+  // solve: A x = b where A = U * V' + D
+  // =====================================
+  bool   has_entry = false; //true;
+  Matrix VMat(leaf_size, matrix_level, rank, has_entry);
+  Matrix UMat(leaf_size, matrix_level, rank, has_entry);
+  Matrix Rhs (leaf_size, matrix_level, 1,    has_entry);
+  Vector DVec(leaf_size, matrix_level,       has_entry);
+
+  // randomly generate entries
+  VMat.rand();
+  UMat.rand();
+  Rhs.rand();
+  int mean = 1e3;
+  DVec.rand(mean);
+
+  // init tree
+  int global_tree_level = spmd_tree_level+matrix_level;
+  UTree uTree; uTree.init( global_tree_level, UMat, ctx, runtime );
+  VTree vTree; vTree.init( global_tree_level, VMat, ctx, runtime );
+  KTree kTree; kTree.init( matrix_level, UMat, VMat, DVec, ctx, runtime );
+
+  // data partition
+  uTree.partition_new( task_level, ctx, runtime );
+  vTree.partition_new( task_level, ctx, runtime );
+  kTree.partition_new( task_level, ctx, runtime );
+  
+  // init rhs
+  uTree.init_rhs(Rhs, ctx, runtime, true/*wait*/);
+
+        
+#if 0
+
+  // leaf solve: U = dense \ U
+  kTree.solve( uTree.leaf(), vTree.leaf(), ctx, runtime );  
+
+  // solve on every machine
+  for (int i=spmd_tree_level+task_level; i>spmd_tree_level; i--) {
+    LMatrix& V = vTree.level(i);
+    LMatrix& u = uTree.uMat_level(i);
+    LMatrix& d = uTree.dMat_level(i);    
+    
+    // reduction operation
+    int local_level = i-spmd_tree_level;
+    int rows = pow(2, local_level)*V.cols();
+    LMatrix VTu(rows, u.cols(), local_level-1, ctx, runtime);
+    LMatrix VTd(rows, d.cols(), local_level-1, ctx, runtime);
+    VTu.two_level_partition(ctx, runtime);
+    VTd.two_level_partition(ctx, runtime);
+
+    LMatrix::gemmRed('t', 'n', 1.0, V, u, 0.0, VTu, ctx, runtime );
+    LMatrix::gemmRed('t', 'n', 1.0, V, d, 0.0, VTd, ctx, runtime );
+
+    // form and solve the small linear system
+    VTu.node_solve( VTd, ctx, runtime );
+      
+    // broadcast operation
+    // d -= u * VTd
+    LMatrix::gemmBro('n', 'n', -1.0, u, VTd, 1.0, d, ctx, runtime );
+    std::cout<<"launched solver tasks at level: "<<i<<std::endl;
+  }
+
+  for (int l=spmd_tree_level-1; l>=0; l--) {
+    
+  }
+#endif
+  
+}
+
+void top_level_task(const Task *task,
+		    const std::vector<PhysicalRegion> &regions,
+		    Context ctx, HighLevelRuntime *runtime) {
+  
+  // machine configuration
+  int num_machines = 1;
+  int num_cores_per_machine = 1;
+  int spmd_tree_level = (int)log2(num_machines);
+  int task_level = (int)log2(num_cores_per_machine);
+  
+  // HODLR configuration
+  int rank = 100;
+  int leaf_size = 400;
+  int matrix_level = task_level+spmd_tree_level;
+
+  // parse input arguments
+  const InputArgs &command_args = HighLevelRuntime::get_input_args();
+  if (command_args.argc > 1) {
+    for (int i = 1; i < command_args.argc; i++) {
+      if (!strcmp(command_args.argv[i],"-machine")) {
+	num_machines = atoi(command_args.argv[++i]);
+	spmd_tree_level = (int)log2(num_machines);
+	matrix_level = task_level+spmd_tree_level;
+      }
+      if (!strcmp(command_args.argv[i],"-core")) {
+	num_cores_per_machine = atoi(command_args.argv[++i]);
+	task_level = (int)log2(num_cores_per_machine);
+	matrix_level = task_level+spmd_tree_level;
+      }
+      if (!strcmp(command_args.argv[i],"-rank"))
+	rank = atoi(command_args.argv[++i]);
+      if (!strcmp(command_args.argv[i],"-leaf"))
+	leaf_size = atoi(command_args.argv[++i]);
+      if (!strcmp(command_args.argv[i],"-mtxlvl"))
+	matrix_level = atoi(command_args.argv[++i]);
+    }
+    assert(is_power_of_two(num_machines));
+    assert(is_power_of_two(num_cores_per_machine));
+    assert(rank      > 0);
+    assert(leaf_size > 0);
+  }
+  std::cout<<"\n========================"
+           <<"\nRunning fast solver..."
+           <<"\n---------------------"
+	   <<"\n# machines: "<<num_machines
+	   <<"\n# cores/machine: "<<num_cores_per_machine
+           <<"\n---------------------"
+	   <<"\noff-diagonal rank: "<<rank
+	   <<"\nleaf size: "<<leaf_size
+	   <<"\nmatrix level: "<<matrix_level
+           <<"\n========================\n"
+	   <<std::endl;
+
+  // create phase barriers
+  SPMDargs arg;
+  arg.leaf_size = leaf_size;
+  arg.rank = rank;
+  arg.spmd_tree_level = spmd_tree_level;
+  arg.my_matrix_level = matrix_level - spmd_tree_level;
+  arg.my_task_level = task_level;
+  std::vector<SPMDargs> args(num_machines, arg);
+  for (int l=0; l<spmd_tree_level; l++) {
+    int num_barriers = (int)pow(2, l); 
+    int num_shards_per_barrier = (int)pow(2, spmd_tree_level-l);
+    PhaseBarrier pb_reduction = runtime->create_phase_barrier(ctx, num_shards_per_barrier);
+    PhaseBarrier pb_node_solve = runtime->create_phase_barrier(ctx, 1);
+    std::vector<PhaseBarrier> barrier_reduction(num_barriers, pb_reduction);
+    std::vector<PhaseBarrier> barrier_node_solve(num_barriers, pb_node_solve);
+    for (int shard=0; shard<num_machines; shard++) {
+      int barrier_idx = shard / num_shards_per_barrier;
+      args[shard].reduction.push_back(barrier_reduction[barrier_idx]);
+      args[shard].node_solve.push_back(barrier_node_solve[barrier_idx]);
+    }
+  }
+  
+  std::vector<TaskLauncher> spmd_tasks;
+  for (int i=0; i<num_machines; i++) {
+    spmd_tasks.push_back
+      (TaskLauncher(SPMD_TASK_ID, TaskArgument(&args[i], sizeof(SPMDargs))));
+  }
+
+  // create ghost regions
+  Point<2> lo = make_point(0, 0);
+  Point<2> hi = make_point(2*rank-1, 2*rank-1);
+  Rect<2>  rect(lo, hi);
+  IndexSpace is = runtime->create_index_space(ctx,
+                          Domain::from_rect<2>(rect));
+  runtime->attach_name(is, "ghost_is");
+  FieldSpace fs = runtime->create_field_space(ctx);
+  runtime->attach_name(fs, "ghost_fs");
+  {
+    FieldAllocator allocator =
+      runtime->create_field_allocator(ctx, fs);
+    allocator.allocate_field(sizeof(double), FID_GHOST);
+    runtime->attach_name(fs, FID_GHOST, "GHOST");
+  }
+
+  for (int l=0; l<spmd_tree_level; l++) {
+    int num_ghosts = (int)pow(2, l);
+    int num_shards_per_ghost = (int)pow(2, spmd_tree_level-l);
+    std::vector<LogicalRegion> ghosts;
+    for (int i=0; i<num_ghosts; i++) {
+      ghosts.push_back(runtime->create_logical_region(ctx, is, fs));
+    }
+    for (int shard=0; shard<num_machines; shard++) {
+      int idx = shard / num_shards_per_ghost;
+      spmd_tasks[shard].add_region_requirement
+	(RegionRequirement(ghosts[idx],READ_WRITE,SIMULTANEOUS,ghosts[idx]));
+      spmd_tasks[shard].region_requirements[l].flags |= NO_ACCESS_FLAG;
+      spmd_tasks[shard].add_index_requirement
+	(IndexSpaceRequirement(is, NO_MEMORY, is));
+      spmd_tasks[shard].add_field(l, FID_GHOST);
+    }
+  }
+  
+  // create SPMD tasks
+  MustEpochLauncher must_epoch_launcher;
+  for (int shard=0; shard<num_machines; shard++) {
+    DomainPoint point(shard);
+    must_epoch_launcher.add_single_task(point, spmd_tasks[shard]);
+  }  
+
+  FutureMap fm = runtime->execute_must_epoch(ctx, must_epoch_launcher);
+  fm.wait_all_results();
+  runtime->destroy_index_space(ctx, is);
+  runtime->destroy_field_space(ctx, fs);
+}
+
+int main(int argc, char *argv[]) {
+  // register top level task
+  HighLevelRuntime::set_top_level_task_id(TOP_LEVEL_TASK_ID);
+  HighLevelRuntime::register_legion_task<top_level_task>(
+    TOP_LEVEL_TASK_ID,   /* task id */
+    Processor::LOC_PROC, /* cpu */
+    true,  /* single */
+    false, /* index  */
+    AUTO_GENERATE_ID,
+    TaskConfigOptions(false /*leaf task*/),
+    "master-task"
+  );
+  HighLevelRuntime::register_legion_task<spmd_fast_solver>(SPMD_TASK_ID,
+      Processor::LOC_PROC, true/*single*/, true/*single*/,
+      AUTO_GENERATE_ID, TaskConfigOptions(), "spmd");
+
+  // register solver tasks
+  register_solver_tasks();
+
+  // register mapper
+  //HighLevelRuntime::set_registration_callback(registration_callback);
+
+  // start legion master task
+  return HighLevelRuntime::start(argc, argv);
+}
+
 
 void launch_solver_tasks
 (int rank, int treelvl, int launchlvl, int niter, bool tracing,
@@ -54,10 +298,9 @@ void launch_solver_tasks
   // ========================================================
 
   // init tree
-  int   nProc = pow(2,launchlvl);
-  UTree uTree; uTree.init( nProc, UMat );
-  VTree vTree; vTree.init( nProc, VMat );
-  KTree kTree; kTree.init( nProc, UMat, VMat, DVec );
+  UTree uTree; uTree.init( UMat );
+  VTree vTree; vTree.init( VMat );
+  KTree kTree; kTree.init( UMat, VMat, DVec );
 
   // data partition
   uTree.partition( launchlvl, ctx, runtime );
@@ -116,158 +359,5 @@ void launch_solver_tasks
 #endif
 
   std::cout<<"Launching solver tasks complete."<<std::endl;
-}
-
-void top_level_task(const Task *task,
-		    const std::vector<PhysicalRegion> &regions,
-		    Context ctx, HighLevelRuntime *runtime) {
-  
-  // machine configuration
-  int num_machines = 1;
-  int num_cores_per_machine = 1;
-  int task_level = (int)log2(num_cores_per_machine);
-
-  // HODLR configuration
-  int rank = 100;
-  int leaf_size = 400;
-  int matrix_level = task_level;
-
-  // tracing configuration
-  int niter = 1;
-  bool tracing = false;
-
-  // parse input arguments
-  const InputArgs &command_args = HighLevelRuntime::get_input_args();
-  if (command_args.argc > 1) {
-    for (int i = 1; i < command_args.argc; i++) {
-      if (!strcmp(command_args.argv[i],"-machine"))
-	num_machines = atoi(command_args.argv[++i]);
-      if (!strcmp(command_args.argv[i],"-core"))
-	num_cores_per_machine = atoi(command_args.argv[++i]);
-      if (!strcmp(command_args.argv[i],"-rank"))
-	rank = atoi(command_args.argv[++i]);
-      if (!strcmp(command_args.argv[i],"-leaf"))
-	leaf_size = atoi(command_args.argv[++i]);
-      if (!strcmp(command_args.argv[i],"-mtxlvl"))
-	matrix_level = atoi(command_args.argv[++i]);
-      if (!strcmp(command_args.argv[i],"-niter"))
-	niter = atoi(command_args.argv[++i]);
-      if (!strcmp(command_args.argv[i],"-tracing"))
-	if (atoi(command_args.argv[++i]) != 0)
-	  tracing = true;
-    }
-    assert(is_power_of_two(num_machines));
-    assert(is_power_of_two(num_cores_per_machine));
-    assert(rank                  > 0);
-    assert(leaf_size             > 0);
-    assert(matrix_level          >= task_level);
-    assert(niter                 > 0);
-  }
-  std::cout<<"\n========================"
-           <<"\nRunning fast solver..."
-           <<"\n---------------------"
-	   <<"\n# machines: "<<num_machines
-	   <<"\n# cores/machine: "<<num_cores_per_machine
-           <<"\n---------------------"
-	   <<"\noff-diagonal rank: "<<rank
-	   <<"\nleaf size: "<<leaf_size
-	   <<"\nmatrix level: "<<matrix_level
-           <<"\n---------------------"
-	   <<"\niteration number: "<<niter
-	   <<"\nlegion tracing: "<<std::boolalpha<<tracing
-           <<"\n========================\n"
-	   <<std::endl;
-
-  // create phase barriers
-  std::vector<SPMDargs> args(num_machines);
-
-  int spmd_tree_level = (int)log2(num_machines);
-  for (int l=0; l<spmd_tree_level; l++) {
-    int num_barriers = (int)pow(2, l); 
-    int num_shards_per_barrier = (int)pow(2, spmd_tree_level-l);
-    PhaseBarrier pb_reduction = runtime->create_phase_barrier(ctx, num_shards_per_barrier);
-    PhaseBarrier pb_node_solve = runtime->create_phase_barrier(ctx, 1);
-    std::vector<PhaseBarrier> barrier_reduction(num_barriers, pb_reduction);
-    std::vector<PhaseBarrier> barrier_node_solve(num_barriers, pb_node_solve);
-    for (int shard=0; shard<num_machines; shard++) {
-      int barrier_idx = shard / num_shards_per_barrier;
-      args[shard].reduction.push_back(barrier_reduction[barrier_idx]);
-      args[shard].node_solve.push_back(barrier_node_solve[barrier_idx]);
-    }
-  }
-
-  // create ghost regions
-  Point<2> lo = make_point(0, 0);
-  Point<2> hi = make_point(2*rank-1, 2*rank-1);
-  Rect<2>  rect(lo, hi);
-  IndexSpace is = runtime->create_index_space(ctx,
-                          Domain::from_rect<2>(rect));
-  runtime->attach_name(is, "ghost_is");
-  FieldSpace fs = runtime->create_field_space(ctx);
-  runtime->attach_name(fs, "ghost_fs");
-  {
-    FieldAllocator allocator =
-      runtime->create_field_allocator(ctx, fs);
-    allocator.allocate_field(sizeof(double), FID_GHOST);
-    runtime->attach_name(fs, FID_GHOST, "GHOST");
-  }
-
-  std::vector<TaskLauncher> spmd_tasks;
-  for (int i=0; i<num_machines; i++) {
-    spmd_tasks.push_back
-      (TaskLauncher(SPMD_TASK_ID, TaskArgument(&args[i], sizeof(SPMDargs))));
-  }
-
-  for (int l=0; l<spmd_tree_level; l++) {
-    int num_ghosts = (int)pow(2, l);
-    int num_shards_per_ghost = (int)pow(2, spmd_tree_level-l);
-    std::vector<LogicalRegion> ghosts;
-    for (int i=0; i<num_ghosts; i++) {
-      ghosts.push_back(runtime->create_logical_region(ctx, is, fs));
-    }
-    for (int shard=0; shard<num_machines; shard++) {
-      int idx = shard / num_shards_per_ghost;
-      spmd_tasks[shard].add_region_requirement
-	(RegionRequirement(ghosts[idx],READ_WRITE,SIMULTANEOUS,ghosts[idx]));
-      spmd_tasks[shard].region_requirements[l].flags |= NO_ACCESS_FLAG;
-      spmd_tasks[shard].add_index_requirement
-	(IndexSpaceRequirement(is, NO_MEMORY, is));
-      spmd_tasks[shard].add_field(l, FID_GHOST);
-    }
-  }
-  
-  // create SPMD tasks
-  MustEpochLauncher must_epoch_launcher;
-  for (int shard=0; shard<num_machines; shard++) {
-    DomainPoint point(shard);
-    must_epoch_launcher.add_single_task(point, spmd_tasks[shard]);
-  }  
-
-  runtime->execute_must_epoch(ctx, must_epoch_launcher);
-  runtime->destroy_index_space(ctx, is);
-  runtime->destroy_field_space(ctx, fs);
-}
-
-int main(int argc, char *argv[]) {
-  // register top level task
-  HighLevelRuntime::set_top_level_task_id(TOP_LEVEL_TASK_ID);
-  HighLevelRuntime::register_legion_task<top_level_task>(
-    TOP_LEVEL_TASK_ID,   /* task id */
-    Processor::LOC_PROC, /* cpu */
-    true,  /* single */
-    false, /* index  */
-    AUTO_GENERATE_ID,
-    TaskConfigOptions(false /*leaf task*/),
-    "master-task"
-  );
-
-  // register solver tasks
-  register_solver_tasks();
-
-  // register mapper
-  HighLevelRuntime::set_registration_callback(registration_callback);
-
-  // start legion master task
-  return HighLevelRuntime::start(argc, argv);
 }
 

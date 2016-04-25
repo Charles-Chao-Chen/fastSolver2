@@ -2,12 +2,22 @@
 
 #include <math.h> // for pow()
 
-void UTree::init(int nProc_, const Matrix& UMat_) {
+void UTree::init(const Matrix& UMat_) {
   assert(UMat_.rows()>0 && UMat_.cols()>0);
-  this->nProc = nProc_;
   this->UMat  = UMat_;
   this->rank  = UMat.cols();
   this->nRhs  = 1; // hard code the number of rhs
+}
+
+void UTree::init(int level, const Matrix& UMat,
+		 Context ctx, HighLevelRuntime *runtime) {
+  assert(UMat.rows()>0 && UMat.cols()>0);
+  this->mLevel = level;
+  this->nRhs   = 1; // hard code the number of rhs
+  this->rank   = UMat.cols();
+  // create the region 
+  int cols = nRhs + UMat.cols()*mLevel;
+  U.create(UMat.rows(), cols, ctx, runtime);
 }
 
 void UTree::init_rhs
@@ -64,6 +74,31 @@ void UTree::partition
   assert(dMat_vec.size() == size_t(mLevel));
 }
 
+void UTree::partition_new
+(int task_level, Context ctx, HighLevelRuntime *runtime) {
+
+  // partition data
+  U.partition(task_level, ctx, runtime);
+  // initialize region
+  U.init_data(nRhs, U.cols(), UMat, ctx, runtime);
+
+  // Set column range for all u and d matrics.
+  // In particular, we need to set the column begin
+  // for u matrices.
+  for (int i=0; i<mLevel; i++) {
+    int ncol = nRhs + rank*i;
+    LMatrix dMat = U;
+    dMat.set_column_size(ncol);
+    dMat_vec.push_back(dMat);
+    LMatrix uMat = U;
+    uMat.set_column_size(rank);
+    uMat.set_column_begin(ncol);
+    uMat_vec.push_back(uMat);
+  }
+  assert(uMat_vec.size() == size_t(mLevel));
+  assert(dMat_vec.size() == size_t(mLevel));
+}
+
 LMatrix& UTree::uMat_level(int i) {
   assert(0<i && i<=mLevel);
   return uMat_vec[i-1];
@@ -96,9 +131,17 @@ Matrix UTree::solution(Context ctx, HighLevelRuntime *runtime) {
   return sln;
 }
 
-void VTree::init(int nProc_, const Matrix& VMat_) {
-  this->nProc = nProc_;
+void VTree::init(const Matrix& VMat_) {
   this->VMat  = VMat_;  
+}
+
+void VTree::init(int level, const Matrix& VMat,
+		 Context ctx, HighLevelRuntime *runtime) {
+  // make sure VMat is valid
+  assert( VMat.rows() > 0 && VMat.cols() > 0);
+  this->mLevel = level;
+  // create region
+  V.create(VMat.rows(), VMat.cols(), ctx, runtime);
 }
 
 void VTree::partition
@@ -115,6 +158,14 @@ void VTree::partition
   V.init_data(VMat, ctx, runtime);
 }
 
+void VTree::partition_new
+(int task_level, Context ctx, HighLevelRuntime *runtime) {
+  // create partition
+  V.partition(task_level, ctx, runtime);
+  // initialize region
+  V.init_data(VMat, ctx, runtime);
+}
+
 LMatrix& VTree::leaf() {
   return V;
 }
@@ -125,18 +176,29 @@ LMatrix& VTree::level(int i) {
 }
 
 void KTree::init
-(int nProc_, const Matrix& UMat_, const Matrix& VMat_,
+(const Matrix& UMat_, const Matrix& VMat_,
  const Vector& DVec_) {
-  this->nProc = nProc_;
   this->UMat  = UMat_;
   this->VMat  = VMat_;
   this->DVec  = DVec_;
-  assert(UMat.num_partition()%nProc==0);
-  assert(VMat.num_partition()%nProc==0);
-  assert(DVec.num_partition()%nProc==0);
   assert(UMat.rows() == VMat.rows());
   assert(UMat.cols() == VMat.cols());
   assert(UMat.rows() == DVec.rows());
+}
+
+void KTree::init
+(int level, const Matrix& UMat, const Matrix& VMat,  const Vector& DVec,
+ Context ctx, HighLevelRuntime *runtime) {
+  this->mLevel = level;
+  // check consistancy
+  assert(UMat.rows() == VMat.rows());
+  assert(UMat.cols() == VMat.cols());
+  assert(UMat.rows() == DVec.rows());
+  // create region
+  int nrow = UMat.rows();
+  int nblk = pow(2, UMat.levels());
+  int ncol = UMat.rows() / nblk; // leaf size
+  K.create( nrow, ncol, ctx, runtime );
 }
 
 void KTree::partition
@@ -152,6 +214,14 @@ void KTree::partition
   K.partition(mLevel, ctx, runtime);
   // initialize region
   K.init_dense_blocks(UMat, VMat, DVec, ctx, runtime, true /*wait*/);
+}
+
+void KTree::partition_new
+(int task_level, Context ctx, HighLevelRuntime *runtime) {
+  // partition region
+  K.partition(task_level, ctx, runtime);
+  // initialize region
+  K.init_dense_blocks(UMat, VMat, DVec, ctx, runtime);
 }
 
 void KTree::solve

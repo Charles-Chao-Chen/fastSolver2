@@ -32,7 +32,7 @@ GEN_GPU_SRC	:=				# .cu files
 INC_FLAGS	:= -I ../include/ -I ../include/tasks/
 CC_FLAGS	:= \
 		-DLEGION_IDS_ARE_64BIT \
-#		-DLEGION_SPY
+		-DLEGION_SPY
 #		-DPRIVILEGE_CHECKS \
 		-DBOUNDS_CHECKS \
 
@@ -80,7 +80,7 @@ include $(LG_RT_DIR)/runtime.mk
 
 
 #clean solver related
-clsol:
+cleansolver:
 	@$(RM) -rf $(OUTFILE) $(GEN_OBJS)  \
 	*~  \
 	../include/*~ ../src/*~ \
@@ -125,6 +125,18 @@ prof1:
 	-hl:prof   1 \
 	-hl:sched  128 \
 	-level 4,legion_prof=2 \
+	-logfile 1node_%.log
+
+spy1:
+	mpirun -H n0003 \
+	-bind-to none -report-bindings \
+	-x GASNET_IB_SPAWNER -x GASNET_BACKTRACE=1 \
+	./solver \
+	-machine 4 \
+	-core 2 \
+	-mtxlvl 4 \
+	-ll:cpu 8 \
+	-level 4,legion_spy=2 \
 	-logfile 1node_%.log
 
 prof2:

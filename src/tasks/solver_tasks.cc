@@ -31,5 +31,5 @@ void register_solver_tasks() {
   GemmRedTask::register_tasks();
   GemmBroTask::register_tasks();
   Add::register_operator();
-  HighLevelRuntime::set_registration_callback(registration_callback);
+  //HighLevelRuntime::set_registration_callback(registration_callback);
 }
