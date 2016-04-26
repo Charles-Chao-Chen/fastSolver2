@@ -595,8 +595,8 @@ void LMatrix::node_solve
   // bug here: have to use stronger previlige
   RegionRequirement AReq(ARegion, READ_WRITE, EXCLUSIVE, ARegion);
   RegionRequirement bReq(bRegion, READ_WRITE, EXCLUSIVE, bRegion);
-  AReq.add_field(FIELDID_V);
-  bReq.add_field(FIELDID_V);
+  AReq.add_field(FID_GHOST);
+  bReq.add_field(FID_GHOST);
   launcher.add_region_requirement(AReq);
   launcher.add_region_requirement(bReq);
   launcher.add_wait_barrier(pb_wait);
