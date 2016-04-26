@@ -10,6 +10,7 @@
 
 #include "leaf_solve.hpp"
 #include "node_solve.hpp"
+#include "node_solve_region.hpp"
 #include "gemm.hpp"
 #include "gemm_reduce.hpp"
 #include "gemm_broadcast.hpp"

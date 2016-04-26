@@ -16,6 +16,8 @@ public:
   LMatrix();
   LMatrix(int, int, int, Context, HighLevelRuntime*);
   LMatrix(IndexSpace, FieldSpace, LogicalRegion);
+  LMatrix(LogicalRegion r, int rows, int cols);
+
   /*
   LMatrix
   (int, int, int, IndexPartition ip, LogicalRegion lr,
@@ -121,6 +123,10 @@ public:
   // for HMatrix::solve()
   void node_solve
   (LMatrix&, Context, HighLevelRuntime*, bool wait=WAIT_DEFAULT);
+
+  void node_solve
+  (LMatrix& b, PhaseBarrier pb_wait, PhaseBarrier pb_ready,
+   Context ctx, HighLevelRuntime* runtime, bool wait=WAIT_DEFAULT);
 
   // print the values on screen
   // for debugging

@@ -16,6 +16,13 @@ LMatrix::LMatrix
 LMatrix::LMatrix(IndexSpace is, FieldSpace fs, LogicalRegion r)
   : ispace(is), fspace(fs), region(r) {}
 
+LMatrix::LMatrix(LogicalRegion r, int rows, int cols) {
+  this->region = r;
+  this->ispace = region.get_index_space();
+  this->mRows  = rows;
+  this->mCols  = cols;
+}
+
 /*
 LMatrix::LMatrix
 (int rows, int cols, int part, IndexPartition ip, LogicalRegion lr,
@@ -572,6 +579,31 @@ void LMatrix::node_solve
     log_solver_tasks.print("Done for node solve...");
   }
 }
+
+void LMatrix::node_solve
+(LMatrix& b, PhaseBarrier pb_wait, PhaseBarrier pb_ready,
+ Context ctx, HighLevelRuntime* runtime, bool wait) {
+
+  assert( mRows/2 == mCols );
+  
+  // first level stuff
+  LogicalRegion ARegion = this->logical_region();
+  LogicalRegion bRegion = b.logical_region();
+
+  NodeSolveRegionTask launcher(TaskArgument(NULL, 0));
+  //RegionRequirement AReq(ARegion, 0, READ_ONLY,  EXCLUSIVE, ARegion);
+  // bug here: have to use stronger previlige
+  RegionRequirement AReq(ARegion, READ_WRITE, EXCLUSIVE, ARegion);
+  RegionRequirement bReq(bRegion, READ_WRITE, EXCLUSIVE, bRegion);
+  AReq.add_field(FIELDID_V);
+  bReq.add_field(FIELDID_V);
+  launcher.add_region_requirement(AReq);
+  launcher.add_region_requirement(bReq);
+  launcher.add_wait_barrier(pb_wait);
+  launcher.add_arrival_barrier(pb_ready);
+  runtime->execute_task(ctx, launcher);
+}
+
 /*
 template <typename SolveTask>
 void LMatrix::solve

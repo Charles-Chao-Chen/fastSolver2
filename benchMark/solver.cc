@@ -18,6 +18,7 @@ struct SPMDargs {
   std::vector<PhaseBarrier> node_solve;
   int leaf_size;
   int rank;
+  int nRhs;
   int spmd_level;
   int my_matrix_level;
   int my_task_level;
@@ -37,6 +38,10 @@ LMatrix create_local_region(LogicalRegion ghost,
   return LMatrix(is, fs, region);
 }
 
+LMatrix create_legion_matrix(LogicalRegion region, int rows, int cols) {
+  return LMatrix(region, rows, cols);
+}
+
 void spmd_fast_solver(const Task *task,
 		      const std::vector<PhysicalRegion> &regions,
 		      Context ctx, HighLevelRuntime *runtime) {
@@ -45,9 +50,10 @@ void spmd_fast_solver(const Task *task,
   std::cout<<"Inside spmd_task["<<spmd_point<<"]\n";
 
   runtime->unmap_all_regions(ctx);
-  const SPMDargs *args = (SPMDargs*)task->args;
+  SPMDargs *args       = (SPMDargs*)task->args;
   int leaf_size        = args->leaf_size;
   int rank             = args->rank;
+  int nRhs             = args->nRhs;
   int spmd_level       = args->spmd_level;
   int matrix_level     = args->my_matrix_level;
   int task_level       = args->my_task_level;
@@ -161,18 +167,19 @@ void spmd_fast_solver(const Task *task,
     runtime->issue_release(ctx, rl_VTu);
     runtime->issue_release(ctx, rl_VTd);
 
+    // node solve
+    if (spmd_point % (int)pow(2, spmd_level-l) == 0) {
+      LMatrix VTu_ghost_lmtx = create_legion_matrix(VTu_ghost,2*rank,rank);
+      LMatrix VTd_ghost_lmtx = create_legion_matrix(VTd_ghost,2*rank,nRhs+rank*l);
+      args->reduction[l] = 
+	runtime->advance_phase_barrier(ctx, args->reduction[l]);
+      VTu_ghost_lmtx.node_solve( VTd_ghost_lmtx, args->reduction[l], args->node_solve[l],
+				 ctx, runtime );
+    }
+    
     
 #if 0
 
-    // node solve
-    if (spmd_point % (int)pow(2, spmd_level-l) == 0) {
-      VTu_ghost.set_level();
-      VTd_ghost.set_level();
-      VTu_ghost.two_level_partition(ctx, runtime);
-      VTd_ghost.two_level_partition(ctx, runtime);
-      VTu_ghost.node_solve( VTd_ghost, args->reduction[l], args->node_solve[l]
-			    ctx, runtime );
-    }
     // broadcast
     arg->node_solve[l] = 
       runtime->advance_phase_barrier(ctx, args->node_solve[l]);
@@ -257,6 +264,7 @@ void top_level_task(const Task *task,
   SPMDargs arg;
   arg.leaf_size = leaf_size;
   arg.rank = rank;
+  arg.nRhs = nRhs;
   arg.spmd_level = spmd_level;
   arg.my_matrix_level = matrix_level - spmd_level;
   arg.my_task_level = task_level;
