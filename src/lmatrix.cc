@@ -713,7 +713,7 @@ void LMatrix::gemm // static method
     (RegionRequirement(B.logical_region(),READ_ONLY,EXCLUSIVE,B.logical_region())
      .add_field(FIELDID_V));
   launcher.add_region_requirement
-    (RegionRequirement(C.logical_region(),WRITE_DISCARD,EXCLUSIVE,C.logical_region())
+    (RegionRequirement(C.logical_region(),READ_WRITE,EXCLUSIVE,C.logical_region())
      .add_field(FIELDID_V));
   runtime->execute_task(ctx, launcher);
 }

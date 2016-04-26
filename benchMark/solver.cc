@@ -121,36 +121,58 @@ void spmd_fast_solver(const Task *task,
     // compute local results
     LogicalRegion VTu_ghost = task->regions[2*l  ].region;
     LogicalRegion VTd_ghost = task->regions[2*l+1].region;
-    LMatrix VTu_local = create_local_region(VTu_ghost, ctx, runtime);
-    LMatrix VTd_local = create_local_region(VTd_ghost, ctx, runtime);
+    LMatrix VTu = create_local_region(VTu_ghost, ctx, runtime);
+    LMatrix VTd = create_local_region(VTd_ghost, ctx, runtime);
         
-    LMatrix::gemm('t', 'n', 1.0, V, u, 0.0, VTu_local, ctx, runtime );
-    LMatrix::gemm('t', 'n', 1.0, V, d, 0.0, VTd_local, ctx, runtime );
+    LMatrix::gemm('t', 'n', 1.0, V, u, 0.0, VTu, ctx, runtime );
+    LMatrix::gemm('t', 'n', 1.0, V, d, 0.0, VTd, ctx, runtime );
 
-#if 0    
     // acquire
-    AcquireLauncher aq_launcher(VTu_ghost, VTu_ghost, regions[2*l]);
-    aq_launcher.add_field(FID_GHOST);
-    runtime->issue_acquire(ctx, aq_launcher);
+    AcquireLauncher aq_VTu(VTu_ghost, VTu_ghost, regions[2*l  ]);
+    AcquireLauncher aq_VTd(VTd_ghost, VTd_ghost, regions[2*l+1]);
+    aq_VTu.add_field(FID_GHOST);
+    aq_VTd.add_field(FID_GHOST);
+    runtime->issue_acquire(ctx, aq_VTu);
+    runtime->issue_acquire(ctx, aq_VTd);
     // copy
-    CopyLauncher cp_launcher;
-    cp_launcher.add_copy_requirements
+    CopyLauncher  cp_VTu;
+    CopyLauncher  cp_VTd;
+    LogicalRegion VTu_local = VTu.logical_region();
+    LogicalRegion VTd_local = VTd.logical_region();
+    cp_VTu.add_copy_requirements
       (RegionRequirement(VTu_local, READ_ONLY, EXCLUSIVE, VTu_local),
        RegionRequirement(VTu_ghost, REDOP_ADD, EXCLUSIVE, VTu_ghost));
-    cp_launcher.add_src_field(0, FIELDID_V);
-    cp_launcher.add_dst_field(0, FID_GHOST);
-    runtime->issue_copy_operation(ctx, cp_launcher);
+    cp_VTd.add_copy_requirements
+      (RegionRequirement(VTd_local, READ_ONLY, EXCLUSIVE, VTd_local),
+       RegionRequirement(VTd_ghost, REDOP_ADD, EXCLUSIVE, VTd_ghost));
+    cp_VTu.add_src_field(0, FIELDID_V);
+    cp_VTu.add_dst_field(0, FID_GHOST);
+    cp_VTd.add_src_field(0, FIELDID_V);
+    cp_VTd.add_dst_field(0, FID_GHOST);
+    runtime->issue_copy_operation(ctx, cp_VTu);
+    runtime->issue_copy_operation(ctx, cp_VTd);
     // release
-    ReleaseLauncher rl_launcher(VTu_ghost, VTu_ghost, regions[2*l]);
-    rl_launcher.add_field(FID_GHOST);
-    rl_launcher.add_arrival_barrier(args->reduction[l]);
-    runtime->issue_release(ctx, rl_launcher);
+    ReleaseLauncher rl_VTu(VTu_ghost, VTu_ghost, regions[2*l  ]);
+    ReleaseLauncher rl_VTd(VTd_ghost, VTd_ghost, regions[2*l+1]);
+    rl_VTu.add_field(FID_GHOST);
+    rl_VTd.add_field(FID_GHOST);
+    rl_VTu.add_arrival_barrier(args->reduction[l]);
+    rl_VTd.add_arrival_barrier(args->reduction[l]);
+    runtime->issue_release(ctx, rl_VTu);
+    runtime->issue_release(ctx, rl_VTd);
+
+    
+#if 0
 
     // node solve
     if (spmd_point % (int)pow(2, spmd_level-l) == 0) {
-      node_solve(VTu_ghost, VTd_ghost, ctx, runtime);
+      VTu_ghost.set_level();
+      VTd_ghost.set_level();
+      VTu_ghost.two_level_partition(ctx, runtime);
+      VTd_ghost.two_level_partition(ctx, runtime);
+      VTu_ghost.node_solve( VTd_ghost, args->reduction[l], args->node_solve[l]
+			    ctx, runtime );
     }
-
     // broadcast
     arg->node_solve[l] = 
       runtime->advance_phase_barrier(ctx, args->node_solve[l]);
@@ -246,9 +268,9 @@ void top_level_task(const Task *task,
     std::vector<PhaseBarrier> barrier_node_solve;
     for (int i=0; i<num_barriers; i++) {
       barrier_reduction.push_back
-        (runtime->create_phase_barrier(ctx, num_shards_per_barrier));
+        (runtime->create_phase_barrier(ctx,2*num_shards_per_barrier/*VTu,VTd*/));
       barrier_node_solve.push_back
-        (runtime->create_phase_barrier(ctx, 1));
+        (runtime->create_phase_barrier(ctx,1));
     }
     for (int shard=0; shard<num_machines; shard++) {
       int barrier_idx = shard / num_shards_per_barrier;
