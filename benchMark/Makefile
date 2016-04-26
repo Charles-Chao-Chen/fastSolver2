@@ -17,7 +17,8 @@ GEN_SRC	:= 	solver.cc \
 		../src/hmatrix.cc ../src/tree.cc \
 		../src/lmatrix.cc ../src/matrix.cc \
 		../src/tasks/leaf_solve.cc ../src/tasks/node_solve.cc \
-		../src/tasks/gemm_reduce.cc   ../src/tasks/gemm_broadcast.cc \
+		../src/tasks/gemm_reduce.cc ../src/tasks/gemm_broadcast.cc \
+		../src/tasks/gemm.cc \
 		../src/tasks/projector.cc ../src/tasks/reduce_add.cc \
 		../src/tasks/init_matrix.cc ../src/tasks/clear_matrix.cc \
 		../src/tasks/solver_tasks.cc ../src/tasks/display_matrix.cc \

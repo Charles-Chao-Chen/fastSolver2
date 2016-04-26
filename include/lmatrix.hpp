@@ -15,6 +15,7 @@ class LMatrix {
 public:
   LMatrix();
   LMatrix(int, int, int, Context, HighLevelRuntime*);
+  LMatrix(IndexSpace, FieldSpace, LogicalRegion);
   /*
   LMatrix
   (int, int, int, IndexPartition ip, LogicalRegion lr,
@@ -137,6 +138,11 @@ public:
   // gemm reduction
   // C = alpha*op(A) * op(B) + beta*C
   static void gemmRed
+  (char, char, double, const LMatrix&, const LMatrix&,
+   double, LMatrix&, Context, HighLevelRuntime*,
+   bool wait=WAIT_DEFAULT);
+
+  static void gemm
   (char, char, double, const LMatrix&, const LMatrix&,
    double, LMatrix&, Context, HighLevelRuntime*,
    bool wait=WAIT_DEFAULT);

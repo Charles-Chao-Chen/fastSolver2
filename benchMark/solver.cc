@@ -23,12 +23,26 @@ struct SPMDargs {
   int my_task_level;
 };
 
+LMatrix create_local_region(LogicalRegion ghost,
+			    Context ctx, HighLevelRuntime *runtime) {
+  IndexSpace is = ghost.get_index_space();
+  FieldSpace fs = runtime->create_field_space(ctx);
+  {
+    FieldAllocator allocator = 
+      runtime->create_field_allocator(ctx, fs);
+    allocator.allocate_field(sizeof(double), FIELDID_V);
+  }
+  LogicalRegion region = 
+    runtime->create_logical_region(ctx, is, fs);  
+  return LMatrix(is, fs, region);
+}
+
 void spmd_fast_solver(const Task *task,
 		      const std::vector<PhysicalRegion> &regions,
 		      Context ctx, HighLevelRuntime *runtime) {
 
-  int point = task->index_point.get_index();
-  std::cout<<"Inside spmd_task["<<point<<"]\n";
+  int spmd_point = task->index_point.get_index();
+  std::cout<<"Inside spmd_task["<<spmd_point<<"]\n";
 
   runtime->unmap_all_regions(ctx);
   const SPMDargs *args = (SPMDargs*)task->args;
@@ -37,6 +51,7 @@ void spmd_fast_solver(const Task *task,
   int spmd_level       = args->spmd_level;
   int matrix_level     = args->my_matrix_level;
   int task_level       = args->my_task_level;
+  assert(task->regions.size()==(unsigned)2*spmd_level);
   
   // ======= Problem configuration =======
   // solve: A x = b where A = U * V' + D
@@ -98,9 +113,62 @@ void spmd_fast_solver(const Task *task,
     std::cout<<"launched solver tasks at level: "<<i<<std::endl;
   }
 
-  for (int l=spmd_level-1; l>=0; l--) {
-    
-  }
+  for (int l=spmd_level-1; l>=spmd_level-1; l--) {
+    LMatrix& V = vTree.level(l);
+    LMatrix& u = uTree.uMat_level(l);
+    LMatrix& d = uTree.dMat_level(l);    
+
+    // compute local results
+    LogicalRegion VTu_ghost = task->regions[2*l  ].region;
+    LogicalRegion VTd_ghost = task->regions[2*l+1].region;
+    LMatrix VTu_local = create_local_region(VTu_ghost, ctx, runtime);
+    LMatrix VTd_local = create_local_region(VTd_ghost, ctx, runtime);
+        
+    LMatrix::gemm('t', 'n', 1.0, V, u, 0.0, VTu_local, ctx, runtime );
+    LMatrix::gemm('t', 'n', 1.0, V, d, 0.0, VTd_local, ctx, runtime );
+
+#if 0    
+    // acquire
+    AcquireLauncher aq_launcher(VTu_ghost, VTu_ghost, regions[2*l]);
+    aq_launcher.add_field(FID_GHOST);
+    runtime->issue_acquire(ctx, aq_launcher);
+    // copy
+    CopyLauncher cp_launcher;
+    cp_launcher.add_copy_requirements
+      (RegionRequirement(VTu_local, READ_ONLY, EXCLUSIVE, VTu_local),
+       RegionRequirement(VTu_ghost, REDOP_ADD, EXCLUSIVE, VTu_ghost));
+    cp_launcher.add_src_field(0, FIELDID_V);
+    cp_launcher.add_dst_field(0, FID_GHOST);
+    runtime->issue_copy_operation(ctx, cp_launcher);
+    // release
+    ReleaseLauncher rl_launcher(VTu_ghost, VTu_ghost, regions[2*l]);
+    rl_launcher.add_field(FID_GHOST);
+    rl_launcher.add_arrival_barrier(args->reduction[l]);
+    runtime->issue_release(ctx, rl_launcher);
+
+    // node solve
+    if (spmd_point % (int)pow(2, spmd_level-l) == 0) {
+      node_solve(VTu_ghost, VTd_ghost, ctx, runtime);
+    }
+
+    // broadcast
+    arg->node_solve[l] = 
+      runtime->advance_phase_barrier(ctx, args->node_solve[l]);
+    CopyLauncher cp_node_solve;
+    cp_node_solve.add_copy_requirements
+      (RegionRequirement(VTd_ghost, READ_ONLY, EXCLUSIVE, VTd_ghost),
+       RegionRequirement(VTd_local, WRITE_DISCARD, EXCLUSIVE, VTd_local));
+    cp_node_solve.add_src_field(0, FID_GHOST);
+    cp_node_solve.add_dst_field(0, FIELDID_V);
+    cp_node_solve.add_wait_barrier(args->node_solve[l]);
+    runtime->issue_copy_operation(ctx, cp_node_solve);
+
+    // local update: d -= u * VTd
+    LMatrix::gemmBro_new('n', 'n', -1.0, u, VTd_local, 1.0, d, ctx, runtime );
+    std::cout<<"launched solver tasks at level: "<<i<<std::endl;
+
+#endif
+   }
   
 }
 
@@ -113,11 +181,14 @@ void top_level_task(const Task *task,
   int num_cores_per_machine = 1;
   int spmd_level = (int)log2(num_machines);
   int task_level = (int)log2(num_cores_per_machine);
-  
+ 
   // HODLR configuration
   int rank = 100;
   int leaf_size = 400;
   int matrix_level = task_level+spmd_level;
+
+  // right hand side
+  const int nRhs = 1;
 
   // parse input arguments
   const InputArgs &command_args = HighLevelRuntime::get_input_args();
@@ -171,10 +242,14 @@ void top_level_task(const Task *task,
   for (int l=0; l<spmd_level; l++) {
     int num_barriers = (int)pow(2, l); 
     int num_shards_per_barrier = (int)pow(2, spmd_level-l);
-    PhaseBarrier pb_reduction = runtime->create_phase_barrier(ctx, num_shards_per_barrier);
-    PhaseBarrier pb_node_solve = runtime->create_phase_barrier(ctx, 1);
-    std::vector<PhaseBarrier> barrier_reduction(num_barriers, pb_reduction);
-    std::vector<PhaseBarrier> barrier_node_solve(num_barriers, pb_node_solve);
+    std::vector<PhaseBarrier> barrier_reduction;
+    std::vector<PhaseBarrier> barrier_node_solve;
+    for (int i=0; i<num_barriers; i++) {
+      barrier_reduction.push_back
+        (runtime->create_phase_barrier(ctx, num_shards_per_barrier));
+      barrier_node_solve.push_back
+        (runtime->create_phase_barrier(ctx, 1));
+    }
     for (int shard=0; shard<num_machines; shard++) {
       int barrier_idx = shard / num_shards_per_barrier;
       args[shard].reduction.push_back(barrier_reduction[barrier_idx]);
@@ -188,15 +263,15 @@ void top_level_task(const Task *task,
       (TaskLauncher(SPMD_TASK_ID, TaskArgument(&args[i], sizeof(SPMDargs))));
   }
 
-  // create ghost regions
+  // create ghost regions: VTu(2r x r) and VTd(2r x .)
   Point<2> lo = make_point(0, 0);
-  Point<2> hi = make_point(2*rank-1, 2*rank-1);
+  Point<2> hi = make_point(2*rank-1, rank-1);
   Rect<2>  rect(lo, hi);
-  IndexSpace is = runtime->create_index_space(ctx,
+  IndexSpace VTu_is = runtime->create_index_space(ctx,
                           Domain::from_rect<2>(rect));
-  runtime->attach_name(is, "ghost_is");
+  runtime->attach_name(VTu_is, "VTu_ghost_is");
   FieldSpace fs = runtime->create_field_space(ctx);
-  runtime->attach_name(fs, "ghost_fs");
+  runtime->attach_name(fs, "VTu_ghost_fs");
   {
     FieldAllocator allocator =
       runtime->create_field_allocator(ctx, fs);
@@ -207,18 +282,37 @@ void top_level_task(const Task *task,
   for (int l=0; l<spmd_level; l++) {
     int num_ghosts = (int)pow(2, l);
     int num_shards_per_ghost = (int)pow(2, spmd_level-l);
-    std::vector<LogicalRegion> ghosts;
+    std::vector<LogicalRegion> VTu_ghosts;
+    std::vector<LogicalRegion> VTd_ghosts;
+    // create VTu regions
     for (int i=0; i<num_ghosts; i++) {
-      ghosts.push_back(runtime->create_logical_region(ctx, is, fs));
+      VTu_ghosts.push_back(runtime->create_logical_region(ctx, VTu_is, fs));
+    }
+    // create VTd regions
+    Point<2> lo = make_point(0, 0);
+    Point<2> hi = make_point(2*rank-1, nRhs+l*rank-1);
+    Rect<2>  rect(lo, hi);
+    IndexSpace VTd_is = runtime->create_index_space
+      (ctx, Domain::from_rect<2>(rect));
+    for (int i=0; i<num_ghosts; i++) {
+      VTd_ghosts.push_back(runtime->create_logical_region(ctx, VTd_is, fs));
     }
     for (int shard=0; shard<num_machines; shard++) {
       int idx = shard / num_shards_per_ghost;
+      // add VTu
       spmd_tasks[shard].add_region_requirement
-	(RegionRequirement(ghosts[idx],READ_WRITE,SIMULTANEOUS,ghosts[idx]));
-      spmd_tasks[shard].region_requirements[l].flags |= NO_ACCESS_FLAG;
+	(RegionRequirement(VTu_ghosts[idx],READ_WRITE,SIMULTANEOUS,VTu_ghosts[idx]));
+      spmd_tasks[shard].region_requirements[2*l  ].flags |= NO_ACCESS_FLAG;
       spmd_tasks[shard].add_index_requirement
-	(IndexSpaceRequirement(is, NO_MEMORY, is));
-      spmd_tasks[shard].add_field(l, FID_GHOST);
+	(IndexSpaceRequirement(VTu_is, NO_MEMORY, VTu_is));
+      spmd_tasks[shard].add_field(2*l  , FID_GHOST);
+      // add VTd
+      spmd_tasks[shard].add_region_requirement
+	(RegionRequirement(VTd_ghosts[idx],READ_WRITE,SIMULTANEOUS,VTd_ghosts[idx]));
+      spmd_tasks[shard].region_requirements[2*l+1].flags |= NO_ACCESS_FLAG;
+      spmd_tasks[shard].add_index_requirement
+	(IndexSpaceRequirement(VTd_is, NO_MEMORY, VTd_is));
+      spmd_tasks[shard].add_field(2*l+1, FID_GHOST);
     }
   }
   
@@ -231,7 +325,7 @@ void top_level_task(const Task *task,
 
   FutureMap fm = runtime->execute_must_epoch(ctx, must_epoch_launcher);
   fm.wait_all_results();
-  runtime->destroy_index_space(ctx, is);
+  runtime->destroy_index_space(ctx, VTu_is);
   runtime->destroy_field_space(ctx, fs);
 }
 

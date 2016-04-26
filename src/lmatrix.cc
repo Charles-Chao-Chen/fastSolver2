@@ -12,6 +12,10 @@ LMatrix::LMatrix
   partition(level, ctx, runtime);
   this->plevel = 1;
 }
+
+LMatrix::LMatrix(IndexSpace is, FieldSpace fs, LogicalRegion r)
+  : ispace(is), fspace(fs), region(r) {}
+
 /*
 LMatrix::LMatrix
 (int rows, int cols, int part, IndexPartition ip, LogicalRegion lr,
@@ -691,6 +695,27 @@ void LMatrix::gemmRed // static method
     fm.wait_all_results();
     log_solver_tasks.print("Done for gemm reduce...");
   }  
+}
+
+void LMatrix::gemm // static method
+(char transa, char transb, double alpha,
+ const LMatrix& A, const LMatrix& B,
+ double beta, LMatrix& C,
+ Context ctx, HighLevelRuntime *runtime, bool wait) {
+  // skip scaling C matrix
+  assert( fabs(beta - 0.0) < 1e-10);
+  GemmTask::TaskArgs args = {transa, transb, alpha, beta};
+  GemmTask launcher(TaskArgument(&args, sizeof(args)));
+  launcher.add_region_requirement
+    (RegionRequirement(A.logical_region(),READ_ONLY,EXCLUSIVE,A.logical_region())
+     .add_field(FIELDID_V));
+  launcher.add_region_requirement
+    (RegionRequirement(B.logical_region(),READ_ONLY,EXCLUSIVE,B.logical_region())
+     .add_field(FIELDID_V));
+  launcher.add_region_requirement
+    (RegionRequirement(C.logical_region(),WRITE_DISCARD,EXCLUSIVE,C.logical_region())
+     .add_field(FIELDID_V));
+  runtime->execute_task(ctx, launcher);
 }
 
 // compute A * B = C; broadcast B
