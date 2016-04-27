@@ -750,6 +750,27 @@ void LMatrix::gemm // static method
   runtime->execute_task(ctx, launcher);
 }
 
+void LMatrix::gemm_inplace // static method
+(char transa, char transb, double alpha,
+ const LMatrix& A, const LMatrix& B,
+ double beta, LMatrix& C,
+ Context ctx, HighLevelRuntime *runtime, bool wait) {
+  // skip scaling C matrix
+  assert( fabs(beta - 1.0) < 1e-10);
+  GemmInplaceTask::TaskArgs args = {transa, transb, alpha, beta};
+  GemmInplaceTask launcher(TaskArgument(&args, sizeof(args)));
+  //launcher.add_region_requirement
+  //(RegionRequirement(A.logical_region(),READ_ONLY,EXCLUSIVE,A.logical_region())
+  //.add_field(FIELDID_V));
+  launcher.add_region_requirement
+    (RegionRequirement(B.logical_region(),READ_ONLY,EXCLUSIVE,B.logical_region())
+     .add_field(FIELDID_V));
+  launcher.add_region_requirement
+    (RegionRequirement(C.logical_region(),READ_WRITE,EXCLUSIVE,C.logical_region())
+     .add_field(FIELDID_V));
+  runtime->execute_task(ctx, launcher);
+}
+
 // compute A * B = C; broadcast B
 // this is hard coded in that A and C are the same region
 // so is GemmBroTask.

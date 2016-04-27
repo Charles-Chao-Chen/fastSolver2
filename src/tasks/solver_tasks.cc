@@ -38,6 +38,7 @@ void register_solver_tasks() {
   NodeSolveTask::register_tasks();
   NodeSolveRegionTask::register_tasks();
   GemmTask::register_tasks();
+  GemmInplaceTask::register_tasks();
   GemmRedTask::register_tasks();
   GemmBroTask::register_tasks();
   Add::register_operator();

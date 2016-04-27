@@ -153,6 +153,11 @@ public:
    double, LMatrix&, Context, HighLevelRuntime*,
    bool wait=WAIT_DEFAULT);
 
+  static void gemm_inplace
+  (char, char, double, const LMatrix&, const LMatrix&,
+   double, LMatrix&, Context, HighLevelRuntime*,
+   bool wait=WAIT_DEFAULT);
+
   // gemm broadcast
   static void gemmBro
   (char, char, double, const LMatrix&, const LMatrix&,

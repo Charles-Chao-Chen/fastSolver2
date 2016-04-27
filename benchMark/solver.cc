@@ -177,11 +177,8 @@ void spmd_fast_solver(const Task *task,
 				 ctx, runtime );
     }
     
-    
-#if 0
-
     // broadcast
-    arg->node_solve[l] = 
+    args->node_solve[l] = 
       runtime->advance_phase_barrier(ctx, args->node_solve[l]);
     CopyLauncher cp_node_solve;
     cp_node_solve.add_copy_requirements
@@ -193,10 +190,9 @@ void spmd_fast_solver(const Task *task,
     runtime->issue_copy_operation(ctx, cp_node_solve);
 
     // local update: d -= u * VTd
-    LMatrix::gemmBro_new('n', 'n', -1.0, u, VTd_local, 1.0, d, ctx, runtime );
-    std::cout<<"launched solver tasks at level: "<<i<<std::endl;
-
-#endif
+    LMatrix VTd_lmtx = create_legion_matrix(VTd_local,2*rank,nRhs+rank*l);    
+    LMatrix::gemm_inplace('n', 'n', -1.0, u, VTd_lmtx, 1.0, d, ctx, runtime );
+    std::cout<<"launched solver tasks at level: "<<l+1<<std::endl;
    }
   
 }
