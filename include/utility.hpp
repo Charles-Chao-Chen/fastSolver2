@@ -10,7 +10,6 @@ using namespace LegionRuntime::Accessor;
 
 enum {
   FIELDID_V,
-  FID_GHOST,
 };
 
 //Realm::Logger log_solver_tasks("solver_tasks");

@@ -120,9 +120,9 @@ void spmd_fast_solver(const Task *task,
   }
 
   for (int l=spmd_level-1; l>=spmd_level-1; l--) {
-    LMatrix& V = vTree.level(l);
-    LMatrix& u = uTree.uMat_level(l);
-    LMatrix& d = uTree.dMat_level(l);    
+    LMatrix& V = vTree.level(l+1);
+    LMatrix& u = uTree.uMat_level(l+1);
+    LMatrix& d = uTree.dMat_level(l+1);    
 
     // compute local results
     LogicalRegion VTu_ghost = task->regions[2*l  ].region;
@@ -136,8 +136,8 @@ void spmd_fast_solver(const Task *task,
     // acquire
     AcquireLauncher aq_VTu(VTu_ghost, VTu_ghost, regions[2*l  ]);
     AcquireLauncher aq_VTd(VTd_ghost, VTd_ghost, regions[2*l+1]);
-    aq_VTu.add_field(FID_GHOST);
-    aq_VTd.add_field(FID_GHOST);
+    aq_VTu.add_field(FIELDID_V);
+    aq_VTd.add_field(FIELDID_V);
     runtime->issue_acquire(ctx, aq_VTu);
     runtime->issue_acquire(ctx, aq_VTd);
     // copy
@@ -152,16 +152,16 @@ void spmd_fast_solver(const Task *task,
       (RegionRequirement(VTd_local, READ_ONLY, EXCLUSIVE, VTd_local),
        RegionRequirement(VTd_ghost, REDOP_ADD, EXCLUSIVE, VTd_ghost));
     cp_VTu.add_src_field(0, FIELDID_V);
-    cp_VTu.add_dst_field(0, FID_GHOST);
+    cp_VTu.add_dst_field(0, FIELDID_V);
     cp_VTd.add_src_field(0, FIELDID_V);
-    cp_VTd.add_dst_field(0, FID_GHOST);
+    cp_VTd.add_dst_field(0, FIELDID_V);
     runtime->issue_copy_operation(ctx, cp_VTu);
     runtime->issue_copy_operation(ctx, cp_VTd);
     // release
     ReleaseLauncher rl_VTu(VTu_ghost, VTu_ghost, regions[2*l  ]);
     ReleaseLauncher rl_VTd(VTd_ghost, VTd_ghost, regions[2*l+1]);
-    rl_VTu.add_field(FID_GHOST);
-    rl_VTd.add_field(FID_GHOST);
+    rl_VTu.add_field(FIELDID_V);
+    rl_VTd.add_field(FIELDID_V);
     rl_VTu.add_arrival_barrier(args->reduction[l]);
     rl_VTd.add_arrival_barrier(args->reduction[l]);
     runtime->issue_release(ctx, rl_VTu);
@@ -176,21 +176,29 @@ void spmd_fast_solver(const Task *task,
       VTu_ghost_lmtx.node_solve( VTd_ghost_lmtx, args->reduction[l], args->node_solve[l],
 				 ctx, runtime );
     }
-    
-    // broadcast
-    args->node_solve[l] = 
-      runtime->advance_phase_barrier(ctx, args->node_solve[l]);
-    CopyLauncher cp_node_solve;
-    cp_node_solve.add_copy_requirements
-      (RegionRequirement(VTd_ghost, READ_ONLY, EXCLUSIVE, VTd_ghost),
-       RegionRequirement(VTd_local, WRITE_DISCARD, EXCLUSIVE, VTd_local));
-    cp_node_solve.add_src_field(0, FID_GHOST);
-    cp_node_solve.add_dst_field(0, FIELDID_V);
-    cp_node_solve.add_wait_barrier(args->node_solve[l]);
-    runtime->issue_copy_operation(ctx, cp_node_solve);
+
+    else {
+      // broadcast
+      args->node_solve[l] = 
+	runtime->advance_phase_barrier(ctx, args->node_solve[l]);
+      CopyLauncher cp_node_solve;
+      cp_node_solve.add_copy_requirements
+	(RegionRequirement(VTd_ghost, READ_ONLY, EXCLUSIVE, VTd_ghost),
+	 RegionRequirement(VTd_local, WRITE_DISCARD, EXCLUSIVE, VTd_local));
+      cp_node_solve.add_src_field(0, FIELDID_V);
+      cp_node_solve.add_dst_field(0, FIELDID_V);
+      cp_node_solve.add_wait_barrier(args->node_solve[l]);
+      runtime->issue_copy_operation(ctx, cp_node_solve);
+    }
 
     // local update: d -= u * VTd
-    LMatrix VTd_lmtx = create_legion_matrix(VTd_local,2*rank,nRhs+rank*l);    
+    LMatrix VTd_lmtx;
+    if (spmd_point % (int)pow(2, spmd_level-l) == 0) {
+      VTd_lmtx = create_legion_matrix(VTd_ghost,2*rank,nRhs+rank*l);    
+    }
+    else {
+      VTd_lmtx = create_legion_matrix(VTd_local,2*rank,nRhs+rank*l);    
+    }
     LMatrix::gemm_inplace('n', 'n', -1.0, u, VTd_lmtx, 1.0, d, ctx, runtime );
     std::cout<<"launched solver tasks at level: "<<l+1<<std::endl;
    }
@@ -301,8 +309,8 @@ void top_level_task(const Task *task,
   {
     FieldAllocator allocator =
       runtime->create_field_allocator(ctx, fs);
-    allocator.allocate_field(sizeof(double), FID_GHOST);
-    runtime->attach_name(fs, FID_GHOST, "GHOST");
+    allocator.allocate_field(sizeof(double), FIELDID_V);
+    runtime->attach_name(fs, FIELDID_V, "GHOST");
   }
 
   for (int l=0; l<spmd_level; l++) {
@@ -331,14 +339,14 @@ void top_level_task(const Task *task,
       spmd_tasks[shard].region_requirements[2*l  ].flags |= NO_ACCESS_FLAG;
       spmd_tasks[shard].add_index_requirement
 	(IndexSpaceRequirement(VTu_is, NO_MEMORY, VTu_is));
-      spmd_tasks[shard].add_field(2*l  , FID_GHOST);
+      spmd_tasks[shard].add_field(2*l  , FIELDID_V);
       // add VTd
       spmd_tasks[shard].add_region_requirement
 	(RegionRequirement(VTd_ghosts[idx],READ_WRITE,SIMULTANEOUS,VTd_ghosts[idx]));
       spmd_tasks[shard].region_requirements[2*l+1].flags |= NO_ACCESS_FLAG;
       spmd_tasks[shard].add_index_requirement
 	(IndexSpaceRequirement(VTd_is, NO_MEMORY, VTd_is));
-      spmd_tasks[shard].add_field(2*l+1, FID_GHOST);
+      spmd_tasks[shard].add_field(2*l+1, FIELDID_V);
     }
   }
   
