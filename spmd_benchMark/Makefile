@@ -135,8 +135,8 @@ spy1:
 	-x GASNET_IB_SPAWNER -x GASNET_BACKTRACE=1 \
 	./solver \
 	-machine 4 \
-	-core 2 \
-	-mtxlvl 4 \
+	-core 1 \
+	-mtxlvl 3 \
 	-ll:cpu 8 \
 	-level 4,legion_spy=2 \
 	-logfile 1node_%.log
