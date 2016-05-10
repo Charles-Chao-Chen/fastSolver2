@@ -75,7 +75,7 @@ void UTree::partition
   assert(dMat_vec.size() == size_t(mLevel));
 }
 
-void UTree::partition_new
+void UTree::horizontal_partition
 (int task_level, Context ctx, HighLevelRuntime *runtime) {
 
   // partition data
@@ -108,6 +108,16 @@ LMatrix& UTree::uMat_level(int i) {
 LMatrix& UTree::dMat_level(int i) {
   assert(0<i && i<=mLevel);
   return dMat_vec[i-1];
+}
+
+LMatrix& UTree::uMat_level_new(int i) {
+  assert(0<=i && i<mLevel);
+  return uMat_vec[i];
+}
+
+LMatrix& UTree::dMat_level_nw(int i) {
+  assert(0<=i && i<mLevel);
+  return dMat_vec[i];
 }
 
 LMatrix& UTree::leaf() {
@@ -160,7 +170,7 @@ void VTree::partition
   V.init_data(VMat, ctx, runtime);
 }
 
-void VTree::partition_new
+void VTree::horizontal_partition
 (int task_level, Context ctx, HighLevelRuntime *runtime) {
   // create partition
   V.partition(task_level, ctx, runtime);
@@ -174,6 +184,11 @@ LMatrix& VTree::leaf() {
 
 LMatrix& VTree::level(int i) {
   assert( 0 < i && i <= mLevel );
+  return V;
+}
+
+LMatrix& VTree::level_new(int i) {
+  assert( 0 <= i && i < mLevel );
   return V;
 }
 
@@ -221,7 +236,7 @@ void KTree::partition
   K.init_dense_blocks(UMat, VMat, DVec, ctx, runtime, true /*wait*/);
 }
 
-void KTree::partition_new
+void KTree::horizontal_partition
 (int task_level, Context ctx, HighLevelRuntime *runtime) {
   // partition region
   K.partition(task_level, ctx, runtime);

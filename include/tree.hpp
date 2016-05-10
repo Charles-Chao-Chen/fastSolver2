@@ -28,7 +28,7 @@ public:
   void partition
   (int level, Context ctx, HighLevelRuntime *runtime);
   
-  void partition_new
+  void horizontal_partition
   (int level, Context ctx, HighLevelRuntime *runtime);
 
   // return the solution
@@ -37,6 +37,8 @@ public:
   // return the legion matrix for one level
   LMatrix& uMat_level(int);
   LMatrix& dMat_level(int);
+  LMatrix& uMat_level_new(int);
+  LMatrix& dMat_level_new(int);
 
   // legion matrices at leaf level
   LMatrix& leaf();
@@ -71,12 +73,13 @@ public:
   void partition
   (int level, Context ctx, HighLevelRuntime *runtime);
 
-  void partition_new
+  void horizontal_partition
   (int level, Context ctx, HighLevelRuntime *runtime);
 
   // return the legion matrix for one level
   LMatrix& leaf();
   LMatrix& level(int);
+  LMatrix& level_new(int);
   
 private:
   int mLevel;
@@ -103,7 +106,7 @@ public:
   void partition
   (int level, Context ctx, HighLevelRuntime *runtime);
 
-  void partition_new
+  void horizontal_partition
   (int level, Context ctx, HighLevelRuntime *runtime);
 
   // wrapper for legion matrix solve

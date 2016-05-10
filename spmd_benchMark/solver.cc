@@ -82,28 +82,30 @@ void spmd_fast_solver(const Task *task,
   KTree kTree; kTree.init( matrix_level, UMat, VMat, DVec, ctx, runtime );
   
   // data partition
-  uTree.partition_new( task_level, ctx, runtime );
-  vTree.partition_new( task_level, ctx, runtime );
-  kTree.partition_new( task_level, ctx, runtime );
+  uTree.horizontal_partition( task_level, ctx, runtime );
+  vTree.horizontal_partition( task_level, ctx, runtime );
+  kTree.horizontal_partition( task_level, ctx, runtime );
   
-  // init rhs
+  // init rhs and wait
   uTree.init_rhs(Rhs, ctx, runtime, true/*wait*/);
 
+  // computation starts now
+  
   // leaf solve: U = dense \ U
   kTree.solve( uTree.leaf(), vTree.leaf(), ctx, runtime );  
 
   // solve on every machine
-  for (int i=spmd_level+task_level; i>spmd_level; i--) {
-    LMatrix& V = vTree.level(i);
-    LMatrix& u = uTree.uMat_level(i);
-    LMatrix& d = uTree.dMat_level(i);    
+  for (int i=spmd_level+task_level-1; i>=spmd_level; i--) {
+    LMatrix& V = vTree.level_new(i);
+    LMatrix& u = uTree.uMat_level_new(i);
+    LMatrix& d = uTree.dMat_level_new(i);    
     
     // reduction operation
     int local_level = i-spmd_level;
-    int rows = pow(2, local_level)*V.cols();
+    int rows = pow(2, local_level+1)*V.cols();
     
-    LMatrix VTu(rows, u.cols(), local_level-1, ctx, runtime);
-    LMatrix VTd(rows, d.cols(), local_level-1, ctx, runtime);
+    LMatrix VTu(rows, u.cols(), local_level, ctx, runtime);
+    LMatrix VTd(rows, d.cols(), local_level, ctx, runtime);
     VTu.two_level_partition(ctx, runtime);
     VTd.two_level_partition(ctx, runtime);
 
@@ -120,9 +122,9 @@ void spmd_fast_solver(const Task *task,
   }
 
   for (int l=spmd_level-1; l>=spmd_level-1; l--) {
-    LMatrix& V = vTree.level(l+1);
-    LMatrix& u = uTree.uMat_level(l+1);
-    LMatrix& d = uTree.dMat_level(l+1);    
+    LMatrix& V = vTree.level_new(l);
+    LMatrix& u = uTree.uMat_level_new(l);
+    LMatrix& d = uTree.dMat_level_new(l);    
 
     // compute local results
     LogicalRegion VTu_ghost = task->regions[2*l  ].region;
@@ -212,13 +214,11 @@ void top_level_task(const Task *task,
   // machine configuration
   int num_machines = 1;
   int num_cores_per_machine = 1;
-  int spmd_level = (int)log2(num_machines);
-  int task_level = (int)log2(num_cores_per_machine);
  
   // HODLR configuration
   int rank = 100;
   int leaf_size = 400;
-  int matrix_level = task_level+spmd_level;
+  int matrix_level = 1;
 
   // right hand side
   const int nRhs = 1;
@@ -227,16 +227,10 @@ void top_level_task(const Task *task,
   const InputArgs &command_args = HighLevelRuntime::get_input_args();
   if (command_args.argc > 1) {
     for (int i = 1; i < command_args.argc; i++) {
-      if (!strcmp(command_args.argv[i],"-machine")) {
+      if (!strcmp(command_args.argv[i],"-machine"))
 	num_machines = atoi(command_args.argv[++i]);
-	spmd_level = (int)log2(num_machines);
-	matrix_level = task_level+spmd_level;
-      }
-      if (!strcmp(command_args.argv[i],"-core")) {
+      if (!strcmp(command_args.argv[i],"-core"))
 	num_cores_per_machine = atoi(command_args.argv[++i]);
-	task_level = (int)log2(num_cores_per_machine);
-	matrix_level = task_level+spmd_level;
-      }
       if (!strcmp(command_args.argv[i],"-rank"))
 	rank = atoi(command_args.argv[++i]);
       if (!strcmp(command_args.argv[i],"-leaf"))
@@ -248,8 +242,15 @@ void top_level_task(const Task *task,
     assert(is_power_of_two(num_cores_per_machine));
     assert(rank         > 0);
     assert(leaf_size    > 0);
-    assert(matrix_level >= task_level+spmd_level);
   }
+  int spmd_level = (int)log2(num_machines);
+  int task_level = (int)log2(num_cores_per_machine);
+  if(matrix_level < task_level+spmd_level) {
+    matrix_level  = task_level+spmd_level;
+    std::cout<<"--------------------------------------------------"<<std::endl
+	     <<"Warning: matrix level is raised up to its minimum!"<<std::endl
+	     <<"--------------------------------------------------"<<std::endl;
+  }  
   std::cout<<"\n========================"
            <<"\nRunning fast solver..."
            <<"\n---------------------"
@@ -290,19 +291,18 @@ void top_level_task(const Task *task,
       args[shard].node_solve.push_back(barrier_node_solve[barrier_idx]);
     }
   }
-  
+  // create spmd tasks  
   std::vector<TaskLauncher> spmd_tasks;
   for (int i=0; i<num_machines; i++) {
     spmd_tasks.push_back
       (TaskLauncher(SPMD_TASK_ID, TaskArgument(&args[i], sizeof(SPMDargs))));
   }
-
   // create ghost regions: VTu(2r x r) and VTd(2r x .)
   Point<2> lo = make_point(0, 0);
   Point<2> hi = make_point(2*rank-1, rank-1);
   Rect<2>  rect(lo, hi);
-  IndexSpace VTu_is = runtime->create_index_space(ctx,
-                          Domain::from_rect<2>(rect));
+  IndexSpace VTu_is = runtime->create_index_space
+    (ctx, Domain::from_rect<2>(rect));
   runtime->attach_name(VTu_is, "VTu_ghost_is");
   FieldSpace fs = runtime->create_field_space(ctx);
   runtime->attach_name(fs, "VTu_ghost_fs");
@@ -312,7 +312,6 @@ void top_level_task(const Task *task,
     allocator.allocate_field(sizeof(double), FIELDID_V);
     runtime->attach_name(fs, FIELDID_V, "GHOST");
   }
-
   for (int l=0; l<spmd_level; l++) {
     int num_ghosts = (int)pow(2, l);
     int num_shards_per_ghost = (int)pow(2, spmd_level-l);
@@ -348,15 +347,13 @@ void top_level_task(const Task *task,
 	(IndexSpaceRequirement(VTd_is, NO_MEMORY, VTd_is));
       spmd_tasks[shard].add_field(2*l+1, FIELDID_V);
     }
-  }
-  
-  // create SPMD tasks
+  }  
+  // create must_epoch_launcher
   MustEpochLauncher must_epoch_launcher;
   for (int shard=0; shard<num_machines; shard++) {
     DomainPoint point(shard);
     must_epoch_launcher.add_single_task(point, spmd_tasks[shard]);
   }  
-
   FutureMap fm = runtime->execute_must_epoch(ctx, must_epoch_launcher);
   fm.wait_all_results();
   runtime->destroy_index_space(ctx, VTu_is);
