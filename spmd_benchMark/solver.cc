@@ -117,10 +117,11 @@ void spmd_fast_solver(const Task *task,
     // broadcast operation
     // d -= u * VTd
     LMatrix::gemmBro('n', 'n', -1.0, u, VTd, 1.0, d, ctx, runtime );
-    std::cout<<"launched solver tasks at level: "<<i<<std::endl;
+    std::cout<<"launched solver tasks at level: "<<tree_level<<std::endl;
   }
+
   // spmd level
-  for (int l=spmd_level-1; l>=spmd_level-1; l--) {
+  for (int l=spmd_level-1; l>=0; l--) {
     LMatrix& V = vTree.level_new(l);
     LMatrix& u = uTree.uMat_level_new(l);
     LMatrix& d = uTree.dMat_level_new(l);    
@@ -141,6 +142,7 @@ void spmd_fast_solver(const Task *task,
     aq_VTd.add_field(FIELDID_V);
     runtime->issue_acquire(ctx, aq_VTu);
     runtime->issue_acquire(ctx, aq_VTd);
+
     // copy
     CopyLauncher  cp_VTu;
     CopyLauncher  cp_VTd;
@@ -158,6 +160,7 @@ void spmd_fast_solver(const Task *task,
     cp_VTd.add_dst_field(0, FIELDID_V);
     runtime->issue_copy_operation(ctx, cp_VTu);
     runtime->issue_copy_operation(ctx, cp_VTd);
+    
     // release
     ReleaseLauncher rl_VTu(VTu_ghost, VTu_ghost, regions[2*l  ]);
     ReleaseLauncher rl_VTd(VTd_ghost, VTd_ghost, regions[2*l+1]);
@@ -178,8 +181,8 @@ void spmd_fast_solver(const Task *task,
 				 ctx, runtime );
     }
 
+    // copy data
     else {
-      // broadcast
       args->node_solve[l] = 
 	runtime->advance_phase_barrier(ctx, args->node_solve[l]);
       CopyLauncher cp_node_solve;
@@ -201,7 +204,7 @@ void spmd_fast_solver(const Task *task,
       VTd_lmtx = create_legion_matrix(VTd_local,2*rank,nRhs+rank*l);    
     }
     LMatrix::gemm_inplace('n', 'n', -1.0, u, VTd_lmtx, 1.0, d, ctx, runtime );
-    std::cout<<"launched solver tasks at level: "<<l+1<<std::endl;
+    std::cout<<"launched solver tasks at level: "<<l<<std::endl;
    }
 }
 
