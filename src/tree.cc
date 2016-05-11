@@ -115,7 +115,7 @@ LMatrix& UTree::uMat_level_new(int i) {
   return uMat_vec[i];
 }
 
-LMatrix& UTree::dMat_level_nw(int i) {
+LMatrix& UTree::dMat_level_new(int i) {
   assert(0<=i && i<mLevel);
   return dMat_vec[i];
 }

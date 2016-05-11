@@ -65,7 +65,7 @@ void spmd_fast_solver(const Task *task,
   bool   has_entry = false; //true;
   Matrix VMat(leaf_size, matrix_level, rank, has_entry);
   Matrix UMat(leaf_size, matrix_level, rank, has_entry);
-  Matrix Rhs (leaf_size, matrix_level, 1,    has_entry);
+  Matrix Rhs (leaf_size, matrix_level, nRhs, has_entry);
   Vector DVec(leaf_size, matrix_level,       has_entry);
 
   // randomly generate entries
@@ -95,17 +95,16 @@ void spmd_fast_solver(const Task *task,
   kTree.solve( uTree.leaf(), vTree.leaf(), ctx, runtime );  
 
   // solve on every machine
-  for (int i=spmd_level+task_level-1; i>=spmd_level; i--) {
-    LMatrix& V = vTree.level_new(i);
-    LMatrix& u = uTree.uMat_level_new(i);
-    LMatrix& d = uTree.dMat_level_new(i);    
+  for (int i=task_level-1; i>=0; i--) {
+    int tree_level = i + spmd_level;
+    LMatrix& V = vTree.level_new(tree_level);
+    LMatrix& u = uTree.uMat_level_new(tree_level);
+    LMatrix& d = uTree.dMat_level_new(tree_level);
     
     // reduction operation
-    int local_level = i-spmd_level;
-    int rows = pow(2, local_level+1)*V.cols();
-    
-    LMatrix VTu(rows, u.cols(), local_level, ctx, runtime);
-    LMatrix VTd(rows, d.cols(), local_level, ctx, runtime);
+    int rows = pow(2, i+1)*V.cols();    
+    LMatrix VTu(rows, u.cols(), i, ctx, runtime);
+    LMatrix VTd(rows, d.cols(), i, ctx, runtime);
     VTu.two_level_partition(ctx, runtime);
     VTd.two_level_partition(ctx, runtime);
 
@@ -120,7 +119,7 @@ void spmd_fast_solver(const Task *task,
     LMatrix::gemmBro('n', 'n', -1.0, u, VTd, 1.0, d, ctx, runtime );
     std::cout<<"launched solver tasks at level: "<<i<<std::endl;
   }
-
+  // spmd level
   for (int l=spmd_level-1; l>=spmd_level-1; l--) {
     LMatrix& V = vTree.level_new(l);
     LMatrix& u = uTree.uMat_level_new(l);
@@ -204,7 +203,6 @@ void spmd_fast_solver(const Task *task,
     LMatrix::gemm_inplace('n', 'n', -1.0, u, VTd_lmtx, 1.0, d, ctx, runtime );
     std::cout<<"launched solver tasks at level: "<<l+1<<std::endl;
    }
-  
 }
 
 void top_level_task(const Task *task,
