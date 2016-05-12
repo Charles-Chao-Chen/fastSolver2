@@ -131,9 +131,14 @@ void spmd_fast_solver(const Task *task,
     LogicalRegion VTd_ghost = task->regions[2*l+1].region;
     LMatrix VTu = create_local_region(VTu_ghost, ctx, runtime);
     LMatrix VTd = create_local_region(VTd_ghost, ctx, runtime);
-        
-    LMatrix::gemm('t', 'n', 1.0, V, u, 0.0, VTu, ctx, runtime );
-    LMatrix::gemm('t', 'n', 1.0, V, d, 0.0, VTd, ctx, runtime );
+
+    int partSize = pow(2,spmd_level-l);
+    int halfSize = partSize / 2;
+    int VTupart = spmd_point % partSize / halfSize;
+    int VTdpart = VTupart;
+    assert(VTupart==0||VTupart==1);
+    LMatrix::gemm('t', 'n', 1.0, V, u, 0.0, VTu, VTupart, ctx, runtime );
+    LMatrix::gemm('t', 'n', 1.0, V, d, 0.0, VTd, VTdpart, ctx, runtime );
 
     // acquire
     AcquireLauncher aq_VTu(VTu_ghost, VTu_ghost, regions[2*l  ]);
@@ -285,7 +290,7 @@ void top_level_task(const Task *task,
     std::vector<PhaseBarrier> barrier_node_solve;
     for (int i=0; i<num_barriers; i++) {
       barrier_reduction.push_back
-        (runtime->create_phase_barrier(ctx,2*num_shards_per_barrier/*VTu,VTd*/));
+        (runtime->create_phase_barrier(ctx,4*num_shards_per_barrier/*VTu,VTd*/));
       barrier_node_solve.push_back
         (runtime->create_phase_barrier(ctx,1));
     }
@@ -295,15 +300,17 @@ void top_level_task(const Task *task,
       args[shard].node_solve.push_back(barrier_node_solve[barrier_idx]);
     }
   }
+  
   // create spmd tasks  
   std::vector<TaskLauncher> spmd_tasks;
   for (int i=0; i<num_machines; i++) {
     spmd_tasks.push_back
       (TaskLauncher(SPMD_TASK_ID, TaskArgument(&args[i], sizeof(SPMDargs))));
   }
-  // create ghost regions: VTu(2r x r) and VTd(2r x .)
+  
+  // create ghost regions: VTu0, VTu1(r x r) and VTd0, VTd1(r x .)
   Point<2> lo = make_point(0, 0);
-  Point<2> hi = make_point(2*rank-1, rank-1);
+  Point<2> hi = make_point(rank-1, rank-1);
   Rect<2>  rect(lo, hi);
   IndexSpace VTu_is = runtime->create_index_space
     (ctx, Domain::from_rect<2>(rect));
@@ -319,39 +326,43 @@ void top_level_task(const Task *task,
   for (int l=0; l<spmd_level; l++) {
     int num_ghosts = (int)pow(2, l);
     int num_shards_per_ghost = (int)pow(2, spmd_level-l);
-    std::vector<LogicalRegion> VTu_ghosts;
-    std::vector<LogicalRegion> VTd_ghosts;
-    // create VTu regions
+    std::vector<std::vector<LogicalRegion> > VTu_ghosts(num_ghosts);
+    std::vector<std::vector<LogicalRegion> > VTd_ghosts(num_ghosts);
     for (int i=0; i<num_ghosts; i++) {
-      VTu_ghosts.push_back(runtime->create_logical_region(ctx, VTu_is, fs));
+      // VTu0
+      VTu_ghosts[i].push_back(runtime->create_logical_region(ctx, VTu_is, fs));
+      // VTu1
+      VTu_ghosts[i].push_back(runtime->create_logical_region(ctx, VTu_is, fs));
     }
     // create VTd regions
     Point<2> lo = make_point(0, 0);
-    Point<2> hi = make_point(2*rank-1, nRhs+l*rank-1);
+    Point<2> hi = make_point(rank-1, nRhs+l*rank-1);
     Rect<2>  rect(lo, hi);
     IndexSpace VTd_is = runtime->create_index_space
       (ctx, Domain::from_rect<2>(rect));
     for (int i=0; i<num_ghosts; i++) {
-      VTd_ghosts.push_back(runtime->create_logical_region(ctx, VTd_is, fs));
+      // VTd0
+      VTd_ghosts[i].push_back(runtime->create_logical_region(ctx, VTd_is, fs));
+      // VTd1
+      VTd_ghosts[i].push_back(runtime->create_logical_region(ctx, VTd_is, fs));
     }
     for (int shard=0; shard<num_machines; shard++) {
-      int idx = shard / num_shards_per_ghost;
-      // add VTu
-      spmd_tasks[shard].add_region_requirement
-	(RegionRequirement(VTu_ghosts[idx],READ_WRITE,SIMULTANEOUS,VTu_ghosts[idx]));
-      spmd_tasks[shard].region_requirements[2*l  ].flags |= NO_ACCESS_FLAG;
-      spmd_tasks[shard].add_index_requirement
-	(IndexSpaceRequirement(VTu_is, NO_MEMORY, VTu_is));
-      spmd_tasks[shard].add_field(2*l  , FIELDID_V);
-      // add VTd
-      spmd_tasks[shard].add_region_requirement
-	(RegionRequirement(VTd_ghosts[idx],READ_WRITE,SIMULTANEOUS,VTd_ghosts[idx]));
-      spmd_tasks[shard].region_requirements[2*l+1].flags |= NO_ACCESS_FLAG;
-      spmd_tasks[shard].add_index_requirement
-	(IndexSpaceRequirement(VTd_is, NO_MEMORY, VTd_is));
-      spmd_tasks[shard].add_field(2*l+1, FIELDID_V);
+      int idx    = shard / num_shards_per_ghost;
+      int subidx = shard % num_shards_per_ghost / (num_shards_per_ghost/2);
+      assert(subidx==0||subidx==1);
+      LogicalRegion ghost0 = VTu_ghosts[idx][subidx];
+      LogicalRegion ghost1 = VTd_ghosts[idx][subidx];
+      RegionRequirement VTu_req(ghost0,READ_WRITE,SIMULTANEOUS,ghost0);
+      RegionRequirement VTd_req(ghost1,READ_WRITE,SIMULTANEOUS,ghost1);
+      VTu_req.flags |= NO_ACCESS_FLAG;
+      VTd_req.flags |= NO_ACCESS_FLAG;
+      VTu_req.add_field(FIELDID_V);
+      VTd_req.add_field(FIELDID_V);
+      spmd_tasks[shard].add_region_requirement(VTu_req);
+      spmd_tasks[shard].add_region_requirement(VTd_req);
     }
-  }  
+  }
+  
   // create must_epoch_launcher
   MustEpochLauncher must_epoch_launcher;
   for (int shard=0; shard<num_machines; shard++) {
