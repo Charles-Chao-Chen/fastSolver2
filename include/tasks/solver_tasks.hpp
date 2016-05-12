@@ -23,10 +23,10 @@
 
 void register_solver_tasks();
 
-void registration_callback(Machine machine, HighLevelRuntime *rt,
-			   const std::set<Processor> &local_procs);
+void create_callback(Machine machine, HighLevelRuntime *rt,
+		     const std::set<Processor> &local_procs);
 
-void register_projector(Machine machine, HighLevelRuntime *rt,
-			const std::set<Processor> &local_procs);
+void create_projector(Machine machine, HighLevelRuntime *rt,
+		      const std::set<Processor> &local_procs);
 
 #endif
