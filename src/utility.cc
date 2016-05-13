@@ -33,9 +33,7 @@ PtrMatrix get_raw_pointer
   ByteOffset offsets[2];
   //double *base = region.get_field_accessor(FIELDID_V).template typeify<double>().template raw_rect_ptr<2>(bounds, subrect, offsets);
   double *base = region.get_field_accessor(FIELDID_V).typeify<double>().raw_rect_ptr<2>(bounds, subrect, offsets);
-#if 0
-  printf("rlo=%d, rhi=%d, col=%d, chi=%d\n",
-	 bounds.lo.x[0], bounds.hi.x[0], bounds.lo.x[1], bounds.hi.x[1]);
+#if 1
   printf("ptr = %p (%d, %d)\n", base, offsets[0].offset, offsets[1].offset);
 #endif
   assert(subrect == bounds);

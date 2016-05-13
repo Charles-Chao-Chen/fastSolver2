@@ -792,17 +792,20 @@ void LMatrix::gemm_inplace // static method
  Context ctx, HighLevelRuntime *runtime, bool wait) {
   // skip scaling C matrix
   assert( fabs(beta - 1.0) < 1e-10);
-  GemmInplaceTask::TaskArgs args = {transa, transb, alpha, beta};
+  GemmInplaceTask::TaskArgs args = {transa, transb, alpha, beta,
+				    A.rows(), B.rows(), C.rows(),
+				    A.cols(), B.cols(), C.cols(),
+				    A.column_begin()};
   GemmInplaceTask launcher(TaskArgument(&args, sizeof(args)));
-  //launcher.add_region_requirement
-  //(RegionRequirement(A.logical_region(),READ_ONLY,EXCLUSIVE,A.logical_region())
-  //.add_field(FIELDID_V));
+  launcher.add_region_requirement
+    (RegionRequirement(A.logical_region(),READ_WRITE,EXCLUSIVE,A.logical_region())
+     .add_field(FIELDID_V));
   launcher.add_region_requirement
     (RegionRequirement(B.logical_region(),READ_ONLY,EXCLUSIVE,B.logical_region())
      .add_field(FIELDID_V));
-  launcher.add_region_requirement
-    (RegionRequirement(C.logical_region(),READ_WRITE,EXCLUSIVE,C.logical_region())
-     .add_field(FIELDID_V));
+  //launcher.add_region_requirement
+  //  (RegionRequirement(C.logical_region(),READ_WRITE,EXCLUSIVE,C.logical_region())
+  //    .add_field(FIELDID_V));
   runtime->execute_task(ctx, launcher);
 }
 

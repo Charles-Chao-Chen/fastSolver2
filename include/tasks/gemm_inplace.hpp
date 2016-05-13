@@ -7,10 +7,17 @@ using namespace LegionRuntime::HighLevel;
 class GemmInplaceTask : public TaskLauncher {
 public:
   struct TaskArgs {
-    char transa;
-    char transb;
+    char transA;
+    char transB;
     double alpha;
     double beta;
+    int Arows;
+    int Brows;
+    int Crows;
+    int Acols;
+    int Bcols;
+    int Ccols;
+    int AcolIdx;
   };
   
   GemmInplaceTask

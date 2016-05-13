@@ -29,47 +29,44 @@ void GemmInplaceTask::register_tasks(void)
 void GemmInplaceTask::cpu_task(const Task *task,
 			   const std::vector<PhysicalRegion> &regions,
 			   Context ctx, HighLevelRuntime *runtime) {
-#if 0
-  assert(regions.size() == 3);
-  assert(task->regions.size() == 3);
-  assert(task->arglen == sizeof(TaskArgs));
-  Point<1> p = task->index_point.get_point<1>();
-  //printf("point = %d\n", p[0]);
+  
+  printf("Inside gemm inplace tasks.\n");
 
-  log_solver_tasks.print("Inside gemm reduction tasks.");
+  assert(regions.size() == 2);
+  assert(task->regions.size() == 2);
+  assert(task->arglen == sizeof(TaskArgs));
 
   const TaskArgs args = *((const TaskArgs*)task->args);
-  int Arblk = args.Arblk;
-  int Brblk = args.Brblk;
-  int Crblk = args.Crblk;
+  char transA = args.transA;
+  char transB = args.transB;
+  double alpha = args.alpha;
+  double beta  = args.beta;
+  int Arows = args.Arows;
+  int Brows = args.Brows;
+  int Crows = args.Crows;
   int Acols = args.Acols;
   int Bcols = args.Bcols;
   int Ccols = args.Ccols;
   int AcolIdx = args.AcolIdx;
-  int BcolIdx = args.BcolIdx;
-  int CcolIdx = args.CcolIdx;      
-  //printf("A(%d, %d), B(%d, %d), C(%d, %d)\n",
-  //	 Arblk, Acols, Brblk, Bcols, Crblk, Ccols);
-  
-  int Arlo = p[0]*Arblk;
-  int Arhi = (p[0] + 1) * Arblk;
-  int Brlo = p[0]*Brblk;
-  int Brhi = (p[0] + 1) * Brblk;
-  
-  int clrSize = args.colorSize;
-  int color = p[0] / clrSize;
-  int Crlo = color*Crblk;
-  int Crhi = (color + 1) * Crblk;
-  
-  PtrMatrix AMat = get_raw_pointer(regions[0], Arlo, Arhi, AcolIdx, AcolIdx+Acols);
-  PtrMatrix BMat = get_raw_pointer(regions[1], Brlo, Brhi, BcolIdx, BcolIdx+Bcols);
-  PtrMatrix CMat = reduction_pointer(regions[2], Crlo, Crhi, CcolIdx, CcolIdx+Ccols);
-  AMat.set_trans(args.transa);
-  BMat.set_trans(args.transb);
-  double alpha = args.alpha;
+  printf("Arows=%d, AcolIdx=%d, Acols=%d\n"
+	 "Brows=%d, Bcols=%d\n"
+	 "Crows=%d, Ccols=%d\n",
+  	 Arows, AcolIdx, Acols,
+	 Brows, Bcols,
+	 Crows, Ccols);
+    
+  PtrMatrix AMat = get_raw_pointer(regions[0], 0, Arows, AcolIdx, AcolIdx+Acols);
+  PtrMatrix BMat = get_raw_pointer(regions[1], 0, Brows, 0, Bcols);
+  PtrMatrix CMat = get_raw_pointer(regions[0], 0, Crows, 0, Ccols);
+  AMat.set_trans(transA);
+  BMat.set_trans(transB);
 
-  //printf("leading D: %d\n", CMat.LD());  
-  PtrMatrix::gemm(alpha, AMat, BMat, CMat);
-#endif
+  /*
+  std::cout << "gemm:" << std::endl;
+  AMat.display("A");
+  BMat.display("B");
+  CMat.display("C");
+*/
+  PtrMatrix::gemm(alpha, AMat, BMat, beta, CMat);
 }
 

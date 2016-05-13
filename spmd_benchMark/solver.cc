@@ -210,10 +210,10 @@ void spmd_fast_solver(const Task *task,
     // local update: d -= u * VTd
     LMatrix VTd_lmtx;
     if (is_master_task(spmd_point, l, spmd_level)) {
-      VTd_lmtx = create_legion_matrix(VTd_ghost,2*rank,nRhs+rank*l);    
+      VTd_lmtx = create_legion_matrix(VTd_ghost,rank,nRhs+rank*l);    
     }
     else {
-      VTd_lmtx = create_legion_matrix(VTd_local,2*rank,nRhs+rank*l);    
+      VTd_lmtx = create_legion_matrix(VTd_local,rank,nRhs+rank*l);    
     }
     LMatrix::gemm_inplace('n', 'n', -1.0, u, VTd_lmtx, 1.0, d, ctx, runtime );
     std::cout<<"launched solver tasks at level: "<<l<<std::endl;

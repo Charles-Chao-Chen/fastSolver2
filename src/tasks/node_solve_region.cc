@@ -40,7 +40,7 @@ void NodeSolveRegionTask::cpu_task(const Task *task,
 			     Context ctx, HighLevelRuntime *runtime) {
 
   log_solver_tasks.print("Inside node solve tasks.");
-  
+#if 0  
   assert(regions.size() == 4);
   assert(task->regions.size() == 4);
   assert(task->arglen == sizeof(TaskArgs));
@@ -75,4 +75,5 @@ void NodeSolveRegionTask::cpu_task(const Task *task,
     }
   }  
   S.solve( B );
+#endif
 }
