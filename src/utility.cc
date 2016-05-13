@@ -24,7 +24,8 @@ double* region_pointer
 }
 
 PtrMatrix get_raw_pointer
-(const PhysicalRegion &region, int rlo, int rhi, int clo, int chi) {
+(const PhysicalRegion &region, int rlo, int rhi, int clo, int chi,
+ bool wait) {
   Rect<2> bounds, subrect;
   bounds.lo.x[0] = rlo;
   bounds.hi.x[0] = rhi-1;
@@ -33,9 +34,17 @@ PtrMatrix get_raw_pointer
   ByteOffset offsets[2];
   //double *base = region.get_field_accessor(FIELDID_V).template typeify<double>().template raw_rect_ptr<2>(bounds, subrect, offsets);
   double *base = region.get_field_accessor(FIELDID_V).typeify<double>().raw_rect_ptr<2>(bounds, subrect, offsets);
-#if 1
+#if 0
   printf("ptr = %p (%d, %d)\n", base, offsets[0].offset, offsets[1].offset);
 #endif
+
+#if 0
+  if (wait) {
+    double *base = region.get_field_accessor(FIELDID_V).typeify<double>().raw_rect_ptr<2>(bounds, subrect, offsets);
+  }
+#endif
+
+  assert(base);
   assert(subrect == bounds);
   assert(offsets[0].offset == sizeof(double));
   int ld = offsets[1].offset/sizeof(double);

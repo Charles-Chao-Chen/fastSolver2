@@ -35,7 +35,7 @@ void GemmTask::cpu_task(const Task *task,
   assert(task->regions.size() == 3);
   assert(task->arglen == sizeof(TaskArgs));
 
-  printf("Inside gemm tasks.\n");
+  //printf("Inside gemm tasks.\n");
 
   const TaskArgs args = *((const TaskArgs*)task->args);
   char transA = args.transA;
@@ -50,14 +50,14 @@ void GemmTask::cpu_task(const Task *task,
   int Acols = args.Acols;
   int Bcols = args.Bcols;
   int Ccols = args.Ccols;
-
+#if 0
   printf("Arows=%d, AcolIdx=%d, Acols=%d, "
 	 "Brows=%d, BcolIdx=%d, Bcols=%d, "
 	 "Crows=%d, Ccols=%d\n",
   	 Arows, AcolIdx, Acols,
 	 Brows, BcolIdx, Bcols,
 	 Crows, Ccols);
-  
+#endif
   PtrMatrix AMat = get_raw_pointer(regions[0], 0, Arows, AcolIdx, AcolIdx+Acols);
   PtrMatrix BMat = get_raw_pointer(regions[1], 0, Brows, BcolIdx, BcolIdx+Bcols);
   PtrMatrix CMat = get_raw_pointer(regions[2], 0, Crows, 0,       Ccols);

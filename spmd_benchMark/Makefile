@@ -129,6 +129,8 @@ prof1:
 	-level 4,legion_prof=2 \
 	-logfile 1node_%.log
 
+#	gdb --args ./solver \
+
 spy1:
 	mpirun -H n0003 \
 	-bind-to none -report-bindings \
@@ -138,6 +140,7 @@ spy1:
 	-core 4 \
 	-mtxlvl 4 \
 	-ll:cpu 8 \
+	-ll:gsize 0 \
 	-level 4,legion_spy=2 \
 	-logfile 1node_%.log
 
