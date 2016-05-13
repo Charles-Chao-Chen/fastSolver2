@@ -7,9 +7,8 @@ using namespace LegionRuntime::HighLevel;
 class NodeSolveRegionTask : public TaskLauncher {
 public:
   struct TaskArgs {
-    int rblock;
-    int Acols;
-    int Bcols;
+    int rank;
+    int nRhs;
   };
   NodeSolveRegionTask(TaskArgument arg,
 		      Predicate pred = Predicate::TRUE_PRED,

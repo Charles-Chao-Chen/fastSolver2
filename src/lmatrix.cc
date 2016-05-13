@@ -590,8 +590,34 @@ void LMatrix::node_solve
   LogicalRegion VTu1_rg = VTu1.logical_region();
   LogicalRegion VTd0_rg = VTd0.logical_region();
   LogicalRegion VTd1_rg = VTd1.logical_region();
-
-  NodeSolveRegionTask launcher(TaskArgument(NULL, 0));
+#if 0
+  printf("VTu0 (%x,%x,%x)\n",
+	 VTu0_rg.get_index_space().get_id(), 
+	 VTu0_rg.get_field_space().get_id(),
+	 VTu0_rg.get_tree_id());
+  printf("VTu1 (%x,%x,%x)\n",
+	 VTu1_rg.get_index_space().get_id(), 
+	 VTu1_rg.get_field_space().get_id(),
+	 VTu1_rg.get_tree_id());
+  printf("VTd0 (%x,%x,%x)\n",
+	 VTd0_rg.get_index_space().get_id(), 
+	 VTd0_rg.get_field_space().get_id(),
+	 VTd0_rg.get_tree_id());
+  printf("VTd1 (%x,%x,%x)\n",
+	 VTd1_rg.get_index_space().get_id(), 
+	 VTd1_rg.get_field_space().get_id(),
+	 VTd1_rg.get_tree_id());
+#endif
+  assert(VTu0.rows() == VTu0.cols());
+  assert(VTu1.rows() == VTu1.cols());
+  assert(VTu0.rows() == VTu1.rows());
+  assert(VTd0.rows() == VTd1.rows());
+  assert(VTd0.cols() == VTd1.cols());
+  assert(VTu0.rows() == VTd0.rows());
+  int rank = VTd0.rows();
+  int nRhs = VTd0.cols();
+  NodeSolveRegionTask::TaskArgs args = {rank, nRhs};
+  NodeSolveRegionTask launcher(TaskArgument(&args, sizeof(args)));
   //RegionRequirement AReq(ARegion, 0, READ_ONLY,  EXCLUSIVE, ARegion);
   RegionRequirement VTu0_rq(VTu0_rg, READ_ONLY, EXCLUSIVE, VTu0_rg);
   RegionRequirement VTu1_rq(VTu1_rg, READ_ONLY, EXCLUSIVE, VTu1_rg);

@@ -28,58 +28,51 @@ void NodeSolveRegionTask::register_tasks(void)
 #endif
 }
 
-// solve the following system for every partition
+// solve the following system
 // --             --  --    --     --      --
 // |  I     V1'*u1 |  | eta0 |     | V1'*d1 |
 // |               |  |      |  =  |        |
 // | V0'*u0   I    |  | eta1 |     | V0'*d0 |
 // --             --  --    --     --      --
-// note the reversed order in VTd
+// note the reverse order in VTd
 void NodeSolveRegionTask::cpu_task(const Task *task,
 			     const std::vector<PhysicalRegion> &regions,
 			     Context ctx, HighLevelRuntime *runtime) {
 
-#if 0
-  assert(regions.size() == 2);
-  assert(task->regions.size() == 2);
-  assert(task->arglen == sizeof(TaskArgs));
-  Point<1> p = task->index_point.get_point<1>();
-  //  printf("point = %d\n", p[0]);
-
   log_solver_tasks.print("Inside node solve tasks.");
+  
+  assert(regions.size() == 4);
+  assert(task->regions.size() == 4);
+  assert(task->arglen == sizeof(TaskArgs));
 
   const TaskArgs args = *((const TaskArgs*)task->args);
-  int rblk  = args.rblock;
-  int Acols = args.Acols;
-  int Bcols = args.Bcols;
-  int rlo = p[0] * rblk;
-  int rhi = (p[0] + 1) * rblk;
-  //printf("(rblock=%d, Acols=%d, Bcols=%d)\n", rblk, Acols, Bcols);
+  int rank = args.rank;
+  int nRhs = args.nRhs;
+  //printf("rank=%d, nRhs=%d\n", rank, nRhs);
   
-  PtrMatrix AMat = get_raw_pointer(regions[0], rlo, rhi, 0, Acols);
-  PtrMatrix BMat = get_raw_pointer(regions[1], rlo, rhi, 0, Bcols);
+  PtrMatrix VTu0 = get_raw_pointer(regions[0], 0, rank, 0, rank);
+  PtrMatrix VTu1 = get_raw_pointer(regions[1], 0, rank, 0, rank);
+  PtrMatrix VTd0 = get_raw_pointer(regions[2], 0, rank, 0, nRhs);
+  PtrMatrix VTd1 = get_raw_pointer(regions[3], 0, rank, 0, nRhs);
 
-  PtrMatrix S(rblk, rblk);
-  S.identity(); // initialize to identity matrix
+  PtrMatrix S(2*rank, 2*rank);
+  PtrMatrix B(2*rank, nRhs);
   
   // assume V0'*u0 and V1'*u1 have the same number of rows
-  assert(rblk%2==0);
-  int r = rblk / 2;
+  S.identity(); // initialize to identity matrix
+  int r = rank;
   for (int i=0; i<r; i++) {
     for (int j=0; j<r; j++) {
-      S(r+i, j) = AMat(i, j);
-      S(i, r+j) = AMat(r+i, j);
+      S(r+i, j) = VTu0(i, j);
+      S(i, r+j) = VTu1(i, j);
     }
   }
   // set the right hand side
-  for (int j=0; j<Bcols; j++) {
+  for (int j=0; j<nRhs; j++) {
     for (int i=0; i<r; i++) {
-      // switch BMat(i, j) with BMat(r+i, j)
-      double temp = BMat(i, j);
-      BMat(i, j) = BMat(r+i, j);
-      BMat(r+i, j) = temp;
+      B(i,   j) = VTd1(i, j);
+      B(i+r, j) = VTd0(i, j);
     }
   }  
-  S.solve( BMat );
-#endif
+  S.solve( B );
 }
