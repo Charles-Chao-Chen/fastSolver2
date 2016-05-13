@@ -13,8 +13,9 @@ LMatrix::LMatrix
   this->plevel = 1;
 }
 
-LMatrix::LMatrix(IndexSpace is, FieldSpace fs, LogicalRegion r)
-  : ispace(is), fspace(fs), region(r) {}
+LMatrix::LMatrix
+(int rows, int cols, LogicalRegion r, IndexSpace is, FieldSpace fs)
+  : mRows(rows), mCols(cols), ispace(is), fspace(fs), region(r) {}
 
 LMatrix::LMatrix(LogicalRegion r, int rows, int cols) {
   this->region = r;
@@ -581,24 +582,29 @@ void LMatrix::node_solve
 }
 
 void LMatrix::node_solve
-(LMatrix& b, PhaseBarrier pb_wait, PhaseBarrier pb_ready,
+(LMatrix& VTu0, LMatrix &VTu1, LMatrix& VTd0, LMatrix &VTd1,
+ PhaseBarrier pb_wait, PhaseBarrier pb_ready,
  Context ctx, HighLevelRuntime* runtime, bool wait) {
 
-  assert( mRows/2 == mCols );
-  
-  // first level stuff
-  LogicalRegion ARegion = this->logical_region();
-  LogicalRegion bRegion = b.logical_region();
+  LogicalRegion VTu0_rg = VTu0.logical_region();
+  LogicalRegion VTu1_rg = VTu1.logical_region();
+  LogicalRegion VTd0_rg = VTd0.logical_region();
+  LogicalRegion VTd1_rg = VTd1.logical_region();
 
   NodeSolveRegionTask launcher(TaskArgument(NULL, 0));
   //RegionRequirement AReq(ARegion, 0, READ_ONLY,  EXCLUSIVE, ARegion);
-  // bug here: have to use stronger previlige
-  RegionRequirement AReq(ARegion, READ_WRITE, EXCLUSIVE, ARegion);
-  RegionRequirement bReq(bRegion, READ_WRITE, EXCLUSIVE, bRegion);
-  AReq.add_field(FIELDID_V);
-  bReq.add_field(FIELDID_V);
-  launcher.add_region_requirement(AReq);
-  launcher.add_region_requirement(bReq);
+  RegionRequirement VTu0_rq(VTu0_rg, READ_ONLY, EXCLUSIVE, VTu0_rg);
+  RegionRequirement VTu1_rq(VTu1_rg, READ_ONLY, EXCLUSIVE, VTu1_rg);
+  RegionRequirement VTd0_rq(VTd0_rg, READ_WRITE, EXCLUSIVE, VTd0_rg);
+  RegionRequirement VTd1_rq(VTd1_rg, READ_WRITE, EXCLUSIVE, VTd1_rg);
+  VTu0_rq.add_field(FIELDID_V);
+  VTu1_rq.add_field(FIELDID_V);
+  VTd0_rq.add_field(FIELDID_V);
+  VTd1_rq.add_field(FIELDID_V);
+  launcher.add_region_requirement(VTu0_rq);
+  launcher.add_region_requirement(VTu1_rq);
+  launcher.add_region_requirement(VTd0_rq);
+  launcher.add_region_requirement(VTd1_rq);
   launcher.add_wait_barrier(pb_wait);
   launcher.add_arrival_barrier(pb_ready);
   runtime->execute_task(ctx, launcher);
@@ -730,8 +736,8 @@ void LMatrix::gemmRed // static method
 }
 
 void LMatrix::gemm // static method
-(char transa, char transb, double alpha,
- const LMatrix& A, const LMatrix& B,
+(char transa, char transb,
+ double alpha, const LMatrix& A, const LMatrix& B,
  double beta, LMatrix& C,
  Context ctx, HighLevelRuntime *runtime, bool wait) {
   // skip scaling C matrix

@@ -29,7 +29,7 @@ bool is_master_task(int point, int current_level, int total_level) {
   return (point % (int) pow(2, total_level - current_level) == 0);
 }
 
-LMatrix create_local_region(LogicalRegion ghost,
+LMatrix create_local_region(LogicalRegion ghost, int rows, int cols,
 			    Context ctx, HighLevelRuntime *runtime) {
   IndexSpace is = ghost.get_index_space();
   FieldSpace fs = runtime->create_field_space(ctx);
@@ -40,7 +40,7 @@ LMatrix create_local_region(LogicalRegion ghost,
   }
   LogicalRegion region = 
     runtime->create_logical_region(ctx, is, fs);  
-  return LMatrix(is, fs, region);
+  return LMatrix(rows, cols, region, is, fs);
 }
 
 LMatrix create_legion_matrix(LogicalRegion region, int rows, int cols) {
@@ -62,7 +62,6 @@ void spmd_fast_solver(const Task *task,
   int spmd_level       = args->spmd_level;
   int matrix_level     = args->my_matrix_level;
   int task_level       = args->my_task_level;
-  assert(task->regions.size()==(unsigned)2*spmd_level);
   
   // ======= Problem configuration =======
   // solve: A x = b where A = U * V' + D
@@ -126,23 +125,24 @@ void spmd_fast_solver(const Task *task,
   }
 
   // spmd level
+  int ghost_idx = 0;
   for (int l=spmd_level-1; l>=0; l--) {
     LMatrix& V = vTree.level_new(l);
     LMatrix& u = uTree.uMat_level_new(l);
     LMatrix& d = uTree.dMat_level_new(l);    
 
     // compute local results
-    LogicalRegion VTu_ghost = task->regions[2*l  ].region;
-    LogicalRegion VTd_ghost = task->regions[2*l+1].region;
-    LMatrix VTu = create_local_region(VTu_ghost, ctx, runtime);
-    LMatrix VTd = create_local_region(VTd_ghost, ctx, runtime);
+    LogicalRegion VTu_ghost = task->regions[ghost_idx].region;
+    LogicalRegion VTd_ghost = task->regions[ghost_idx+1].region;
+    LMatrix VTu = create_local_region(VTu_ghost, rank, rank, ctx, runtime);
+    LMatrix VTd = create_local_region(VTd_ghost, rank, nRhs+l*rank, ctx, runtime);
 
     LMatrix::gemm('t', 'n', 1.0, V, u, 0.0, VTu, ctx, runtime );
     LMatrix::gemm('t', 'n', 1.0, V, d, 0.0, VTd, ctx, runtime );
 
     // acquire
-    AcquireLauncher aq_VTu(VTu_ghost, VTu_ghost, regions[2*l  ]);
-    AcquireLauncher aq_VTd(VTd_ghost, VTd_ghost, regions[2*l+1]);
+    AcquireLauncher aq_VTu(VTu_ghost, VTu_ghost, regions[ghost_idx]);
+    AcquireLauncher aq_VTd(VTd_ghost, VTd_ghost, regions[ghost_idx+1]);
     aq_VTu.add_field(FIELDID_V);
     aq_VTd.add_field(FIELDID_V);
     runtime->issue_acquire(ctx, aq_VTu);
@@ -167,8 +167,8 @@ void spmd_fast_solver(const Task *task,
     runtime->issue_copy_operation(ctx, cp_VTd);
     
     // release
-    ReleaseLauncher rl_VTu(VTu_ghost, VTu_ghost, regions[2*l  ]);
-    ReleaseLauncher rl_VTd(VTd_ghost, VTd_ghost, regions[2*l+1]);
+    ReleaseLauncher rl_VTu(VTu_ghost, VTu_ghost, regions[ghost_idx]);
+    ReleaseLauncher rl_VTd(VTd_ghost, VTd_ghost, regions[ghost_idx+1]);
     rl_VTu.add_field(FIELDID_V);
     rl_VTd.add_field(FIELDID_V);
     rl_VTu.add_arrival_barrier(args->reduction[l]);
@@ -178,12 +178,18 @@ void spmd_fast_solver(const Task *task,
 
     // node solve
     if (is_master_task(spmd_point, l, spmd_level)) {
-      LMatrix VTu_ghost_lmtx = create_legion_matrix(VTu_ghost,2*rank,rank);
-      LMatrix VTd_ghost_lmtx = create_legion_matrix(VTd_ghost,2*rank,nRhs+rank*l);
+      LMatrix VTu0 = create_legion_matrix(VTu_ghost,rank,rank);
+      LMatrix VTd0 = create_legion_matrix(VTd_ghost,rank,nRhs+rank*l);
+      LogicalRegion VTu1_ghost = task->regions[ghost_idx+2].region;
+      LogicalRegion VTd1_ghost = task->regions[ghost_idx+3].region;
+      LMatrix VTu1 = create_legion_matrix(VTu1_ghost,rank,rank);
+      LMatrix VTd1 = create_legion_matrix(VTd1_ghost,rank,nRhs+rank*l);
       args->reduction[l] = 
 	runtime->advance_phase_barrier(ctx, args->reduction[l]);
-      VTu_ghost_lmtx.node_solve( VTd_ghost_lmtx, args->reduction[l], args->node_solve[l],
-				 ctx, runtime );
+      LMatrix::node_solve( VTu0, VTu1, VTd0, VTd1,
+			   args->reduction[l], args->node_solve[l],
+			   ctx, runtime );
+      ghost_idx += 4;
     }
 
     // copy data
@@ -198,6 +204,7 @@ void spmd_fast_solver(const Task *task,
       cp_node_solve.add_dst_field(0, FIELDID_V);
       cp_node_solve.add_wait_barrier(args->node_solve[l]);
       runtime->issue_copy_operation(ctx, cp_node_solve);
+      ghost_idx += 2;
     }
 
     // local update: d -= u * VTd
@@ -290,7 +297,7 @@ void top_level_task(const Task *task,
     std::vector<PhaseBarrier> barrier_node_solve;
     for (int i=0; i<num_barriers; i++) {
       barrier_reduction.push_back
-        (runtime->create_phase_barrier(ctx,4*num_shards_per_barrier/*VTu,VTd*/));
+        (runtime->create_phase_barrier(ctx,2*num_shards_per_barrier/*VTu,VTd*/));
       barrier_node_solve.push_back
         (runtime->create_phase_barrier(ctx,1));
     }
@@ -323,7 +330,9 @@ void top_level_task(const Task *task,
     allocator.allocate_field(sizeof(double), FIELDID_V);
     runtime->attach_name(fs, FIELDID_V, "GHOST");
   }
-  for (int l=0; l<spmd_level; l++) {
+  // go upward, this order should be consistant with task
+  // launches, so the right ghost region can be referred to.
+  for (int l=spmd_level-1; l>=0; l--) {
     int num_ghosts = (int)pow(2, l);
     int num_shards_per_ghost = (int)pow(2, spmd_level-l);
     std::vector<std::vector<LogicalRegion> > VTu_ghosts(num_ghosts);

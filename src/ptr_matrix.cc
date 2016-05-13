@@ -183,3 +183,23 @@ void PtrMatrix::gemm
 	       V.pointer(), &LDB,
 	       &beta, W.pointer(), &LDC);
 }
+
+void PtrMatrix::gemm
+(double alpha, const PtrMatrix& U, const PtrMatrix& V,
+ double beta, PtrMatrix& W) {
+  assert(U.cols() == V.rows());
+  assert(U.rows() == W.rows());
+  assert(V.cols() == W.cols());
+  char transa = U.trans;
+  char transb = V.trans;
+  int  M = U.rows();
+  int  N = V.cols();
+  int  K = U.cols();
+  int  LDA = U.LD();
+  int  LDB = V.LD();
+  int  LDC = W.LD();
+  blas::dgemm_(&transa, &transb, &M, &N, &K,
+	       &alpha, U.pointer(), &LDA,
+	       V.pointer(), &LDB,
+	       &beta, W.pointer(), &LDC);
+}

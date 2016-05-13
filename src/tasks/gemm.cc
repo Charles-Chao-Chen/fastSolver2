@@ -56,11 +56,11 @@ void GemmTask::cpu_task(const Task *task,
   
   PtrMatrix AMat = get_raw_pointer(regions[0], 0, Arows, AcolIdx, AcolIdx+Acols);
   PtrMatrix BMat = get_raw_pointer(regions[1], 0, Brows, BcolIdx, BcolIdx+Bcols);
-  PtrMatrix CMat = get_raw_pointer(regions[2], 0, Crows, 0, Ccols);
+  PtrMatrix CMat = get_raw_pointer(regions[2], 0, Crows, 0,       Ccols);
   AMat.set_trans(transA);
   BMat.set_trans(transB);
 
   //printf("leading D: %d\n", CMat.LD());  
-  PtrMatrix::gemm(alpha, AMat, BMat, CMat);
+  PtrMatrix::gemm(alpha, AMat, BMat, beta, CMat);
 }
 

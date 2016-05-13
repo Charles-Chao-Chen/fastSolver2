@@ -15,7 +15,7 @@ class LMatrix {
 public:
   LMatrix();
   LMatrix(int, int, int, Context, HighLevelRuntime*);
-  LMatrix(IndexSpace, FieldSpace, LogicalRegion);
+  LMatrix(int, int, LogicalRegion, IndexSpace, FieldSpace);
   LMatrix(LogicalRegion r, int rows, int cols);
 
   /*
@@ -124,8 +124,9 @@ public:
   void node_solve
   (LMatrix&, Context, HighLevelRuntime*, bool wait=WAIT_DEFAULT);
 
-  void node_solve
-  (LMatrix& b, PhaseBarrier pb_wait, PhaseBarrier pb_ready,
+  static void node_solve
+  (LMatrix&, LMatrix&, LMatrix&, LMatrix&,
+   PhaseBarrier pb_wait, PhaseBarrier pb_ready,
    Context ctx, HighLevelRuntime* runtime, bool wait=WAIT_DEFAULT);
 
   // print the values on screen
