@@ -1,8 +1,8 @@
 #include "legion.h"
 #include "utilities.h"
-#include "smpd_mapper.hpp"
+#include "spmd_mapper.hpp"
 
-Realm::Logger log_solver_mapper("solver_mapper");
+//Realm::Logger log_solver_mapper("solver_mapper");
 
 SPMDsolverMapper::SPMDsolverMapper(Machine machine, HighLevelRuntime *rt, Processor local,
 				   std::vector<Processor>* _procs_list,
@@ -19,7 +19,7 @@ SPMDsolverMapper::SPMDsolverMapper(Machine machine, HighLevelRuntime *rt, Proces
 {}
 
 void SPMDsolverMapper::select_task_options(Task *task) {
-
+#if 0
   // only top level task is not index space task
   if (! task->is_index_space) {
   
@@ -53,9 +53,12 @@ void SPMDsolverMapper::select_task_options(Task *task) {
     //std::vector<Processor> procs = mem_procs[ valid_mems[num_mems] ];
     assert( !procs.empty() );
     task->target_proc = procs[0];
-  }  
+  }
+  #endif
 }
 
+#if 0
+  
 // assign every point in the launch domain to different processors
 void SPMDsolverMapper::slice_domain(const Task *task, const Domain &domain,
 				std::vector<DomainSplit> &slices) {
@@ -162,9 +165,12 @@ void SPMDsolverMapper::slice_domain(const Task *task, const Domain &domain,
     }
   }
 }
+#endif
+
 
 bool SPMDsolverMapper::map_task(Task *task) {
-  
+
+#if 0
 #if 0
   std::cout << "Inside map_task() ..." << std::endl;
   std::cout << "orign: " << task->orig_proc.id
@@ -194,6 +200,7 @@ bool SPMDsolverMapper::map_task(Task *task) {
     task->regions[idx].blocking_factor = 1;
   } 
   return true;
+#endif
 }
 
 void SPMDsolverMapper::notify_mapping_failed(const Mappable *mappable)
@@ -221,3 +228,17 @@ void SPMDsolverMapper::notify_mapping_result(const Mappable *mappable)
 #endif
 }
 */
+
+
+  bool SPMDsolverMapper::map_copy(Copy *copy) {
+
+   return false;
+ }
+
+
+ bool SPMDsolverMapper::map_must_epoch(const std::vector<Task*> &tasks,
+		     const std::vector<MappingConstraint> &constraints,
+		     MappingTagID tag) {
+
+   return false;
+ }

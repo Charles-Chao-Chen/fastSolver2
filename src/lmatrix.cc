@@ -736,7 +736,10 @@ void LMatrix::gemm // static method
  Context ctx, HighLevelRuntime *runtime, bool wait) {
   // skip scaling C matrix
   assert( fabs(beta - 0.0) < 1e-10);
-  GemmTask::TaskArgs args = {transa, transb, alpha, beta};
+  GemmTask::TaskArgs args = {transa, transb, alpha, beta,
+			     A.rows(), B.rows(), C.rows(),
+			     A.column_begin(), B.column_begin(),
+			     A.cols(), B.cols(), C.cols()};
   GemmTask launcher(TaskArgument(&args, sizeof(args)));
   launcher.add_region_requirement
     (RegionRequirement(A.logical_region(),READ_ONLY,EXCLUSIVE,A.logical_region())

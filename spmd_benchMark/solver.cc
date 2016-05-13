@@ -132,13 +132,8 @@ void spmd_fast_solver(const Task *task,
     LMatrix VTu = create_local_region(VTu_ghost, ctx, runtime);
     LMatrix VTd = create_local_region(VTd_ghost, ctx, runtime);
 
-    int partSize = pow(2,spmd_level-l);
-    int halfSize = partSize / 2;
-    int VTupart = spmd_point % partSize / halfSize;
-    int VTdpart = VTupart;
-    assert(VTupart==0||VTupart==1);
-    LMatrix::gemm('t', 'n', 1.0, V, u, 0.0, VTu, VTupart, ctx, runtime );
-    LMatrix::gemm('t', 'n', 1.0, V, d, 0.0, VTd, VTdpart, ctx, runtime );
+    LMatrix::gemm('t', 'n', 1.0, V, u, 0.0, VTu, ctx, runtime );
+    LMatrix::gemm('t', 'n', 1.0, V, d, 0.0, VTd, ctx, runtime );
 
     // acquire
     AcquireLauncher aq_VTu(VTu_ghost, VTu_ghost, regions[2*l  ]);
@@ -350,10 +345,10 @@ void top_level_task(const Task *task,
       int idx    = shard / num_shards_per_ghost;
       int subidx = shard % num_shards_per_ghost / (num_shards_per_ghost/2);
       assert(subidx==0||subidx==1);
-      LogicalRegion ghost0 = VTu_ghosts[idx][subidx];
-      LogicalRegion ghost1 = VTd_ghosts[idx][subidx];
-      RegionRequirement VTu_req(ghost0,READ_WRITE,SIMULTANEOUS,ghost0);
-      RegionRequirement VTd_req(ghost1,READ_WRITE,SIMULTANEOUS,ghost1);
+      LogicalRegion VTu = VTu_ghosts[idx][subidx];
+      LogicalRegion VTd = VTd_ghosts[idx][subidx];
+      RegionRequirement VTu_req(VTu,READ_WRITE,SIMULTANEOUS,VTu);
+      RegionRequirement VTd_req(VTd,READ_WRITE,SIMULTANEOUS,VTd);
       VTu_req.flags |= NO_ACCESS_FLAG;
       VTd_req.flags |= NO_ACCESS_FLAG;
       VTu_req.add_field(FIELDID_V);

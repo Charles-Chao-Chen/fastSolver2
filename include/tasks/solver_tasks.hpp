@@ -19,6 +19,7 @@
 #include "reduce_add.hpp"
 
 #include "mapper.hpp"
+#include "spmd_mapper.hpp"
 #include "dist_mapper.hpp"
 
 void register_solver_tasks();

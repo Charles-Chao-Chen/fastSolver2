@@ -41,13 +41,13 @@ void create_spmd_solver_mapper(Machine machine, HighLevelRuntime *rt,
   for (std::set<Processor>::const_iterator it = local_procs.begin();
         it != local_procs.end(); it++)
   {
-    PennantMapper* mapper = new PennantMapper(machine, runtime, *it,
+    SPMDsolverMapper* mapper = new SPMDsolverMapper(machine, rt, *it,
                                               procs_list,
                                               sysmems_list,
                                               sysmem_local_procs,
                                               proc_sysmems,
                                               proc_regmems);
-    runtime->replace_default_mapper(mapper, *it);
+    rt->replace_default_mapper(mapper, *it);
   }
 }
 
@@ -56,8 +56,8 @@ void create_mapper(Machine machine, HighLevelRuntime *rt,
 
   std::set<Processor>::const_iterator it = local_procs.begin();
   for (; it != local_procs.end(); it++) {
-    rt->replace_default_mapper
-      (new Solvermapper(machine, rt, *it),*it);
+    SolverMapper *mapper = new SolverMapper(machine, rt, *it);
+    rt->replace_default_mapper(mapper,*it);
   }
 }
 
@@ -84,5 +84,5 @@ void register_solver_tasks() {
   GemmBroTask::register_tasks();
   Add::register_operator();
   HighLevelRuntime::set_registration_callback(create_projector);
-  HighLevelRuntime::set_registration_callback(create_spmd_solver_mapper);
+  //HighLevelRuntime::set_registration_callback(create_spmd_solver_mapper);
 }

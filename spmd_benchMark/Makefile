@@ -26,7 +26,7 @@ GEN_SRC	:= 	solver.cc \
 		../src/tasks/dense_block.cc ../src/tasks/add_matrix.cc \
 		../src/ptr_matrix.cc ../src/utility.cc \
 		../src/tasks/scale_matrix.cc ../src/tasks/mapper.cc \
-		../src/tasks/dist_mapper.cc
+		../src/tasks/dist_mapper.cc ../src/tasks/spmd_mapper.cc
 
 GEN_GPU_SRC	:=				# .cu files
 
