@@ -30,7 +30,7 @@ void GemmInplaceTask::cpu_task(const Task *task,
 			   const std::vector<PhysicalRegion> &regions,
 			   Context ctx, HighLevelRuntime *runtime) {
   
-  printf("Inside gemm inplace tasks.\n");
+  //printf("Inside gemm inplace tasks.\n");
 
   assert(regions.size() == 2);
   assert(task->regions.size() == 2);
@@ -48,13 +48,14 @@ void GemmInplaceTask::cpu_task(const Task *task,
   int Bcols = args.Bcols;
   int Ccols = args.Ccols;
   int AcolIdx = args.AcolIdx;
+#if 0
   printf("Arows=%d, AcolIdx=%d, Acols=%d\n"
 	 "Brows=%d, Bcols=%d\n"
 	 "Crows=%d, Ccols=%d\n",
   	 Arows, AcolIdx, Acols,
 	 Brows, Bcols,
 	 Crows, Ccols);
-    
+#endif
   PtrMatrix AMat = get_raw_pointer(regions[0], 0, Arows, AcolIdx, AcolIdx+Acols);
   PtrMatrix BMat = get_raw_pointer(regions[1], 0, Brows, 0, Bcols);
   PtrMatrix CMat = get_raw_pointer(regions[0], 0, Crows, 0, Ccols);

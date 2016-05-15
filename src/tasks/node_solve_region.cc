@@ -39,8 +39,8 @@ void NodeSolveRegionTask::cpu_task(const Task *task,
 			     const std::vector<PhysicalRegion> &regions,
 			     Context ctx, HighLevelRuntime *runtime) {
 
-  printf("Inside node solve tasks.\n");
-
+  //printf("Inside node solve tasks.\n");
+#if 0
   LogicalRegion VTu0_rg = regions[0].get_logical_region();
   LogicalRegion VTu1_rg = regions[1].get_logical_region();
   LogicalRegion VTd0_rg = regions[2].get_logical_region();
@@ -61,7 +61,7 @@ void NodeSolveRegionTask::cpu_task(const Task *task,
 	 VTd1_rg.get_index_space().get_id(), 
 	 VTd1_rg.get_field_space().get_id(),
 	 VTd1_rg.get_tree_id());
-      
+#endif      
   assert(regions.size() == 4);
   assert(task->regions.size() == 4);
   assert(task->arglen == sizeof(TaskArgs));
@@ -69,15 +69,13 @@ void NodeSolveRegionTask::cpu_task(const Task *task,
   const TaskArgs args = *((const TaskArgs*)task->args);
   int rank = args.rank;
   int nRhs = args.nRhs;
-  printf("rank=%d, nRhs=%d\n", rank, nRhs);
+  //printf("rank=%d, nRhs=%d\n", rank, nRhs);
 
   PtrMatrix VTu0 = get_raw_pointer(regions[0], 0, rank, 0, rank);
   PtrMatrix VTu1 = get_raw_pointer(regions[1], 0, rank, 0, rank);
-  //PtrMatrix VTd0 = get_raw_pointer(regions[2], 0, rank, 0, nRhs);
-  //PtrMatrix VTd1 = get_raw_pointer(regions[3], 0, rank, 0, nRhs);
+  PtrMatrix VTd0 = get_raw_pointer(regions[2], 0, rank, 0, nRhs);
+  PtrMatrix VTd1 = get_raw_pointer(regions[3], 0, rank, 0, nRhs);
  
-#if 0
-
   PtrMatrix S(2*rank, 2*rank);
   PtrMatrix B(2*rank, nRhs);
   
@@ -98,5 +96,4 @@ void NodeSolveRegionTask::cpu_task(const Task *task,
     }
   }  
   S.solve( B );
-#endif
 }
