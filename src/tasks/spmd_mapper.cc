@@ -19,50 +19,18 @@ SPMDsolverMapper::SPMDsolverMapper(Machine machine, HighLevelRuntime *rt, Proces
 {}
 
 void SPMDsolverMapper::select_task_options(Task *task) {
-#if 0
-  // only top level task is not index space task
-  if (! task->is_index_space) {
-  
-    task->inline_task   = false;
-    task->spawn_task    = false;
-    task->map_locally   = false;
-    task->profile_task  = false;
-    task->task_priority = 0;
-
-    // top level task run on machine 0
-#ifdef DEBUG_SOLVER_MAPPER
-    std::vector<Processor> procs = mem_procs[ valid_mems[num_mems] ];
-#else
-    std::vector<Processor> procs = mem_procs[ valid_mems[0] ];
-#endif
-    assert( !procs.empty() );  
-    task->target_proc = procs[0];
-  }
-
-  // index space tasks
-  else {
-    //std::cout << "index space task" << std::endl;
-    task->inline_task   = false;
-    task->spawn_task    = false;
-    task->map_locally   = true;
-    task->profile_task  = false;
-    task->task_priority = 0;
-  
-    // assign a dummy processor
-    std::vector<Processor> procs = mem_procs[ valid_mems[0] ];
-    //std::vector<Processor> procs = mem_procs[ valid_mems[num_mems] ];
-    assert( !procs.empty() );
-    task->target_proc = procs[0];
-  }
-  #endif
+  // Task options:
+  task->inline_task   = false;
+  task->spawn_task    = false;
+  task->map_locally   = true;
+  task->profile_task  = false;
 }
 
 #if 0
-  
 // assign every point in the launch domain to different processors
 void SPMDsolverMapper::slice_domain(const Task *task, const Domain &domain,
 				std::vector<DomainSplit> &slices) {
-  
+
 #if 0
   std::cout << "inside slice_domain()" << std::endl;
   std::cout << "orign: " << task->orig_proc.id
@@ -70,107 +38,12 @@ void SPMDsolverMapper::slice_domain(const Task *task, const Domain &domain,
 	    << ", target: " << task->target_proc.id
 	    << std::endl;
 #endif
-
-  assert(domain.get_dim() == 1);
-  Rect<1> rect = domain.get_rect<1>();
-  int num_elmts = rect.volume();
-
-  /*
-  // assume evenly split
-  if (num_elmts > num_mems) 
-    assert(num_elmts % num_mems == 0);
-  else
-    assert(num_mems % num_elmts == 0);
-    // if num_mems > num_elmts, e.g.,
-    //  num_mems = 8, num_elmts = 4,
-    //  the assignment is {0, 2, 4, 6}
-    // if num_mems < num_elmts, e.g.,
-    //  num_mems = 4, num_elmts = 8,
-    //  the assignment is {0, 0, 1, 1, ..., 4, 4}
-    */
-
-  if (num_elmts >= num_mems) {
-    // e.g. num_elmts = 64x8, num_mems = 62
-    // lower = 8, upper = 9
-    // num_lower = 46, num_upper = 16
-    int lower = num_elmts / num_mems;
-    int upper = lower + 1;
-    int num_upper = num_elmts % num_mems;
-    int num_lower = num_mems - num_upper;
-    int mem_idx = 0;
-    int num_task = 0;
-    for (int i=0; i<num_elmts; i++) {
-      Point<1> lo(i);
-      Point<1> hi(i);
-      Rect<1> chunk(lo, hi);
-      // compute machine index
-      if (mem_idx < num_lower) {
-	if (num_task < lower) {
-	  num_task++;
-	}
-	else {
-	  mem_idx++;
-	  num_task=1;
-	}
-      }
-      else { // mem_idx >= num_lower
-	if (num_task < upper) {
-	  num_task++;
-	}
-	else {
-	  mem_idx++;
-	  num_task=1;
-	}
-      }
-      //end if
-      assert(mem_idx < num_mems);
-      Processor target = mem_procs[valid_mems[mem_idx]][0];
-      DomainSplit ds(Domain::from_rect<1>(chunk), target, false, false);
-      slices.push_back(ds);
-      log_solver_mapper.print("task %s: Point(%i) is assigned to "
-			      "machine: %i", task->variants->name, i,
-			      mem_idx);
-    }
-  }
-    
-  else { // num_elmts < num_mems
-    // different lower and upper definitions here
-    // e.g. num_mems = 62, num_elmts = 8
-    // lower = 7, upper = 8
-    // num_lower = 2, num_upper = 6
-    // the result is: [0,8,16,...,48,55]
-    int lower = num_mems / num_elmts;
-    int upper = lower + 1;
-    int num_upper = num_mems % num_elmts;
-    int mem_idx = 0;
-    for (int i=0; i<num_elmts; i++) {
-      Point<1> lo(i);
-      Point<1> hi(i);
-      Rect<1> chunk(lo, hi);
-      assert(mem_idx < num_mems);
-      Processor target = mem_procs[valid_mems[mem_idx]][0];
-      DomainSplit ds(Domain::from_rect<1>(chunk), target, false, false);
-      slices.push_back(ds);
-      log_solver_mapper.print("task %s: Point(%i) is assigned to "
-			      "machine: %i", task->variants->name, i,
-			      mem_idx);
-      // compute next machine index
-      if (i < num_upper) {
-	mem_idx += upper;
-      }
-      else {
-	mem_idx += lower;
-      }
-      // end if
-    }
-  }
 }
 #endif
 
 
 bool SPMDsolverMapper::map_task(Task *task) {
 
-#if 0
 #if 0
   std::cout << "Inside map_task() ..." << std::endl;
   std::cout << "orign: " << task->orig_proc.id
@@ -179,28 +52,91 @@ bool SPMDsolverMapper::map_task(Task *task) {
 	    << std::endl;
 #endif
 
-  log_solver_mapper.print("map task %s: %i", task->variants->name, task->index_point.point_data[0]);
+  //log_solver_mapper.print("map task %s: %i", task->variants->name, task->index_point.point_data[0]);
+
+  Memory sysmem = proc_sysmems[task->target_proc];
+  assert(sysmem.exists());
+  std::vector<Processor> local_procs = sysmem_local_procs[sysmem];
+  task->additional_procs.insert(local_procs.begin(), local_procs.end());
   
-  // find the memory associated with the target processor
-  Memory sys_mem = machine_interface.find_memory_kind
-    (task->target_proc, Memory::SYSTEM_MEM); 
-  assert(sys_mem.exists());
+  std::vector<RegionRequirement> &regions = task->regions;
+  for (std::vector<RegionRequirement>::iterator it = regions.begin();
+        it != regions.end(); it++) {
+    RegionRequirement &req = *it;
 
-  // assign additional processors
-  std::vector<Processor>& procs = mem_procs[sys_mem];
-  assert(!procs.empty());
-  task->additional_procs.insert(procs.begin(), procs.end());
+    // Region options:
+    req.virtual_map = false;
+    req.enable_WAR_optimization = false;
+    req.reduction_list = false;
 
-  // map the regions
-  for (unsigned idx = 0; idx < task->regions.size(); idx++) {
-    task->regions[idx].target_ranking.push_back(sys_mem);
-    task->regions[idx].virtual_map = false;
-    task->regions[idx].enable_WAR_optimization = war_enabled;
-    task->regions[idx].reduction_list = false;
-    task->regions[idx].blocking_factor = 1;
-  } 
-  return true;
-#endif
+    // Place all regions in local system memory.
+    req.target_ranking.push_back(sysmem);
+    std::set<FieldID> fields;
+    get_field_space_fields(req.parent.get_field_space(), fields);
+    req.additional_fields.insert(fields.begin(), fields.end());
+  }
+  return false;
+}
+
+
+bool SPMDsolverMapper::map_must_epoch(const std::vector<Task*> &tasks,
+				      const std::vector<MappingConstraint> &constraints,
+				      MappingTagID tag) {
+
+  unsigned tasks_per_sysmem = (tasks.size() + sysmems_list.size() - 1) / sysmems_list.size();
+  for (unsigned i = 0; i < tasks.size(); ++i)
+  {
+    Task* task = tasks[i];
+    unsigned index = task->index_point.point_data[0];
+    assert(index / tasks_per_sysmem < sysmems_list.size());
+    Memory sysmem = sysmems_list[index / tasks_per_sysmem];
+    unsigned subindex = index % tasks_per_sysmem;
+    assert(subindex < sysmem_local_procs[sysmem].size());
+    task->target_proc = sysmem_local_procs[sysmem][subindex];
+    map_task(task);
+    task->additional_procs.clear();
+  }
+
+  typedef std::map<LogicalRegion, Memory> Mapping;
+  Mapping mappings;
+  for (unsigned i = 0; i < constraints.size(); ++i)
+  {
+    const MappingConstraint& c = constraints[i];
+    if (c.t1->regions[c.idx1].flags & NO_ACCESS_FLAG &&
+        c.t2->regions[c.idx2].flags & NO_ACCESS_FLAG)
+      continue;
+
+    Memory regmem;
+    if (c.t2->regions[c.idx2].flags & NO_ACCESS_FLAG)
+      regmem = proc_sysmems[c.t1->target_proc]; // proc_regmems[c.t1->target_proc];
+    else if (c.t1->regions[c.idx1].flags & NO_ACCESS_FLAG)
+      regmem = proc_sysmems[c.t2->target_proc]; // proc_regmems[c.t2->target_proc];
+    else
+      assert(0);
+    c.t1->regions[c.idx1].target_ranking.clear();
+    c.t1->regions[c.idx1].target_ranking.push_back(regmem);
+    c.t2->regions[c.idx2].target_ranking.clear();
+    c.t2->regions[c.idx2].target_ranking.push_back(regmem);
+    mappings[c.t1->regions[c.idx1].region] = regmem;
+  }
+
+  for (unsigned i = 0; i < constraints.size(); ++i)
+  {
+    const MappingConstraint& c = constraints[i];
+    if (c.t1->regions[c.idx1].flags & NO_ACCESS_FLAG &&
+        c.t2->regions[c.idx2].flags & NO_ACCESS_FLAG)
+    {
+      Mapping::iterator it =
+        mappings.find(c.t1->regions[c.idx1].region);
+      assert(it != mappings.end());
+      Memory regmem = it->second;
+      c.t1->regions[c.idx1].target_ranking.clear();
+      c.t1->regions[c.idx1].target_ranking.push_back(regmem);
+      c.t2->regions[c.idx2].target_ranking.clear();
+      c.t2->regions[c.idx2].target_ranking.push_back(regmem);
+    }
+  }
+  return false;
 }
 
 void SPMDsolverMapper::notify_mapping_failed(const Mappable *mappable)
@@ -228,17 +164,3 @@ void SPMDsolverMapper::notify_mapping_result(const Mappable *mappable)
 #endif
 }
 */
-
-
-  bool SPMDsolverMapper::map_copy(Copy *copy) {
-
-   return false;
- }
-
-
- bool SPMDsolverMapper::map_must_epoch(const std::vector<Task*> &tasks,
-		     const std::vector<MappingConstraint> &constraints,
-		     MappingTagID tag) {
-
-   return false;
- }

@@ -14,8 +14,9 @@ public:
 		   std::map<Processor, Memory>* proc_sysmems,
 		   std::map<Processor, Memory>* proc_regmems);
   virtual void select_task_options(Task *task);
+  //virtual void slice_domain(const Task *task, const Domain &domain,
+  //			    std::vector<DomainSplit> &slices);
   virtual bool map_task(Task *task);
-  virtual bool map_copy(Copy *copy);
   virtual void notify_mapping_failed(const Mappable *mappable);
   virtual bool map_must_epoch(const std::vector<Task*> &tasks,
                               const std::vector<MappingConstraint> &constraints,

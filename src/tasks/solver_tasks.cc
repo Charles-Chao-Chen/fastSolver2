@@ -84,5 +84,5 @@ void register_solver_tasks() {
   GemmBroTask::register_tasks();
   Add::register_operator();
   HighLevelRuntime::set_registration_callback(create_projector);
-  //HighLevelRuntime::set_registration_callback(create_spmd_solver_mapper);
+  HighLevelRuntime::set_registration_callback(create_spmd_solver_mapper);
 }
