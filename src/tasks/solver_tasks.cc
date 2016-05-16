@@ -4,6 +4,8 @@
 void create_spmd_solver_mapper(Machine machine, HighLevelRuntime *rt,
 			       const std::set<Processor> &local_procs) {
 
+  create_projector(machine, rt, local_procs);
+  
   std::vector<Processor>* procs_list = new std::vector<Processor>();
   std::vector<Memory>* sysmems_list = new std::vector<Memory>();
   std::map<Memory, std::vector<Processor> >* sysmem_local_procs =
@@ -83,6 +85,5 @@ void register_solver_tasks() {
   GemmRedTask::register_tasks();
   GemmBroTask::register_tasks();
   Add::register_operator();
-  HighLevelRuntime::set_registration_callback(create_projector);
   HighLevelRuntime::set_registration_callback(create_spmd_solver_mapper);
 }

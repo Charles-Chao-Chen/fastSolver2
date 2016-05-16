@@ -149,13 +149,13 @@ spy2:
 	-bind-to none -report-bindings \
 	-x GASNET_IB_SPAWNER -x GASNET_BACKTRACE=1 \
 	./solver \
-	-machine 4 \
-	-core 4 \
-	-mtxlvl 4 \
+	-machine 2 \
+	-core 8 \
+	-mtxlvl 6 \
 	-ll:cpu 8 \
 	-ll:gsize 0 \
 	-level 4,legion_spy=2 \
-	-logfile 1node_%.log
+	-logfile 2node_%.log
 
 prof2:
 	mpirun -H n0000,n0001 \

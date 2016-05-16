@@ -422,9 +422,6 @@ int main(int argc, char *argv[]) {
   // register solver tasks
   register_solver_tasks();
 
-  // register mapper
-  //HighLevelRuntime::set_registration_callback(registration_callback);
-
   // start legion master task
   return HighLevelRuntime::start(argc, argv);
 }
