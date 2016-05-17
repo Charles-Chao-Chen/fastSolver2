@@ -381,8 +381,8 @@ void top_level_task(const Task *task,
 	LogicalRegion VTd = VTd_ghosts[idx][subidx];
 	RegionRequirement VTu_req(VTu,READ_WRITE,SIMULTANEOUS,VTu);
 	RegionRequirement VTd_req(VTd,READ_WRITE,SIMULTANEOUS,VTd);
-	VTu_req.flags |= NO_ACCESS_FLAG;
-	VTd_req.flags |= NO_ACCESS_FLAG;
+	VTu_req.flags = NO_ACCESS_FLAG;
+	VTd_req.flags = NO_ACCESS_FLAG;
 	VTu_req.add_field(FIELDID_V);
 	VTd_req.add_field(FIELDID_V);
 	spmd_tasks[shard].add_region_requirement(VTu_req);

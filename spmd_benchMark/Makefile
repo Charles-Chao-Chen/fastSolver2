@@ -25,7 +25,8 @@ GEN_SRC	:= 	solver.cc \
 		../src/tasks/solver_tasks.cc ../src/tasks/display_matrix.cc \
 		../src/tasks/dense_block.cc ../src/tasks/add_matrix.cc \
 		../src/ptr_matrix.cc ../src/utility.cc \
-		../src/tasks/scale_matrix.cc ../src/tasks/mapper.cc \
+		../src/tasks/scale_matrix.cc \
+#		../src/tasks/mapper.cc \
 		../src/tasks/dist_mapper.cc ../src/tasks/spmd_mapper.cc
 
 GEN_GPU_SRC	:=				# .cu files
@@ -144,10 +145,13 @@ spy1:
 	-level 4,legion_spy=2 \
 	-logfile 1node_%.log
 
+#
+
 spy2:
 	mpirun -H n0002,n0003 \
 	-bind-to none -report-bindings \
 	-x GASNET_IB_SPAWNER -x GASNET_BACKTRACE=1 \
+	-x LEGION_FREEZE_ON_ERROR=1 \
 	./solver \
 	-machine 2 \
 	-core 2 \
@@ -155,7 +159,7 @@ spy2:
 	-ll:cpu 2 \
 	-ll:gsize 0 \
 	-level 4,legion_spy=2 \
-	-logfile 2node_%.log
+	-logfile 2node_%.log &
 
 prof2:
 	mpirun -H n0000,n0001 \

@@ -1,6 +1,6 @@
 #include "solver_tasks.hpp"
 
-
+/*
 void create_spmd_solver_mapper(Machine machine, HighLevelRuntime *rt,
 			       const std::set<Processor> &local_procs) {
 
@@ -62,6 +62,7 @@ void create_mapper(Machine machine, HighLevelRuntime *rt,
     rt->replace_default_mapper(mapper,*it);
   }
 }
+*/
 
 void create_projector(Machine machine, HighLevelRuntime *rt,
 			   const std::set<Processor> &local_procs) {    
@@ -85,5 +86,9 @@ void register_solver_tasks() {
   GemmRedTask::register_tasks();
   GemmBroTask::register_tasks();
   Add::register_operator();
-  HighLevelRuntime::set_registration_callback(create_spmd_solver_mapper);
+#if 1
+  HighLevelRuntime::set_registration_callback(create_projector);
+#else
+  //HighLevelRuntime::set_registration_callback(create_spmd_solver_mapper);
+#endif
 }

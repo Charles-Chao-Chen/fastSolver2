@@ -512,7 +512,7 @@ void LMatrix::two_level_partition
       coloring[j] = Domain::from_rect<2>(subrect);
     }
     IndexSpace is = lr.get_index_space();
-    IndexPartition ip = runtime->create_index_partition(ctx, is, domain, coloring, true);
+    IndexPartition ip = runtime->create_index_partition(ctx, is, domain, coloring, true,0);
     LogicalPartition lp = runtime->get_logical_partition(ctx, lr, ip);
     (void)lp;
   }
