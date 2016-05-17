@@ -136,7 +136,7 @@ spy1:
 	-bind-to none -report-bindings \
 	-x GASNET_IB_SPAWNER -x GASNET_BACKTRACE=1 \
 	./solver \
-	-machine 4 \
+	-machine 2 \
 	-core 2 \
 	-mtxlvl 4 \
 	-ll:cpu 8 \
@@ -150,9 +150,9 @@ spy2:
 	-x GASNET_IB_SPAWNER -x GASNET_BACKTRACE=1 \
 	./solver \
 	-machine 2 \
-	-core 8 \
-	-mtxlvl 6 \
-	-ll:cpu 8 \
+	-core 2 \
+	-mtxlvl 4 \
+	-ll:cpu 2 \
 	-ll:gsize 0 \
 	-level 4,legion_spy=2 \
 	-logfile 2node_%.log

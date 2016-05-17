@@ -2,10 +2,11 @@
 #define _spmd_mapper_hpp
 
 #include "default_mapper.h"
+#include "shim_mapper.h"
 
 using namespace LegionRuntime::HighLevel;
 
-class SPMDsolverMapper : public DefaultMapper {
+class SPMDsolverMapper : public ShimMapper {
 public:
   SPMDsolverMapper(Machine machine, HighLevelRuntime *rt, Processor local,
 		   std::vector<Processor>* procs_list,
@@ -14,14 +15,15 @@ public:
 		   std::map<Processor, Memory>* proc_sysmems,
 		   std::map<Processor, Memory>* proc_regmems);
   virtual void select_task_options(Task *task);
-  //virtual void slice_domain(const Task *task, const Domain &domain,
-  //			    std::vector<DomainSplit> &slices);
+  virtual void slice_domain(const Task *task, const Domain &domain,
+			    std::vector<DomainSplit> &slices);
   virtual bool map_task(Task *task);
-  virtual void notify_mapping_failed(const Mappable *mappable);
   virtual bool map_must_epoch(const std::vector<Task*> &tasks,
                               const std::vector<MappingConstraint> &constraints,
                               MappingTagID tag);
-
+  virtual void notify_mapping_failed(const Mappable *mappable);
+  //virtual void notify_mapping_result(const Mappable *mappable);
+  
 private:
   std::vector<Processor> procs_list;
   std::vector<Memory> sysmems_list;

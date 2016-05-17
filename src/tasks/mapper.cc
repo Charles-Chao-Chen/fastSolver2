@@ -334,7 +334,7 @@ bool SolverMapper::map_task(Task *task) {
 	    << std::endl;
 #endif
 
-  log_solver_mapper.print("map task %s: %i", task->variants->name, task->index_point.point_data[0]);
+  //log_solver_mapper.print("map task %s: %i", task->variants->name, task->index_point.point_data[0]);
   
   // find the memory associated with the target processor
   Memory sys_mem = machine_interface.find_memory_kind

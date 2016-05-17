@@ -124,6 +124,7 @@ void spmd_fast_solver(const Task *task,
     std::cout<<"launched solver tasks at level: "<<tree_level<<std::endl;
   }
 
+#if 0
   // spmd level
   int ghost_idx = 0;
   for (int l=spmd_level-1; l>=0; l--) {
@@ -218,9 +219,8 @@ void spmd_fast_solver(const Task *task,
     LMatrix::gemm_inplace('n', 'n', -1.0, u, VTd_lmtx, 1.0, d, ctx, runtime );
     std::cout<<"launched solver tasks at level: "<<l<<std::endl;
   }
-
-  // check residule
-  
+#endif
+  // check residule  
 }
 
 void top_level_task(const Task *task,

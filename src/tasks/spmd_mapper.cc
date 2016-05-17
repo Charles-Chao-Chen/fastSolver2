@@ -10,7 +10,7 @@ SPMDsolverMapper::SPMDsolverMapper(Machine machine, HighLevelRuntime *rt, Proces
 				   std::map<Memory, std::vector<Processor> >* _sysmem_local_procs,
 				   std::map<Processor, Memory>* _proc_sysmems,
 				   std::map<Processor, Memory>* _proc_regmems)
-  : DefaultMapper(machine, rt, local),
+  : ShimMapper(machine, rt, local),
     procs_list(*_procs_list),
     sysmems_list(*_sysmems_list),
     sysmem_local_procs(*_sysmem_local_procs),
@@ -26,11 +26,9 @@ void SPMDsolverMapper::select_task_options(Task *task) {
   task->profile_task  = false;
 }
 
-#if 0
-// assign every point in the launch domain to different processors
 void SPMDsolverMapper::slice_domain(const Task *task, const Domain &domain,
 				std::vector<DomainSplit> &slices) {
-
+  
 #if 0
   std::cout << "inside slice_domain()" << std::endl;
   std::cout << "orign: " << task->orig_proc.id
@@ -38,14 +36,26 @@ void SPMDsolverMapper::slice_domain(const Task *task, const Domain &domain,
 	    << ", target: " << task->target_proc.id
 	    << std::endl;
 #endif
-}
-#endif
 
+  assert(domain.get_dim() == 1);
+  Rect<1> rect = domain.get_rect<1>();
+  int num_elmts = rect.volume();
+  for (int i=0; i<num_elmts; i++) {
+    Point<1> lo(i);
+    Point<1> hi(i);
+    Rect<1> chunk(lo, hi);
+    Processor target = task->orig_proc;
+    DomainSplit ds(Domain::from_rect<1>(chunk), target, false, false);
+    slices.push_back(ds);
+  }
+}
 
 bool SPMDsolverMapper::map_task(Task *task) {
 
 #if 0
-  std::cout << "Inside map_task() ..." << std::endl;
+  std::cout << "map task: " << task->variants->name
+	    << "[" << task->index_point.point_data[0]
+	    << "]" << std::endl;
   std::cout << "orign: " << task->orig_proc.id
 	    << ", current: " << task->current_proc.id
 	    << ", target: " << task->target_proc.id
@@ -143,12 +153,10 @@ void SPMDsolverMapper::notify_mapping_failed(const Mappable *mappable)
 {
   printf("WARNING: MAPPING FAILED!  Retrying...\n");
 }
-/*
+
+#if 0
 void SPMDsolverMapper::notify_mapping_result(const Mappable *mappable)
 {
-  std::cout << "inside notify_result()" << std::endl;
-    
-#if 0
   if (mappable->get_mappable_kind() == Mappable::TASK_MAPPABLE)
     {
       const Task *task = mappable->as_mappable_task();
@@ -161,6 +169,5 @@ void SPMDsolverMapper::notify_mapping_result(const Mappable *mappable)
 		 task->regions[idx].selected_memory.id);
 	}
     }
-#endif
 }
-*/
+#endif
