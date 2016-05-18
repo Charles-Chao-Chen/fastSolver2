@@ -141,6 +141,7 @@ void spmd_fast_solver(const Task *task,
     LMatrix::gemm('t', 'n', 1.0, V, u, 0.0, VTu, ctx, runtime );
     LMatrix::gemm('t', 'n', 1.0, V, d, 0.0, VTd, ctx, runtime );
 
+    /*
     // acquire
     AcquireLauncher aq_VTu(VTu_ghost, VTu_ghost, regions[ghost_idx]);
     AcquireLauncher aq_VTd(VTd_ghost, VTd_ghost, regions[ghost_idx+1]);
@@ -148,7 +149,8 @@ void spmd_fast_solver(const Task *task,
     aq_VTd.add_field(FIELDID_V);
     runtime->issue_acquire(ctx, aq_VTu);
     runtime->issue_acquire(ctx, aq_VTd);
-
+    */
+    
     // copy
     CopyLauncher  cp_VTu;
     CopyLauncher  cp_VTd;
@@ -166,7 +168,8 @@ void spmd_fast_solver(const Task *task,
     cp_VTd.add_dst_field(0, FIELDID_V);
     runtime->issue_copy_operation(ctx, cp_VTu);
     runtime->issue_copy_operation(ctx, cp_VTd);
-    
+
+#if 1
     // release
     ReleaseLauncher rl_VTu(VTu_ghost, VTu_ghost, regions[ghost_idx]);
     ReleaseLauncher rl_VTd(VTd_ghost, VTd_ghost, regions[ghost_idx+1]);
@@ -177,6 +180,7 @@ void spmd_fast_solver(const Task *task,
     runtime->issue_release(ctx, rl_VTu);
     runtime->issue_release(ctx, rl_VTd);
 
+    
     // node solve
     if (is_master_task(spmd_point, l, spmd_level)) {
       LMatrix VTu0 = create_legion_matrix(VTu_ghost,rank,rank);
@@ -218,6 +222,8 @@ void spmd_fast_solver(const Task *task,
     }
     LMatrix::gemm_inplace('n', 'n', -1.0, u, VTd_lmtx, 1.0, d, ctx, runtime );
     std::cout<<"launched solver tasks at level: "<<l<<std::endl;
+#endif // after copy operation
+
   }
 #endif
   // check residule  
