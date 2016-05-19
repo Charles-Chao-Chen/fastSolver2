@@ -1,8 +1,7 @@
 #include "solver_tasks.hpp"
 
-/*
-void create_spmd_solver_mapper(Machine machine, HighLevelRuntime *rt,
-			       const std::set<Processor> &local_procs) {
+void create_solver_mapper(Machine machine, HighLevelRuntime *rt,
+			  const std::set<Processor> &local_procs) {
 
   create_projector(machine, rt, local_procs);
   
@@ -43,7 +42,7 @@ void create_spmd_solver_mapper(Machine machine, HighLevelRuntime *rt,
   for (std::set<Processor>::const_iterator it = local_procs.begin();
         it != local_procs.end(); it++)
   {
-    SPMDsolverMapper* mapper = new SPMDsolverMapper(machine, rt, *it,
+    SolverMapper* mapper = new SolverMapper(machine, rt, *it,
                                               procs_list,
                                               sysmems_list,
                                               sysmem_local_procs,
@@ -52,17 +51,6 @@ void create_spmd_solver_mapper(Machine machine, HighLevelRuntime *rt,
     rt->replace_default_mapper(mapper, *it);
   }
 }
-
-void create_mapper(Machine machine, HighLevelRuntime *rt,
-			   const std::set<Processor> &local_procs) {
-
-  std::set<Processor>::const_iterator it = local_procs.begin();
-  for (; it != local_procs.end(); it++) {
-    SolverMapper *mapper = new SolverMapper(machine, rt, *it);
-    rt->replace_default_mapper(mapper,*it);
-  }
-}
-*/
 
 void create_projector(Machine machine, HighLevelRuntime *rt,
 			   const std::set<Processor> &local_procs) {    
@@ -86,9 +74,9 @@ void register_solver_tasks() {
   GemmRedTask::register_tasks();
   GemmBroTask::register_tasks();
   Add::register_operator();
-#if 1
+#if 0
   HighLevelRuntime::set_registration_callback(create_projector);
 #else
-  //HighLevelRuntime::set_registration_callback(create_spmd_solver_mapper);
+  HighLevelRuntime::set_registration_callback(create_solver_mapper);
 #endif
 }

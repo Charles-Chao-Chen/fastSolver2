@@ -3,7 +3,7 @@ $(error LG_RT_DIR variable is not defined, aborting build)
 endif
 
 #Flags for directing the runtime makefile what to include
-DEBUG=1                   # Include debugging symbols
+DEBUG=0                   # Include debugging symbols
 OUTPUT_LEVEL=LEVEL_DEBUG  # Compile time print level
 SHARED_LOWLEVEL=0	  # Use the shared low level
 USE_CUDA=0
@@ -36,7 +36,7 @@ GEN_GPU_SRC	:=				# .cu files
 INC_FLAGS	:= -I ../include/ -I ../include/tasks/
 CC_FLAGS	:= \
 		-DLEGION_IDS_ARE_64BIT \
-		-DLEGION_SPY
+#		-DLEGION_SPY
 #		-DPRIVILEGE_CHECKS \
 		-DBOUNDS_CHECKS \
 
@@ -123,13 +123,14 @@ prof1:
 	-bind-to none -report-bindings \
 	-x GASNET_IB_SPAWNER -x GASNET_BACKTRACE=1 \
 	./solver \
-	-tasklvl 3 \
-	-matrixlvl 5 \
+	-machine 1 \
+	-core 8 \
+	-mtxlvl 6 \
 	-ll:cpu 8 \
-	-hl:prof   1 \
-	-hl:sched  128 \
+	-ll:gsize 0 \
+	-hl:prof 1 \
 	-level 4,legion_prof=2 \
-	-logfile 1node_%.log
+	-logfile 1node_%.log 
 
 #	gdb --args ./solver \
 
@@ -143,7 +144,7 @@ spy1:
 	-mtxlvl 4 \
 	-ll:cpu 8 \
 	-ll:gsize 0 \
-	-level 4,legion_prof=2 \
+	-level 4,legion_spy=2 \
 	-logfile 1node_%.log 
 
 #	-x LEGION_FREEZE_ON_ERROR=1 \
@@ -166,11 +167,12 @@ prof2:
 	-bind-to none -report-bindings \
 	-x GASNET_IB_SPAWNER -x GASNET_BACKTRACE=1 \
 	./solver \
-	-tasklvl 4 \
-	-matrixlvl 4 \
+	-machine 2 \
+	-core 8 \
+	-mtxlvl 6 \
 	-ll:cpu 8 \
-	-hl:prof   2 \
-	-hl:sched  128 \
+	-ll:gsize 0 \
+	-hl:prof 2 \
 	-level 4,legion_prof=2 \
 	-logfile 2node_%.log
 
