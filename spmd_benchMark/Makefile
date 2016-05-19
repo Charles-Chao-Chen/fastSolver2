@@ -143,7 +143,7 @@ spy1:
 	-ll:cpu 8 \
 	-ll:gsize 0 \
 	-level 4,legion_spy=2 \
-	-logfile 1node_%.log
+	-logfile 1node_%.log 
 
 #	-x LEGION_FREEZE_ON_ERROR=1 \
 
@@ -152,10 +152,10 @@ spy2:
 	-bind-to none -report-bindings \
 	-x GASNET_IB_SPAWNER -x GASNET_BACKTRACE=1 \
 	./solver \
-	-machine 2 \
-	-core 2 \
+	-machine 4 \
+	-core 4 \
 	-mtxlvl 4 \
-	-ll:cpu 2 \
+	-ll:cpu 8 \
 	-ll:gsize 0 \
 	-level 4,legion_spy=2 \
 	-logfile 2node_%.log 
