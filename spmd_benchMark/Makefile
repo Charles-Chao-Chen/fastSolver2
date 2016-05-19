@@ -26,6 +26,7 @@ GEN_SRC	:= 	solver.cc \
 		../src/tasks/dense_block.cc ../src/tasks/add_matrix.cc \
 		../src/ptr_matrix.cc ../src/utility.cc \
 		../src/tasks/scale_matrix.cc \
+		../src/tasks/new_mapper.cc
 #		../src/tasks/mapper.cc \
 		../src/tasks/dist_mapper.cc ../src/tasks/spmd_mapper.cc
 
@@ -142,7 +143,7 @@ spy1:
 	-mtxlvl 4 \
 	-ll:cpu 8 \
 	-ll:gsize 0 \
-	-level 4,legion_spy=2 \
+	-level 4,legion_prof=2 \
 	-logfile 1node_%.log 
 
 #	-x LEGION_FREEZE_ON_ERROR=1 \
