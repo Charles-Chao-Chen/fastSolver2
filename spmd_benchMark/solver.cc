@@ -13,9 +13,11 @@ enum {
   SPMD_TASK_ID = 1,
 };
 
+const int MAX_TREE_LEVEL = 10;
+
 struct SPMDargs {
-  std::vector<PhaseBarrier> reduction;
-  std::vector<PhaseBarrier> node_solve;
+  PhaseBarrier reduction[MAX_TREE_LEVEL];
+  PhaseBarrier node_solve[MAX_TREE_LEVEL];
   int leaf_size;
   int rank;
   int nRhs;
@@ -155,6 +157,7 @@ void spmd_fast_solver(const Task *task,
     cp_VTu.add_dst_field(0, FIELDID_V);
     cp_VTd.add_src_field(0, FIELDID_V);
     cp_VTd.add_dst_field(0, FIELDID_V);
+    assert(args->reduction[l]!=PhaseBarrier());
     cp_VTu.add_arrival_barrier(args->reduction[l]);
     cp_VTd.add_arrival_barrier(args->reduction[l]);
     runtime->issue_copy_operation(ctx, cp_VTu);
@@ -170,6 +173,7 @@ void spmd_fast_solver(const Task *task,
       LMatrix VTd1 = create_legion_matrix(VTd1_ghost,rank,nRhs+rank*l);
       args->reduction[l] = 
 	runtime->advance_phase_barrier(ctx, args->reduction[l]);
+      assert(args->node_solve[l]!=PhaseBarrier());
       LMatrix::node_solve( VTu0, VTu1, VTd0, VTd1,
 			   args->reduction[l], args->node_solve[l],
 			   ctx, runtime );
@@ -243,6 +247,7 @@ void top_level_task(const Task *task,
   }
   int spmd_level = (int)log2(num_machines);
   int task_level = (int)log2(num_cores_per_machine);
+  assert(spmd_level<=MAX_TREE_LEVEL);
   if(matrix_level < task_level+spmd_level) {
     matrix_level  = task_level+spmd_level;
     std::cout<<"--------------------------------------------------"<<std::endl
@@ -285,8 +290,8 @@ void top_level_task(const Task *task,
     }
     for (int shard=0; shard<num_machines; shard++) {
       int barrier_idx = shard / num_shards_per_barrier;
-      args[shard].reduction.push_back(barrier_reduction[barrier_idx]);
-      args[shard].node_solve.push_back(barrier_node_solve[barrier_idx]);
+      args[shard].reduction[l] = barrier_reduction[barrier_idx];
+      args[shard].node_solve[l] = barrier_node_solve[barrier_idx];
     }
   }
   

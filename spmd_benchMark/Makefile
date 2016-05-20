@@ -3,7 +3,7 @@ $(error LG_RT_DIR variable is not defined, aborting build)
 endif
 
 #Flags for directing the runtime makefile what to include
-DEBUG=0                   # Include debugging symbols
+DEBUG=1                   # Include debugging symbols
 OUTPUT_LEVEL=LEVEL_DEBUG  # Compile time print level
 SHARED_LOWLEVEL=0	  # Use the shared low level
 USE_CUDA=0
@@ -36,7 +36,7 @@ GEN_GPU_SRC	:=				# .cu files
 INC_FLAGS	:= -I ../include/ -I ../include/tasks/
 CC_FLAGS	:= \
 		-DLEGION_IDS_ARE_64BIT \
-#		-DLEGION_SPY
+		-DLEGION_SPY
 #		-DPRIVILEGE_CHECKS \
 		-DBOUNDS_CHECKS \
 
@@ -153,14 +153,15 @@ spy2:
 	mpirun -H n0002,n0003 \
 	-bind-to none -report-bindings \
 	-x GASNET_IB_SPAWNER -x GASNET_BACKTRACE=1 \
+	-x LEGION_FREEZE_ON_ERROR=1 \
 	./solver \
-	-machine 4 \
-	-core 4 \
+	-machine 2 \
+	-core 2 \
 	-mtxlvl 4 \
-	-ll:cpu 8 \
+	-ll:cpu 2 \
 	-ll:gsize 0 \
 	-level 4,legion_spy=2 \
-	-logfile 2node_%.log 
+	-logfile 2node_%.log &
 
 prof2:
 	mpirun -H n0000,n0001 \
