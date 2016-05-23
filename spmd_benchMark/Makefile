@@ -139,7 +139,6 @@ spy1:
 	-core 4 \
 	-mtxlvl 4 \
 	-ll:cpu 8 \
-	-ll:gsize 0 \
 	-level 4,legion_spy=2 \
 	-logfile 1node_%.log 
 

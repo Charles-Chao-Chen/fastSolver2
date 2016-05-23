@@ -118,7 +118,7 @@ void SolverMapper::map_must_epoch(const MapperContext           ctx,
 			   constraint.t2->regions[constraint.idx2].privilege_fields.begin(),
 			   constraint.t2->regions[constraint.idx2].privilege_fields.end());
       const TaskLayoutConstraintSet &layout_constraints1 = 
-	mapper_runtime->find_task_layout_constraints(ctx, 
+	runtime->find_task_layout_constraints(ctx, 
 						     constraint.t1->task_id, info1.variant);
       if (!default_create_custom_instances(ctx, 
 					   output.task_processors[index1], target_memory,
@@ -138,7 +138,7 @@ void SolverMapper::map_must_epoch(const MapperContext           ctx,
       const size_t num_instances = constraint_mapping.size();
       assert(num_instances > 0);
       std::set<FieldID> missing_fields;
-      mapper_runtime->filter_instances(ctx, *constraint.t2, constraint.idx2,
+      runtime->filter_instances(ctx, *constraint.t2, constraint.idx2,
 				       info2.variant, constraint_mapping, missing_fields);
       if (num_instances != constraint_mapping.size())
         {
