@@ -134,9 +134,10 @@ spy1:
 	mpirun -H n0003 \
 	-bind-to none -report-bindings \
 	-x GASNET_IB_SPAWNER -x GASNET_BACKTRACE=1 \
+	-x LEGION_FREEZE_ON_ERROR=1 \
 	./solver \
 	-machine 2 \
-	-core 2 \
+	-core 4 \
 	-mtxlvl 4 \
 	-ll:cpu 8 \
 	-level 4,legion_spy=2 \

@@ -40,6 +40,7 @@ void SolverMapper::map_must_epoch(const MapperContext           ctx,
 	  unsigned subindex = index % tasks_per_sysmem;
 	  assert(subindex < sysmem_local_procs[sysmem].size());
 	  output.task_processors[i] = sysmem_local_procs[sysmem][subindex];
+          proc_map[input.tasks[i]] = sysmem_local_procs[sysmem][subindex]; 
 	  //map_task(task);
 	  //task->additional_procs.clear();
 	}
