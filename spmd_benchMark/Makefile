@@ -3,7 +3,7 @@ $(error LG_RT_DIR variable is not defined, aborting build)
 endif
 
 #Flags for directing the runtime makefile what to include
-DEBUG=1                   # Include debugging symbols
+DEBUG=0                   # Include debugging symbols
 OUTPUT_LEVEL=LEVEL_DEBUG  # Compile time print level
 SHARED_LOWLEVEL=0	  # Use the shared low level
 USE_CUDA=0
@@ -152,10 +152,9 @@ spy2:
 	-x LEGION_FREEZE_ON_ERROR=1 \
 	./solver \
 	-machine 2 \
-	-core 2 \
+	-core 8 \
 	-mtxlvl 4 \
-	-ll:cpu 2 \
-	-ll:gsize 0 \
+	-ll:cpu 8 \
 	-level 4,legion_spy=2 \
 	-logfile 2node_%.log &
 

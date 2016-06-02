@@ -20,8 +20,8 @@ SolverMapper::SolverMapper(Machine machine, Runtime *rt, Processor local,
 
 
 void SolverMapper::map_must_epoch(const MapperContext           ctx,
-				   const MapMustEpochInput&      input,
-				   MapMustEpochOutput&     output)
+				  const MapMustEpochInput&      input,
+				  MapMustEpochOutput&     output)
 {
   log_solver_mapper.spew("Default map_must_epoch in %s", get_mapper_name());
   // Figure out how to assign tasks to CPUs first. We know we can't
@@ -51,9 +51,9 @@ void SolverMapper::map_must_epoch(const MapperContext           ctx,
       if (input.tasks.size() > local_cpus.size())
         {
           log_solver_mapper.error("Default mapper error. Not enough CPUs for must "
-                           "epoch launch of task %s with %ld tasks", 
-                           input.tasks[0]->get_task_name(),
-                           input.tasks.size());
+				  "epoch launch of task %s with %ld tasks", 
+				  input.tasks[0]->get_task_name(),
+				  input.tasks.size());
           assert(false);
         }
       for (unsigned idx = 0; idx < input.tasks.size(); idx++)
@@ -114,11 +114,11 @@ void SolverMapper::map_must_epoch(const MapperContext           ctx,
 					       layout_constraints, true/*needs check*/, constraint_mapping))
 	    {
 	      log_solver_mapper.error("Default mapper error. Unable to make instance(s) "
-			       "in memory " IDFMT " for index %d of constrained "
-			       "task %s (ID %lld) in must epoch launch.",
-			       target_memory.id, base_index,
-			       base_task->get_task_name(), 
-			       base_task->get_unique_id());
+				      "in memory " IDFMT " for index %d of constrained "
+				      "task %s (ID %lld) in must epoch launch.",
+				      target_memory.id, base_index,
+				      base_task->get_task_name(), 
+				      base_task->get_unique_id());
 	      assert(false);
 	    }
         }
@@ -133,11 +133,11 @@ void SolverMapper::map_must_epoch(const MapperContext           ctx,
 					       true/*needs check*/, constraint_mapping))
 	    {
 	      log_solver_mapper.error("Default mapper error. Unable to make instance(s) "
-			       "in memory " IDFMT " for index %d of constrained "
-			       "task %s (ID %lld) in must epoch launch.",
-			       target_memory.id, base_index,
-			       base_task->get_task_name(), 
-			       base_task->get_unique_id());
+				      "in memory " IDFMT " for index %d of constrained "
+				      "task %s (ID %lld) in must epoch launch.",
+				      target_memory.id, base_index,
+				      base_task->get_task_name(), 
+				      base_task->get_unique_id());
 	      assert(false);
 	    }
         }
@@ -151,3 +151,34 @@ bool SolverMapper::default_policy_select_close_virtual(const MapperContext,
   return false;  
 }
 
+Processor SolverMapper::default_policy_select_initial_processor
+(MapperContext ctx, const Task &task) {
+  
+  VariantInfo info = 
+    default_find_preferred_variant(task, ctx, false/*needs tight*/);
+  // If we are the right kind then we return ourselves
+  if (info.proc_kind == local_kind)
+    return local_proc;
+  // Otherwise pick a local one of the right type
+  switch (info.proc_kind)
+    {
+    case Processor::LOC_PROC:
+      {
+	assert(!local_cpus.empty());
+	return default_select_random_processor(local_cpus); 
+      }
+    case Processor::TOC_PROC:
+      {
+	assert(!local_gpus.empty());
+	return default_select_random_processor(local_gpus);
+      }
+    case Processor::IO_PROC:
+      {
+	assert(!local_ios.empty());
+	return default_select_random_processor(local_ios);
+      }
+    default:
+      assert(false);
+    }
+  return Processor::NO_PROC;
+}

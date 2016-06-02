@@ -22,6 +22,9 @@ public:
 public:
   virtual bool default_policy_select_close_virtual(const MapperContext,
 						   const Close &);
+  virtual Processor default_policy_select_initial_processor(
+                                    MapperContext ctx, const Task &task);
+
 private:
   std::vector<Processor> procs_list;
   std::vector<Memory> sysmems_list;
