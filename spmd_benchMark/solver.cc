@@ -203,7 +203,10 @@ void spmd_fast_solver(const Task *task,
     else {
       VTd_lmtx = create_legion_matrix(VTd_local,rank,nRhs+rank*l);    
     }
-    LMatrix::gemm_inplace('n', 'n', -1.0, u, VTd_lmtx, 1.0, d, ctx, runtime );
+
+    bool wait = (l==0 ? true : false);
+    LMatrix::gemm_inplace('n', 'n', -1.0, u, VTd_lmtx, 1.0, d,
+			  ctx, runtime, wait );
     std::cout<<"launched solver tasks at level: "<<l<<std::endl;
   }
   // check residule
