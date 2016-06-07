@@ -135,6 +135,9 @@ public:
   (const std::string&, Context, HighLevelRuntime*,
    bool wait=WAIT_DEFAULT);
 
+  // free resources
+  void clear(Context, HighLevelRuntime*);
+  
   // static methods
   // matrix subtraction
   static void add

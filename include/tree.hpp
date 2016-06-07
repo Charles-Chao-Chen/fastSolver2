@@ -42,6 +42,8 @@ public:
 
   // legion matrices at leaf level
   LMatrix& leaf();
+
+  void clear(Context ctx, HighLevelRuntime* runtime);
   
 private:
   int mLevel;

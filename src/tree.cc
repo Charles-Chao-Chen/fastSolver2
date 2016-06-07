@@ -124,6 +124,10 @@ LMatrix& UTree::leaf() {
   return U;
 }
 
+void UTree::clear(Context ctx, HighLevelRuntime* runtime) {
+  U.clear(ctx, runtime);
+}
+
 Matrix UTree::solution(Context ctx, HighLevelRuntime *runtime) {
   Matrix sln(UMat.rows(), nRhs);
   LogicalRegion lr = U.logical_region();

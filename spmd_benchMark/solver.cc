@@ -206,7 +206,10 @@ void spmd_fast_solver(const Task *task,
     LMatrix::gemm_inplace('n', 'n', -1.0, u, VTd_lmtx, 1.0, d, ctx, runtime );
     std::cout<<"launched solver tasks at level: "<<l<<std::endl;
   }
-  // check residule  
+  // check residule
+
+  // clear resources
+  uTree.clear(ctx, runtime);
 }
 
 void top_level_task(const Task *task,
@@ -404,7 +407,7 @@ int main(int argc, char *argv[]) {
   );
   HighLevelRuntime::register_legion_task<spmd_fast_solver>(SPMD_TASK_ID,
       Processor::LOC_PROC, true/*single*/, true/*single*/,
-      AUTO_GENERATE_ID, TaskConfigOptions(), "spmd");
+      AUTO_GENERATE_ID, TaskConfigOptions(false), "spmd");
 
   // register solver tasks
   register_solver_tasks();

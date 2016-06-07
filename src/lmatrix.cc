@@ -883,3 +883,9 @@ void LMatrix::display
     f.get_void_result();
   }
 }
+
+void LMatrix::clear(Context ctx, HighLevelRuntime* runtime) {
+  runtime->destroy_logical_region(ctx, region);
+  runtime->destroy_field_space(ctx, fspace);
+  runtime->destroy_index_space(ctx, ispace);
+}
