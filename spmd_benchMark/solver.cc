@@ -210,6 +210,8 @@ void spmd_fast_solver(const Task *task,
 
   // clear resources
   uTree.clear(ctx, runtime);
+  vTree.clear(ctx, runtime);
+  kTree.clear(ctx, runtime);
 }
 
 void top_level_task(const Task *task,
@@ -322,9 +324,12 @@ void top_level_task(const Task *task,
   }
   // go upward, this order should be consistant with task
   // launches, so the right ghost region can be referred to.
+  std::vector<std::vector<LogicalRegion> > VTu_all;
+  std::vector<std::vector<LogicalRegion> > VTd_all;
   for (int l=spmd_level-1; l>=0; l--) {
     int num_ghosts = (int)pow(2, l);
     int num_shards_per_ghost = (int)pow(2, spmd_level-l);
+    // create ghost regions
     std::vector<std::vector<LogicalRegion> > VTu_ghosts(num_ghosts);
     std::vector<std::vector<LogicalRegion> > VTd_ghosts(num_ghosts);
     for (int i=0; i<num_ghosts; i++) {
@@ -345,6 +350,9 @@ void top_level_task(const Task *task,
       // VTd1
       VTd_ghosts[i].push_back(runtime->create_logical_region(ctx, VTd_is, fs));
     }
+    VTu_all.insert(VTu_all.end(), VTu_ghosts.begin(), VTu_ghosts.end());
+    VTd_all.insert(VTd_all.end(), VTd_ghosts.begin(), VTd_ghosts.end());
+    // add region requirements
     for (int shard=0; shard<num_machines; shard++) {
       int idx    = shard / num_shards_per_ghost;
       int subidx = shard % num_shards_per_ghost / (num_shards_per_ghost/2);
@@ -389,8 +397,18 @@ void top_level_task(const Task *task,
   }  
   FutureMap fm = runtime->execute_must_epoch(ctx, must_epoch_launcher);
   fm.wait_all_results();
-  runtime->destroy_index_space(ctx, VTu_is);
-  runtime->destroy_field_space(ctx, fs);
+
+  // destroy regions
+  for (unsigned i=0; i<VTu_all.size(); i++) {
+    for (unsigned j=0; j<VTu_all[i].size(); j++) {
+      runtime->destroy_logical_region(ctx, VTu_all[i][j]);
+    }
+  }
+  for (unsigned i=0; i<VTd_all.size(); i++) {
+    for (unsigned j=0; j<VTd_all[i].size(); j++) {
+      runtime->destroy_logical_region(ctx, VTd_all[i][j]);
+    }
+  }
 }
 
 int main(int argc, char *argv[]) {

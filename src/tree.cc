@@ -196,6 +196,10 @@ LMatrix& VTree::level_new(int i) {
   return V;
 }
 
+void VTree::clear(Context ctx, HighLevelRuntime* runtime) {
+  V.clear(ctx, runtime);
+}
+
 void KTree::init
 (const Matrix& UMat_, const Matrix& VMat_,
  const Vector& DVec_) {
@@ -251,4 +255,8 @@ void KTree::horizontal_partition
 void KTree::solve
 (LMatrix& U, LMatrix& V, Context ctx, HighLevelRuntime *runtime) {
   K.solve(U, V, ctx, runtime);
+}
+
+void KTree::clear(Context ctx, HighLevelRuntime* runtime) {
+  K.clear(ctx, runtime);
 }

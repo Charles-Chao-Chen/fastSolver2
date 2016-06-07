@@ -82,6 +82,8 @@ public:
   LMatrix& leaf();
   LMatrix& level(int);
   LMatrix& level_new(int);
+
+  void clear(Context ctx, HighLevelRuntime* runtime);
   
 private:
   int mLevel;
@@ -115,6 +117,8 @@ public:
   // leaf solve task
   void solve(LMatrix&, LMatrix&, Context ctx, HighLevelRuntime *runtime);
   
+  void clear(Context ctx, HighLevelRuntime* runtime);
+
 private:
   int mLevel;
   Matrix UMat, VMat;
