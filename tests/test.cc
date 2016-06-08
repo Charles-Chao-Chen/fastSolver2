@@ -62,8 +62,8 @@ void top_level_task(const Task *task,
 	 rank, launchlvl, (int)pow(2,launchlvl));
 	 
   //test_lmatrix_init(ctx, runtime);
+  
   test_solver(rank, treelvl, launchlvl, ctx, runtime);
-
     
   /*
   // ======= Problem configuration =======
@@ -592,6 +592,12 @@ void test_solver(int rank, int treelvl, int launchlvl, Context ctx, HighLevelRun
   
   // init rhs
   uTree.init_rhs(Rhs, ctx, runtime, true/*wait*/);
+ 
+
+  TraceID tSolverID = 321;
+  
+  for (int itr=0; itr<3; itr++) {
+    runtime->begin_trace(ctx, tSolverID);
   
   // leaf solve: U = dense \ U
   kTree.solve( uTree.leaf(), vTree.leaf(), ctx, runtime );  
@@ -630,8 +636,16 @@ void test_solver(int rank, int treelvl, int launchlvl, Context ctx, HighLevelRun
       
     // broadcast operation
     // d -= u * VTd
-    LMatrix::gemmBro('n', 'n', -1.0, u, VTd, 1.0, d, ctx, runtime );
-    std::cout<<"Solved level: "<<i<<std::endl;
+    if (itr==0&&i==1) {
+      LMatrix::gemmBro('n', 'n', -1.0, u, VTd, 1.0, d, ctx, runtime, true /*wait*/ );
+    } else {
+      LMatrix::gemmBro('n', 'n', -1.0, u, VTd, 1.0, d, ctx, runtime );
+    }
+    std::cout<<"Launched level: "<<i<<std::endl;
+  }
+
+    (void)tSolverID; // get rid of warning
+    runtime->end_trace(ctx, tSolverID);  
   }
 
 #if 0
