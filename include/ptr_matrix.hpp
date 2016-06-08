@@ -55,6 +55,9 @@ public:
   static void gemm
   (double, const PtrMatrix&, const PtrMatrix&, PtrMatrix&);
 
+  static void gemm
+  (double, const PtrMatrix&, const PtrMatrix&, double, PtrMatrix&);
+
 private:
 
   // private variables  

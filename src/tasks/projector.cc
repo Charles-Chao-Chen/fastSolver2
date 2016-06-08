@@ -3,7 +3,9 @@
 const ProjectionID CONTRACTION = 1988;
 
 Contraction::Contraction(HighLevelRuntime *runtime)
-  : ProjectionFunctor(runtime) {}
+  : ProjectionFunctor(runtime) {
+  //std::cout<<"Register projection functor with ID: "<<CONTRACTION<<std::endl;
+}
 
 LogicalRegion Contraction::project(Context ctx, Task *task,
 				   unsigned index,

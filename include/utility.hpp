@@ -16,10 +16,13 @@ enum {
 
 const bool WAIT_DEFAULT = false; //true; // waiting for tasks
 
+bool is_power_of_two(int x);
+
 double* region_pointer(const PhysicalRegion &region, int, int, int, int);
 
 PtrMatrix get_raw_pointer
-(const PhysicalRegion &region, int rlo, int rhi, int clo, int chi);
+(const PhysicalRegion &region, int rlo, int rhi, int clo, int chi,
+ bool wait=false);
 
 PtrMatrix reduction_pointer
 (const PhysicalRegion &region, int rlo, int rhi, int clo, int chi);

@@ -30,9 +30,9 @@ void HMatrix::init
   assert( U.cols()  > 0 );
 
   // populate data
-  uTree.init( nProc, U);
-  vTree.init( nProc, V );
-  kTree.init( nProc, U, V, D );
+  uTree.init( U);
+  vTree.init( V );
+  kTree.init( U, V, D );
 
   // data partition
   uTree.partition( level, ctx, runtime );

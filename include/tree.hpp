@@ -9,7 +9,9 @@ class UTree {
 public:
 
   // init data
-  void init(int, const Matrix&);
+  void init(const Matrix&);
+  
+  void init(int, const Matrix&, Context ctx, HighLevelRuntime *runtime);
   
   // initialize problem right hand side
   void init_rhs
@@ -25,6 +27,9 @@ public:
   // create partition
   void partition
   (int level, Context ctx, HighLevelRuntime *runtime);
+  
+  void horizontal_partition
+  (int level, Context ctx, HighLevelRuntime *runtime);
 
   // return the solution
   Matrix solution(Context ctx, HighLevelRuntime *runtime);
@@ -32,12 +37,15 @@ public:
   // return the legion matrix for one level
   LMatrix& uMat_level(int);
   LMatrix& dMat_level(int);
+  LMatrix& uMat_level_new(int);
+  LMatrix& dMat_level_new(int);
 
   // legion matrices at leaf level
   LMatrix& leaf();
+
+  void clear(Context ctx, HighLevelRuntime* runtime);
   
 private:
-  int nProc;
   int mLevel;
   int rank;
   int nRhs;
@@ -59,18 +67,25 @@ class VTree {
 public:
 
   // init data
-  void init(int, const Matrix&);
+  void init(const Matrix&);
+  
+  void init(int, const Matrix&, Context ctx, HighLevelRuntime *runtime);
 
   // create partition
   void partition
   (int level, Context ctx, HighLevelRuntime *runtime);
 
+  void horizontal_partition
+  (int level, Context ctx, HighLevelRuntime *runtime);
+
   // return the legion matrix for one level
   LMatrix& leaf();
   LMatrix& level(int);
+  LMatrix& level_new(int);
+
+  void clear(Context ctx, HighLevelRuntime* runtime);
   
 private:
-  int nProc;
   int mLevel;
   Matrix VMat;
 
@@ -86,18 +101,25 @@ class KTree {
 public:
   
   // init data
-  void init(int, const Matrix& U, const Matrix& V, const Vector& D);
+  void init(const Matrix& U, const Matrix& V, const Vector& D);
+
+  void init(int, const Matrix& U, const Matrix& V, const Vector& D,
+	    Context ctx, HighLevelRuntime *runtime);
 
   // create partition
   void partition
+  (int level, Context ctx, HighLevelRuntime *runtime);
+
+  void horizontal_partition
   (int level, Context ctx, HighLevelRuntime *runtime);
 
   // wrapper for legion matrix solve
   // leaf solve task
   void solve(LMatrix&, LMatrix&, Context ctx, HighLevelRuntime *runtime);
   
+  void clear(Context ctx, HighLevelRuntime* runtime);
+
 private:
-  int nProc;
   int mLevel;
   Matrix UMat, VMat;
   Vector DVec;

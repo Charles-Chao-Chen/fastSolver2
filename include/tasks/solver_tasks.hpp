@@ -10,17 +10,25 @@
 
 #include "leaf_solve.hpp"
 #include "node_solve.hpp"
+#include "node_solve_region.hpp"
+#include "gemm.hpp"
+#include "gemm_inplace.hpp"
 #include "gemm_reduce.hpp"
 #include "gemm_broadcast.hpp"
 #include "projector.hpp"
 #include "reduce_add.hpp"
 
-#include "mapper.hpp"
-#include "dist_mapper.hpp"
+#include "new_mapper.hpp"
+//#include "mapper.hpp"
+//#include "spmd_mapper.hpp"
+//#include "dist_mapper.hpp"
 
 void register_solver_tasks();
 
-void registration_callback(Machine machine, HighLevelRuntime *rt,
-			   const std::set<Processor> &local_procs);
+void create_callback(Machine machine, HighLevelRuntime *rt,
+		     const std::set<Processor> &local_procs);
+
+void create_projector(Machine machine, HighLevelRuntime *rt,
+		      const std::set<Processor> &local_procs);
 
 #endif

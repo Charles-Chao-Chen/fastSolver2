@@ -30,6 +30,16 @@ SolverMapper::SolverMapper
       mem_procs[*it_mem] = valid_procs;
     }    
   }
+
+  /*
+  assert(valid_mems.size()==5);
+  assert(mem_procs.size()==5);
+  mem_procs.erase(valid_mems[3]);
+  valid_mems.erase(valid_mems.begin()+3);
+  assert(valid_mems.size()==4);
+  assert(mem_procs.size()==4);
+*/
+  
   this->num_mems = valid_mems.size();
   assert( ! valid_mems.empty() );
 
@@ -40,14 +50,7 @@ SolverMapper::SolverMapper
     std::cout << "Every machine has "
 	      << mem_procs[ valid_mems[0] ].size()
 	      << " cores." << std::endl;
-#ifdef DEBUG_SOLVER_MAPPER
-    std::cout << "Use the first " << num_mems-1 << " machines for"
-      " running tasks and the last one for top-level task.\n";
-#endif
   }
-#ifdef DEBUG_SOLVER_MAPPER
-  num_mems--;
-#endif
 }
 
 void SolverMapper::select_task_options(Task *task) {
@@ -331,7 +334,7 @@ bool SolverMapper::map_task(Task *task) {
 	    << std::endl;
 #endif
 
-  log_solver_mapper.print("map task %s: %i", task->variants->name, task->index_point.point_data[0]);
+  //log_solver_mapper.print("map task %s: %i", task->variants->name, task->index_point.point_data[0]);
   
   // find the memory associated with the target processor
   Memory sys_mem = machine_interface.find_memory_kind

@@ -15,6 +15,9 @@ class LMatrix {
 public:
   LMatrix();
   LMatrix(int, int, int, Context, HighLevelRuntime*);
+  LMatrix(int, int, LogicalRegion, IndexSpace, FieldSpace);
+  LMatrix(LogicalRegion r, int rows, int cols);
+
   /*
   LMatrix
   (int, int, int, IndexPartition ip, LogicalRegion lr,
@@ -121,12 +124,20 @@ public:
   void node_solve
   (LMatrix&, Context, HighLevelRuntime*, bool wait=WAIT_DEFAULT);
 
+  static void node_solve
+  (LMatrix&, LMatrix&, LMatrix&, LMatrix&,
+   PhaseBarrier pb_wait, PhaseBarrier pb_ready,
+   Context ctx, HighLevelRuntime* runtime, bool wait=WAIT_DEFAULT);
+
   // print the values on screen
   // for debugging
   void display
   (const std::string&, Context, HighLevelRuntime*,
    bool wait=WAIT_DEFAULT);
 
+  // free resources
+  void clear(Context, HighLevelRuntime*);
+  
   // static methods
   // matrix subtraction
   static void add
@@ -137,6 +148,16 @@ public:
   // gemm reduction
   // C = alpha*op(A) * op(B) + beta*C
   static void gemmRed
+  (char, char, double, const LMatrix&, const LMatrix&,
+   double, LMatrix&, Context, HighLevelRuntime*,
+   bool wait=WAIT_DEFAULT);
+
+  static void gemm
+  (char, char, double, const LMatrix&, const LMatrix&,
+   double, LMatrix&, Context, HighLevelRuntime*,
+   bool wait=WAIT_DEFAULT);
+
+  static void gemm_inplace
   (char, char, double, const LMatrix&, const LMatrix&,
    double, LMatrix&, Context, HighLevelRuntime*,
    bool wait=WAIT_DEFAULT);

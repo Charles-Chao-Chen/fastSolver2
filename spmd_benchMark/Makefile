@@ -3,7 +3,7 @@ $(error LG_RT_DIR variable is not defined, aborting build)
 endif
 
 #Flags for directing the runtime makefile what to include
-DEBUG=1                   # Include debugging symbols
+DEBUG=0                   # Include debugging symbols
 OUTPUT_LEVEL=LEVEL_DEBUG  # Compile time print level
 SHARED_LOWLEVEL=0	  # Use the shared low level
 USE_CUDA=0
@@ -25,8 +25,10 @@ GEN_SRC	:= 	solver.cc \
 		../src/tasks/solver_tasks.cc ../src/tasks/display_matrix.cc \
 		../src/tasks/dense_block.cc ../src/tasks/add_matrix.cc \
 		../src/ptr_matrix.cc ../src/utility.cc \
-		../src/tasks/scale_matrix.cc ../src/tasks/mapper.cc \
-		../src/tasks/dist_mapper.cc
+		../src/tasks/scale_matrix.cc \
+		../src/tasks/new_mapper.cc
+#		../src/tasks/mapper.cc \
+		../src/tasks/dist_mapper.cc ../src/tasks/spmd_mapper.cc
 
 GEN_GPU_SRC	:=				# .cu files
 
@@ -34,18 +36,6 @@ GEN_GPU_SRC	:=				# .cu files
 INC_FLAGS	:= -I ../include/ -I ../include/tasks/
 CC_FLAGS	:= \
 		-DLEGION_IDS_ARE_64BIT \
-		-DLEGION_SPY
-#		-DPRIVILEGE_CHECKS \
-		-DBOUNDS_CHECKS \
-
-
-#-g  \
-		-DNODE_LOGGING \
-		-DBOUNDS_CHECKS -DPRIVILEGE_CHECKS \
-#			$(INC_FLAGS)  \
-#			-DDEBUG
-#		   -DSHOW_REGISTER_TASKS \
-
 
 NVCC_FLAGS	:=
 GASNET_FLAGS	:=
@@ -53,6 +43,14 @@ GASNET_FLAGS	:=
 # gnu blas and lapack
 LD_FLAGS 	:= -llapack -lblas
 
+# enable legion spy
+ifeq ($(strip $(DEBUG)),1)
+CC_FLAGS += -DLEGION_SPY \
+	-DPRIVILEGE_CHECKS \
+	-DBOUNDS_CHECKS
+endif
+
+# dynamic linking on daint
 ifeq ($(findstring daint,$(shell uname -n)),daint)
 LD_FLAGS = -dynamic
 endif
@@ -121,62 +119,83 @@ prof1:
 	-bind-to none -report-bindings \
 	-x GASNET_IB_SPAWNER -x GASNET_BACKTRACE=1 \
 	./solver \
-	-tasklvl 3 \
-	-matrixlvl 5 \
+	-machine 1 \
+	-core 8 \
+	-mtxlvl 6 \
 	-ll:cpu 8 \
-	-hl:prof   1 \
-	-hl:sched  128 \
+	-ll:gsize 0 \
+	-hl:prof 1 \
 	-level 4,legion_prof=2 \
-	-logfile 1node_%.log
+	-logfile 1node_%.log 
+
+#	gdb --args ./solver \
 
 spy1:
 	mpirun -H n0003 \
 	-bind-to none -report-bindings \
 	-x GASNET_IB_SPAWNER -x GASNET_BACKTRACE=1 \
+	-x LEGION_FREEZE_ON_ERROR=1 \
 	./solver \
-	-machine 4 \
-	-core 1 \
-	-mtxlvl 3 \
+	-machine 2 \
+	-core 4 \
+	-mtxlvl 4 \
 	-ll:cpu 8 \
 	-level 4,legion_spy=2 \
-	-logfile 1node_%.log
+	-logfile 1node_%.log 
 
-oldspy2:
-	mpirun -H n0000,n0001 \
+#	-x LEGION_FREEZE_ON_ERROR=1 \
+
+spy2:
+	mpirun -H n0002,n0003 \
 	-bind-to none -report-bindings \
 	-x GASNET_IB_SPAWNER -x GASNET_BACKTRACE=1 \
+	-x LEGION_FREEZE_ON_ERROR=1 \
 	./solver \
-	-tasklvl 1 \
-	-matrixlvl 4 \
-	-ll:cpu 1 \
+	-machine 2 \
+	-core 8 \
+	-mtxlvl 4 \
+	-ll:cpu 8 \
 	-level 4,legion_spy=2 \
-	-logfile 2node_%.log
+	-logfile 2node_%.log &
+
+#	-ll:gsize 0 \
 
 prof2:
 	mpirun -H n0000,n0001 \
 	-bind-to none -report-bindings \
 	-x GASNET_IB_SPAWNER -x GASNET_BACKTRACE=1 \
 	./solver \
-	-tasklvl 4 \
-	-matrixlvl 4 \
+	-machine 2 \
+	-core 8 \
+	-mtxlvl 6 \
 	-ll:cpu 8 \
-	-hl:prof   2 \
-	-hl:sched  128 \
+	-hl:prof 2 \
 	-level 4,legion_prof=2 \
 	-logfile 2node_%.log
+
+spy4:
+	mpirun -H n0000,n0001,n0002,n0003 \
+	-bind-to none -report-bindings \
+	-x GASNET_IB_SPAWNER -x GASNET_BACKTRACE=1 \
+	./solver \
+	-machine 4 \
+	-core 8 \
+	-mtxlvl 6 \
+	-ll:cpu 8 \
+	-level 4,legion_spy=2 \
+	-logfile 4node_%.log
+
 
 prof4:
 	mpirun -H n0000,n0001,n0002,n0003 \
 	-bind-to none -report-bindings \
 	-x GASNET_IB_SPAWNER -x GASNET_BACKTRACE=1 \
 	./solver \
-	-tasklvl 5 \
-	-matrixlvl 8 \
-	-niter 3 \
-	-tracing \
+	-machine 4 \
+	-core 8 \
+	-mtxlvl 6 \
 	-ll:cpu 8 \
-	-hl:prof   4 \
-	-hl:sched  8192 \
+	-hl:prof 4 \
 	-level 4,legion_prof=2 \
 	-logfile 4node_%.log
 

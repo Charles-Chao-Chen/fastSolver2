@@ -55,7 +55,7 @@ NVCC_FLAGS	:=
 GASNET_FLAGS	:=
 
 # gnu blas and lapack
-LD_FLAGS	:= -dynamic # for daint
+LD_FLAGS	:= -llapack -lblas #-dynamic # for daint
 
 # mkl linking flags
 #LD_FLAGS := -L/share/apps/intel/intel-14/mkl/lib/intel64/ \
@@ -121,8 +121,8 @@ prof1:
 	-bind-to none -report-bindings \
 	-x GASNET_IB_SPAWNER -x GASNET_BACKTRACE=1 \
 	./test \
-	-launchlvl 2 \
-	-treelvl 7 \
+	-launchlvl 3 \
+	-treelvl 5 \
 	-ll:cpu 8 \
 	-hl:prof   1 \
 	-hl:sched  128 \
@@ -136,7 +136,7 @@ prof2:
 	-x GASNET_IB_SPAWNER -x GASNET_BACKTRACE=1 \
 	./test \
 	-launchlvl 4 \
-	-treelvl 7 \
+	-treelvl 4 \
 	-ll:cpu 8 \
 	-hl:prof   2 \
 	-hl:sched  128 \
@@ -150,7 +150,7 @@ prof4:
 	-x GASNET_IB_SPAWNER -x GASNET_BACKTRACE=1 \
 	./test \
 	-launchlvl 5 \
-	-treelvl 7 \
+	-treelvl 8 \
 	-ll:cpu 8 \
 	-hl:prof   4 \
 	-hl:sched  1024 \

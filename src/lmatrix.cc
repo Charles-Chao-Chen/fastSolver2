@@ -12,6 +12,18 @@ LMatrix::LMatrix
   partition(level, ctx, runtime);
   this->plevel = 1;
 }
+
+LMatrix::LMatrix
+(int rows, int cols, LogicalRegion r, IndexSpace is, FieldSpace fs)
+  : mRows(rows), mCols(cols), ispace(is), fspace(fs), region(r) {}
+
+LMatrix::LMatrix(LogicalRegion r, int rows, int cols) {
+  this->region = r;
+  this->ispace = region.get_index_space();
+  this->mRows  = rows;
+  this->mCols  = cols;
+}
+
 /*
 LMatrix::LMatrix
 (int rows, int cols, int part, IndexPartition ip, LogicalRegion lr,
@@ -149,12 +161,19 @@ void LMatrix::init_data
   req.add_field(FIELDID_V);
   launcher.add_region_requirement(req);
   FutureMap fm = runtime->execute_index_space(ctx, launcher);
-    
+
+  // wait for initialization
+  //fm.wait_all_results();
+  
+  /*
   if(wait) {
     log_solver_tasks.print("Wait for init tree...");
+    std::cout<<"Wait for init tree..."<<std::endl;
     fm.wait_all_results();
     log_solver_tasks.print("Done for init tree...");
+    std::cout<<"Done for init tree..."<<std::endl;
   }
+  */
 }
 
 Matrix LMatrix::to_matrix(Context ctx, HighLevelRuntime *runtime) {
@@ -493,7 +512,7 @@ void LMatrix::two_level_partition
       coloring[j] = Domain::from_rect<2>(subrect);
     }
     IndexSpace is = lr.get_index_space();
-    IndexPartition ip = runtime->create_index_partition(ctx, is, domain, coloring, true);
+    IndexPartition ip = runtime->create_index_partition(ctx, is, domain, coloring, true,0);
     LogicalPartition lp = runtime->get_logical_partition(ctx, lr, ip);
     (void)lp;
   }
@@ -561,6 +580,62 @@ void LMatrix::node_solve
     log_solver_tasks.print("Done for node solve...");
   }
 }
+
+void LMatrix::node_solve
+(LMatrix& VTu0, LMatrix &VTu1, LMatrix& VTd0, LMatrix &VTd1,
+ PhaseBarrier pb_wait, PhaseBarrier pb_ready,
+ Context ctx, HighLevelRuntime* runtime, bool wait) {
+
+  LogicalRegion VTu0_rg = VTu0.logical_region();
+  LogicalRegion VTu1_rg = VTu1.logical_region();
+  LogicalRegion VTd0_rg = VTd0.logical_region();
+  LogicalRegion VTd1_rg = VTd1.logical_region();
+#if 0
+  printf("VTu0 (%x,%x,%x)\n",
+	 VTu0_rg.get_index_space().get_id(), 
+	 VTu0_rg.get_field_space().get_id(),
+	 VTu0_rg.get_tree_id());
+  printf("VTu1 (%x,%x,%x)\n",
+	 VTu1_rg.get_index_space().get_id(), 
+	 VTu1_rg.get_field_space().get_id(),
+	 VTu1_rg.get_tree_id());
+  printf("VTd0 (%x,%x,%x)\n",
+	 VTd0_rg.get_index_space().get_id(), 
+	 VTd0_rg.get_field_space().get_id(),
+	 VTd0_rg.get_tree_id());
+  printf("VTd1 (%x,%x,%x)\n",
+	 VTd1_rg.get_index_space().get_id(), 
+	 VTd1_rg.get_field_space().get_id(),
+	 VTd1_rg.get_tree_id());
+#endif
+  assert(VTu0.rows() == VTu0.cols());
+  assert(VTu1.rows() == VTu1.cols());
+  assert(VTu0.rows() == VTu1.rows());
+  assert(VTd0.rows() == VTd1.rows());
+  assert(VTd0.cols() == VTd1.cols());
+  assert(VTu0.rows() == VTd0.rows());
+  int rank = VTd0.rows();
+  int nRhs = VTd0.cols();
+  NodeSolveRegionTask::TaskArgs args = {rank, nRhs};
+  NodeSolveRegionTask launcher(TaskArgument(&args, sizeof(args)));
+  //RegionRequirement AReq(ARegion, 0, READ_ONLY,  EXCLUSIVE, ARegion);
+  RegionRequirement VTu0_rq(VTu0_rg, READ_ONLY, EXCLUSIVE, VTu0_rg);
+  RegionRequirement VTu1_rq(VTu1_rg, READ_ONLY, EXCLUSIVE, VTu1_rg);
+  RegionRequirement VTd0_rq(VTd0_rg, READ_WRITE, EXCLUSIVE, VTd0_rg);
+  RegionRequirement VTd1_rq(VTd1_rg, READ_WRITE, EXCLUSIVE, VTd1_rg);
+  VTu0_rq.add_field(FIELDID_V);
+  VTu1_rq.add_field(FIELDID_V);
+  VTd0_rq.add_field(FIELDID_V);
+  VTd1_rq.add_field(FIELDID_V);
+  launcher.add_region_requirement(VTu0_rq);
+  launcher.add_region_requirement(VTu1_rq);
+  launcher.add_region_requirement(VTd0_rq);
+  launcher.add_region_requirement(VTd1_rq);
+  launcher.add_wait_barrier(pb_wait);
+  launcher.add_arrival_barrier(pb_ready);
+  runtime->execute_task(ctx, launcher);
+}
+
 /*
 template <typename SolveTask>
 void LMatrix::solve
@@ -686,6 +761,54 @@ void LMatrix::gemmRed // static method
   }  
 }
 
+void LMatrix::gemm // static method
+(char transa, char transb,
+ double alpha, const LMatrix& A, const LMatrix& B,
+ double beta, LMatrix& C,
+ Context ctx, HighLevelRuntime *runtime, bool wait) {
+  // skip scaling C matrix
+  assert( fabs(beta - 0.0) < 1e-10);
+  GemmTask::TaskArgs args = {transa, transb, alpha, beta,
+			     A.rows(), B.rows(), C.rows(),
+			     A.column_begin(), B.column_begin(),
+			     A.cols(), B.cols(), C.cols()};
+  GemmTask launcher(TaskArgument(&args, sizeof(args)));
+  launcher.add_region_requirement
+    (RegionRequirement(A.logical_region(),READ_ONLY,EXCLUSIVE,A.logical_region())
+     .add_field(FIELDID_V));
+  launcher.add_region_requirement
+    (RegionRequirement(B.logical_region(),READ_ONLY,EXCLUSIVE,B.logical_region())
+     .add_field(FIELDID_V));
+  launcher.add_region_requirement
+    (RegionRequirement(C.logical_region(),READ_WRITE,EXCLUSIVE,C.logical_region())
+     .add_field(FIELDID_V));
+  runtime->execute_task(ctx, launcher);
+}
+
+void LMatrix::gemm_inplace // static method
+(char transa, char transb, double alpha,
+ const LMatrix& A, const LMatrix& B,
+ double beta, LMatrix& C,
+ Context ctx, HighLevelRuntime *runtime, bool wait) {
+  // skip scaling C matrix
+  assert( fabs(beta - 1.0) < 1e-10);
+  GemmInplaceTask::TaskArgs args = {transa, transb, alpha, beta,
+				    A.rows(), B.rows(), C.rows(),
+				    A.cols(), B.cols(), C.cols(),
+				    A.column_begin()};
+  GemmInplaceTask launcher(TaskArgument(&args, sizeof(args)));
+  launcher.add_region_requirement
+    (RegionRequirement(A.logical_region(),READ_WRITE,EXCLUSIVE,A.logical_region())
+     .add_field(FIELDID_V));
+  launcher.add_region_requirement
+    (RegionRequirement(B.logical_region(),READ_ONLY,EXCLUSIVE,B.logical_region())
+     .add_field(FIELDID_V));
+  //launcher.add_region_requirement
+  //  (RegionRequirement(C.logical_region(),READ_WRITE,EXCLUSIVE,C.logical_region())
+  //    .add_field(FIELDID_V));
+  runtime->execute_task(ctx, launcher);
+}
+
 // compute A * B = C; broadcast B
 // this is hard coded in that A and C are the same region
 // so is GemmBroTask.
@@ -759,4 +882,10 @@ void LMatrix::display
     std::cout << "Waiting for displaying matrix ..." << std::endl;
     f.get_void_result();
   }
+}
+
+void LMatrix::clear(Context ctx, HighLevelRuntime* runtime) {
+  runtime->destroy_logical_region(ctx, region);
+  runtime->destroy_field_space(ctx, fspace);
+  runtime->destroy_index_space(ctx, ispace);
 }

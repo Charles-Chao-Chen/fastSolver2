@@ -48,10 +48,9 @@ void launch_solver_tasks
   // ========================================================
 
   // init tree
-  int   nProc = pow(2,launchlvl);
-  UTree uTree; uTree.init( nProc, UMat );
-  VTree vTree; vTree.init( nProc, VMat );
-  KTree kTree; kTree.init( nProc, UMat, VMat, DVec );
+  UTree uTree; uTree.init( UMat );
+  VTree vTree; vTree.init( VMat );
+  KTree kTree; kTree.init( UMat, VMat, DVec );
 
   // data partition
   uTree.partition( launchlvl, ctx, runtime );
@@ -177,4 +176,3 @@ int main(int argc, char *argv[]) {
   // start legion master task
   return HighLevelRuntime::start(argc, argv);
 }
-
