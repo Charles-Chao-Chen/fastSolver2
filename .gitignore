@@ -1,6 +1,9 @@
 # emacs temporary files
 *~
 
+# error files
+*.err
+
 # logging files
 *.log
 
