@@ -1,0 +1,27 @@
+#!/bin/bash -l
+#SBATCH --cpus-per-task=8
+#SBATCH --ntasks-per-core=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --output=solver.out
+#SBATCH --error=solver.err
+
+export GASNET_IB_SPAWNER=mpi
+export GASNET_BACKTRACE=1
+
+time aprun -n ${1} -N 1 -d 8 -cc none \
+	./solver                \
+	-tasklvl   ${2}         \
+	-matrixlvl ${3}         \
+	-rank      ${4}         \
+	-niter     ${5}		\
+	-tracing   ${6}		\
+	-ll:lmbsize 512         \
+	-ll:util   1		\
+	-ll:dma    1		\
+	-ll:cpu    4            \
+	-ll:csize  10000        \
+	-hl:prof   ${1}         \
+	-hl:sched  1024		\
+	-level 4,legion_prof=2  \
+	-logfile ${1}node_%.log
+
