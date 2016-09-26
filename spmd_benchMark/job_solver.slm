@@ -9,6 +9,8 @@
 #SBATCH --ntasks-per-core=1
 #SBATCH --ntasks-per-node=1
 
+#SBATCH --mem=32000
+
 export GASNET_IB_SPAWNER=mpi
 export GASNET_BACKTRACE=1
 
@@ -18,6 +20,8 @@ time srun -n ${1} -c 8 --cpu_bind=none \
 	-core      ${2}		\
 	-mtxlvl    ${3} 	\
 	-ll:cpu	   ${2}		\
+	-ll:csize  25000        \
+	-hl:sched  1024		\
 	-hl:prof   ${1}		\
 	-level 4,legion_prof=2	\
 	-logfile   ${1}node_%.log
