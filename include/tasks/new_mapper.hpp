@@ -15,9 +15,11 @@ public:
 	       std::map<Processor, Memory>* proc_sysmems,
 	       std::map<Processor, Memory>* proc_regmems);
 
+#if 1
   virtual void map_must_epoch(const MapperContext           ctx,
 			      const MapMustEpochInput&      input,
 			      MapMustEpochOutput&     output);
+#endif
 
 public:
   virtual bool default_policy_select_close_virtual(const MapperContext,

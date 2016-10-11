@@ -19,6 +19,7 @@ SolverMapper::SolverMapper(Machine machine, Runtime *rt, Processor local,
 {}
 
 
+#if 1
 void SolverMapper::map_must_epoch(const MapperContext           ctx,
 				  const MapMustEpochInput&      input,
 				  MapMustEpochOutput&     output)
@@ -143,6 +144,7 @@ void SolverMapper::map_must_epoch(const MapperContext           ctx,
         }
     }
 }
+#endif
 
 // suggested by Elliott because of potential runtime bugs
 bool SolverMapper::default_policy_select_close_virtual(const MapperContext,

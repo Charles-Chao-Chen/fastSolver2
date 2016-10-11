@@ -37,3 +37,7 @@ LogicalRegion Contraction::project(Context ctx, Task *task,
   }
   assert(false);
 }
+
+unsigned Contraction::get_depth() const {
+  return 1;
+}

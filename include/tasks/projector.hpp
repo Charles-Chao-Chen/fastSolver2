@@ -20,6 +20,8 @@ public:
                                 unsigned index,
                                 LogicalPartition upper_bound,
                                 const DomainPoint &point);
+
+  unsigned get_depth() const;
 };
 
 #endif
