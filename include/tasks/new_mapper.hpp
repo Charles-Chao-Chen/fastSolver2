@@ -15,18 +15,19 @@ public:
 	       std::map<Processor, Memory>* proc_sysmems,
 	       std::map<Processor, Memory>* proc_regmems);
 
-#if 1
-  virtual void map_must_epoch(const MapperContext           ctx,
-			      const MapMustEpochInput&      input,
-			      MapMustEpochOutput&     output);
-#endif
-
-public:
-  virtual bool default_policy_select_close_virtual(const MapperContext,
-						   const Close &);
-  virtual Processor default_policy_select_initial_processor(
-                                    MapperContext ctx, const Task &task);
-
+  void slice_task(const MapperContext      ctx,
+		  const Task&              task, 
+		  const SliceTaskInput&    input,
+		  SliceTaskOutput&   output);
+  
+  void default_slice_task(const Task &task,
+			  const std::vector<Processor> &local,
+			  const std::vector<Processor> &remote,
+			  const SliceTaskInput& input,
+			  SliceTaskOutput &output,
+			  std::map<Domain,std::vector<TaskSlice> >
+			  &cached_slices) const;
+	
 private:
   std::vector<Processor> procs_list;
   std::vector<Memory> sysmems_list;
