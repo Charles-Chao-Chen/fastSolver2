@@ -221,8 +221,6 @@ void top_level_task(const Task *task,
 		    const std::vector<PhysicalRegion> &regions,
 		    Context ctx, HighLevelRuntime *runtime) {
  
-  std::cout<<"Inside top level task." <<std::endl;
-
   // machine configuration
   int num_machines = 1;
   int num_cores_per_machine = 1;

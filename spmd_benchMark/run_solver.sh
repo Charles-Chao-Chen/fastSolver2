@@ -1,6 +1,6 @@
 #!/bin/bash
 
-Nn=1
+Nn=2
 Ofile=$Nn"node_%.log"
 
 #	-x GASNET_IB_SPAWNER=mpi  \
