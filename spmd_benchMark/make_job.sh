@@ -1,8 +1,8 @@
 #!/bin/sh
 
-NumNodes=512
+NumNodes=16
 NumCore=4
-Mtxlvl=17
+Mtxlvl=12
 #Time=00:05:00
 
 export NumProcs
