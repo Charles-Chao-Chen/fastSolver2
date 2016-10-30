@@ -41,12 +41,13 @@ cd $PBS_O_WORKDIR
 #	-level inst=2,metadata=2 \
 
 # Certainty has 36GB memory every node
-time mpirun -np $Nn -bind-to none -report-bindings \
+time mpirun -np $Nn -pernode \
+	-bind-to none -report-bindings \
 	-x GASNET_BACKTRACE=1 \
 	./solver \
 	-machine $Nn \
 	-core 8 \
-	-mtxlvl 10 \
+	-mtxlvl 12 \
 	-ll:cpu 8 \
 	-ll:csize  30000 \
 	-hl:sched  1024	\
