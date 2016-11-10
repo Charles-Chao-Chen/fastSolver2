@@ -43,7 +43,8 @@ NVCC_FLAGS	:=
 GASNET_FLAGS	:=
 
 # gnu blas and lapack
-LD_FLAGS 	:= -llapack -lblas
+LD_FLAGS 	:= ../netlib_blas/dgemm.o ../netlib_blas/dgesv.o ../netlib_blas/dgetrf.o ../netlib_blas/dgetrf2.o ../netlib_blas/dgetrs.o ../netlib_blas/dlamch.o ../netlib_blas/dlaswp.o ../netlib_blas/dscal.o ../netlib_blas/dtrsm.o ../netlib_blas/idamax.o ../netlib_blas/ieeeck.o ../netlib_blas/ilaenv.o ../netlib_blas/iparmq.o ../netlib_blas/lsame.o ../netlib_blas/xerbla.o
+# -llapack -lblas
 
 # enable legion spy
 ifeq ($(strip $(DEBUG)),1)

@@ -105,7 +105,7 @@ void PtrMatrix::solve(PtrMatrix& B) {
   int LDB = B.LD();
   int IPIV[N];
   int INFO;
-  lapack::dgesv_(&N, &NRHS, ptr, &LDA, IPIV,
+  lapack::dgesv7_(&N, &NRHS, ptr, &LDA, IPIV,
 		 B.pointer(), &LDB, &INFO);
   assert(INFO==0);
   /*
@@ -152,7 +152,7 @@ void PtrMatrix::gemm
   int  LDC = res.LD();
   double alpha = 1.0, beta = 0.0;
   //double alpha = 0.0, beta = 0.0;
-  blas::dgemm_(&transa, &transb, &M, &N, &K,
+  blas::dgemm7_(&transa, &transb, &M, &N, &K,
 	       &alpha, U.pointer(), &LDA,
 	       V.pointer(), &LDB,
 	       &beta, res.pointer(), &LDC);
@@ -178,7 +178,7 @@ void PtrMatrix::gemm
   int  LDB = V.LD();
   int  LDC = W.LD();
   double beta = 1.0;
-  blas::dgemm_(&transa, &transb, &M, &N, &K,
+  blas::dgemm7_(&transa, &transb, &M, &N, &K,
 	       &alpha, U.pointer(), &LDA,
 	       V.pointer(), &LDB,
 	       &beta, W.pointer(), &LDC);
@@ -198,7 +198,7 @@ void PtrMatrix::gemm
   int  LDA = U.LD();
   int  LDB = V.LD();
   int  LDC = W.LD();
-  blas::dgemm_(&transa, &transb, &M, &N, &K,
+  blas::dgemm7_(&transa, &transb, &M, &N, &K,
 	       &alpha, U.pointer(), &LDA,
 	       V.pointer(), &LDB,
 	       &beta, W.pointer(), &LDC);
