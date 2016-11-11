@@ -89,7 +89,7 @@ void hsolve
     double *B    = U;
     int     INFO;
     int     IPIV[N];
-    lapack::dgesv7_(&N, &NRHS, A, &LDA, IPIV, B, &LDB, &INFO);
+    lapack::dgesv_(&N, &NRHS, A, &LDA, IPIV, B, &LDB, &INFO);
     assert(INFO == 0);
     return;
   }
@@ -132,15 +132,15 @@ void hsolve
   double *V0Td0 = RHS + S_size/2;
   double *V1Td1 = RHS;
   
-  blas::dgemm7_(&transa, &transb, &V0_cols, &u0_cols, &V0_rows, &alpha, V0, &LD, u0, &LD, &beta, V0Tu0, &S_size);
-  blas::dgemm7_(&transa, &transb, &V1_cols, &u1_cols, &V1_rows, &alpha, V1, &LD, u1, &LD, &beta, V1Tu1, &S_size);
-  blas::dgemm7_(&transa, &transb, &V0_cols, &d0_cols, &V0_rows, &alpha, V0, &LD, d0, &LD, &beta, V0Td0, &S_size);
-  blas::dgemm7_(&transa, &transb, &V1_cols, &d1_cols, &V1_rows, &alpha, V1, &LD, d1, &LD, &beta, V1Td1, &S_size);
+  blas::dgemm_(&transa, &transb, &V0_cols, &u0_cols, &V0_rows, &alpha, V0, &LD, u0, &LD, &beta, V0Tu0, &S_size);
+  blas::dgemm_(&transa, &transb, &V1_cols, &u1_cols, &V1_rows, &alpha, V1, &LD, u1, &LD, &beta, V1Tu1, &S_size);
+  blas::dgemm_(&transa, &transb, &V0_cols, &d0_cols, &V0_rows, &alpha, V0, &LD, d0, &LD, &beta, V0Td0, &S_size);
+  blas::dgemm_(&transa, &transb, &V1_cols, &d1_cols, &V1_rows, &alpha, V1, &LD, d1, &LD, &beta, V1Td1, &S_size);
 
   int INFO;
   int IPIV[S_size];
   assert(d0_cols == d1_cols);
-  lapack::dgesv7_(&S_size, &d0_cols, S, &S_size, IPIV, RHS, &S_size, &INFO);
+  lapack::dgesv_(&S_size, &d0_cols, S, &S_size, IPIV, RHS, &S_size, &INFO);
   assert(INFO == 0);
 
   transa =  'n';
@@ -152,7 +152,7 @@ void hsolve
   double *eta0 = V1Td1;
   double *eta1 = V0Td0;
   
-  blas::dgemm7_(&transa, &transb, &u0_rows, &eta0_cols, &u0_cols, &alpha, u0, &LD, eta0, &S_size, &beta, d0, &LD);
-  blas::dgemm7_(&transa, &transb, &u1_rows, &eta1_cols, &u1_cols, &alpha, u1, &LD, eta1, &S_size, &beta, d1, &LD);
+  blas::dgemm_(&transa, &transb, &u0_rows, &eta0_cols, &u0_cols, &alpha, u0, &LD, eta0, &S_size, &beta, d0, &LD);
+  blas::dgemm_(&transa, &transb, &u1_rows, &eta1_cols, &u1_cols, &alpha, u1, &LD, eta1, &S_size, &beta, d1, &LD);
 }
 
