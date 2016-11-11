@@ -340,7 +340,7 @@ void Matrix::solve(Matrix &B) {
   int LDB = B.rows();
   int IPIV[N];
   int INFO;
-  lapack::dgesv_(&N, &NRHS, this->pointer(), &LDA, IPIV,
+  lapack::dgesv7_(&N, &NRHS, this->pointer(), &LDA, IPIV,
 		 B.pointer(), &LDB, &INFO);
   assert(INFO==0);  
 }
