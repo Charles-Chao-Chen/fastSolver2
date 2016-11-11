@@ -8,7 +8,7 @@
 *  Definition:
 *  ===========
 *
-*       SUBROUTINE DTRSM7(SIDE,UPLO,TRANSA,DIAG,M,N,ALPHA,A,LDA,B,LDB)
+*       SUBROUTINE DTRSM(SIDE,UPLO,TRANSA,DIAG,M,N,ALPHA,A,LDA,B,LDB)
 * 
 *       .. Scalar Arguments ..
 *       DOUBLE PRECISION ALPHA
@@ -179,7 +179,7 @@
 *> \endverbatim
 *>
 *  =====================================================================
-      SUBROUTINE DTRSM7(SIDE,UPLO,TRANSA,DIAG,M,N,ALPHA,A,LDA,B,LDB)
+      SUBROUTINE DTRSM(SIDE,UPLO,TRANSA,DIAG,M,N,ALPHA,A,LDA,B,LDB)
 *
 *  -- Reference BLAS level3 routine (version 3.4.0) --
 *  -- Reference BLAS is a software package provided by Univ. of Tennessee,    --
@@ -198,11 +198,11 @@
 *  =====================================================================
 *
 *     .. External Functions ..
-      LOGICAL LSAME7
-      EXTERNAL LSAME7
+      LOGICAL LSAME
+      EXTERNAL LSAME
 *     ..
 *     .. External Subroutines ..
-      EXTERNAL XERBLA7
+      EXTERNAL XERBLA
 *     ..
 *     .. Intrinsic Functions ..
       INTRINSIC MAX
@@ -219,26 +219,25 @@
 *
 *     Test the input parameters.
 *
-      LSIDE = LSAME7(SIDE,'L')
+      LSIDE = LSAME(SIDE,'L')
       IF (LSIDE) THEN
           NROWA = M
       ELSE
           NROWA = N
       END IF
-      NOUNIT = LSAME7(DIAG,'N')
-      UPPER = LSAME7(UPLO,'U')
+      NOUNIT = LSAME(DIAG,'N')
+      UPPER = LSAME(UPLO,'U')
 *
       INFO = 0
-      IF ((.NOT.LSIDE) .AND. (.NOT.LSAME7(SIDE,'R'))) THEN
+      IF ((.NOT.LSIDE) .AND. (.NOT.LSAME(SIDE,'R'))) THEN
           INFO = 1
-      ELSE IF ((.NOT.UPPER) .AND. (.NOT.LSAME7(UPLO,'L'))) THEN
+      ELSE IF ((.NOT.UPPER) .AND. (.NOT.LSAME(UPLO,'L'))) THEN
           INFO = 2
-      ELSE IF ((.NOT.LSAME7(TRANSA,'N')) .AND.
-     +         (.NOT.LSAME7(TRANSA,'T')) .AND.
-     +         (.NOT.LSAME7(TRANSA,'C'))) THEN
+      ELSE IF ((.NOT.LSAME(TRANSA,'N')) .AND.
+     +         (.NOT.LSAME(TRANSA,'T')) .AND.
+     +         (.NOT.LSAME(TRANSA,'C'))) THEN
           INFO = 3
-      ELSE IF ((.NOT.LSAME7(DIAG,'U')) .AND.
-     +         (.NOT.LSAME7(DIAG,'N'))) THEN
+      ELSE IF ((.NOT.LSAME(DIAG,'U')) .AND. (.NOT.LSAME(DIAG,'N'))) THEN
           INFO = 4
       ELSE IF (M.LT.0) THEN
           INFO = 5
@@ -250,7 +249,7 @@
           INFO = 11
       END IF
       IF (INFO.NE.0) THEN
-          CALL XERBLA7('DTRSM ',INFO)
+          CALL XERBLA('DTRSM ',INFO)
           RETURN
       END IF
 *
@@ -272,7 +271,7 @@
 *     Start the operations.
 *
       IF (LSIDE) THEN
-          IF (LSAME7(TRANSA,'N')) THEN
+          IF (LSAME(TRANSA,'N')) THEN
 *
 *           Form  B := alpha*inv( A )*B.
 *
@@ -338,7 +337,7 @@
               END IF
           END IF
       ELSE
-          IF (LSAME7(TRANSA,'N')) THEN
+          IF (LSAME(TRANSA,'N')) THEN
 *
 *           Form  B := alpha*B*inv( A ).
 *

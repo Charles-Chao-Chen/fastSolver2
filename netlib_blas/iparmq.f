@@ -18,7 +18,7 @@
 *  Definition:
 *  ===========
 *
-*       INTEGER FUNCTION IPARMQ7( ISPEC, NAME, OPTS, N, ILO, IHI, LWORK )
+*       INTEGER FUNCTION IPARMQ( ISPEC, NAME, OPTS, N, ILO, IHI, LWORK )
 * 
 *       .. Scalar Arguments ..
 *       INTEGER            IHI, ILO, ISPEC, LWORK, N
@@ -220,7 +220,7 @@
 *> \endverbatim
 *>
 *  =====================================================================
-      INTEGER FUNCTION IPARMQ7( ISPEC, NAME, OPTS, N, ILO, IHI, LWORK )
+      INTEGER FUNCTION IPARMQ( ISPEC, NAME, OPTS, N, ILO, IHI, LWORK )
 *
 *  -- LAPACK auxiliary routine (version 3.6.0) --
 *  -- LAPACK is a software package provided by Univ. of Tennessee,    --
@@ -280,7 +280,7 @@
 *        .     to xLAHQR, the classic double shift algorithm.
 *        .     This must be at least 11. ====
 *
-         IPARMQ7 = NMIN
+         IPARMQ = NMIN
 *
       ELSE IF( ISPEC.EQ.INIBL ) THEN
 *
@@ -288,22 +288,22 @@
 *        .    whenever aggressive early deflation finds
 *        .    at least (NIBBLE*(window size)/100) deflations. ====
 *
-         IPARMQ7 = NIBBLE
+         IPARMQ = NIBBLE
 *
       ELSE IF( ISPEC.EQ.ISHFTS ) THEN
 *
 *        ==== NSHFTS: The number of simultaneous shifts =====
 *
-         IPARMQ7 = NS
+         IPARMQ = NS
 *
       ELSE IF( ISPEC.EQ.INWIN ) THEN
 *
 *        ==== NW: deflation window size.  ====
 *
          IF( NH.LE.KNWSWP ) THEN
-            IPARMQ7 = NS
+            IPARMQ = NS
          ELSE
-            IPARMQ7 = 3*NS / 2
+            IPARMQ = 3*NS / 2
          END IF
 *
       ELSE IF( ISPEC.EQ.IACC22 ) THEN
@@ -318,7 +318,7 @@
 *
 *        Convert NAME to upper case if the first character is lower case.
 *
-         IPARMQ7 = 0
+         IPARMQ = 0
          SUBNAM = NAME
          IC = ICHAR( SUBNAM( 1: 1 ) )
          IZ = ICHAR( 'Z' )
@@ -368,28 +368,28 @@
 *
          IF( SUBNAM( 2:6 ).EQ.'GGHRD' .OR.
      $       SUBNAM( 2:6 ).EQ.'GGHD3' ) THEN
-            IPARMQ7 = 1
+            IPARMQ = 1
             IF( NH.GE.K22MIN )
-     $         IPARMQ7 = 2
+     $         IPARMQ = 2
          ELSE IF ( SUBNAM( 4:6 ).EQ.'EXC' ) THEN
             IF( NH.GE.KACMIN )
-     $         IPARMQ7 = 1
+     $         IPARMQ = 1
             IF( NH.GE.K22MIN )
-     $         IPARMQ7 = 2
+     $         IPARMQ = 2
          ELSE IF ( SUBNAM( 2:6 ).EQ.'HSEQR' .OR.
      $             SUBNAM( 2:5 ).EQ.'LAQR' ) THEN
             IF( NS.GE.KACMIN )
-     $         IPARMQ7 = 1
+     $         IPARMQ = 1
             IF( NS.GE.K22MIN )
-     $         IPARMQ7 = 2
+     $         IPARMQ = 2
          END IF
 *
       ELSE
 *        ===== invalid value of ispec =====
-         IPARMQ7 = -1
+         IPARMQ = -1
 *
       END IF
 *
-*     ==== End of IPARMQ7 ====
+*     ==== End of IPARMQ ====
 *
       END

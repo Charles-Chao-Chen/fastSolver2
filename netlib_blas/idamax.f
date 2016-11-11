@@ -8,7 +8,7 @@
 *  Definition:
 *  ===========
 *
-*       INTEGER FUNCTION IDAMAX7(N,DX,INCX)
+*       INTEGER FUNCTION IDAMAX(N,DX,INCX)
 * 
 *       .. Scalar Arguments ..
 *       INTEGER INCX,N
@@ -49,7 +49,7 @@
 *> \endverbatim
 *>
 *  =====================================================================
-      INTEGER FUNCTION IDAMAX7(N,DX,INCX)
+      INTEGER FUNCTION IDAMAX(N,DX,INCX)
 *
 *  -- Reference BLAS level1 routine (version 3.6.0) --
 *  -- Reference BLAS is a software package provided by Univ. of Tennessee,    --
@@ -72,9 +72,9 @@
 *     .. Intrinsic Functions ..
       INTRINSIC DABS
 *     ..
-      IDAMAX7 = 0
+      IDAMAX = 0
       IF (N.LT.1 .OR. INCX.LE.0) RETURN
-      IDAMAX7 = 1
+      IDAMAX = 1
       IF (N.EQ.1) RETURN
       IF (INCX.EQ.1) THEN
 *
@@ -83,7 +83,7 @@
          DMAX = DABS(DX(1))
          DO I = 2,N
             IF (DABS(DX(I)).GT.DMAX) THEN
-               IDAMAX7 = I
+               IDAMAX = I
                DMAX = DABS(DX(I))
             END IF
          END DO
@@ -96,7 +96,7 @@
          IX = IX + INCX
          DO I = 2,N
             IF (DABS(DX(IX)).GT.DMAX) THEN
-               IDAMAX7 = I
+               IDAMAX = I
                DMAX = DABS(DX(IX))
             END IF
             IX = IX + INCX

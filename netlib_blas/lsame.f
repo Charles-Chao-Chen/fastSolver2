@@ -8,7 +8,7 @@
 *  Definition:
 *  ===========
 *
-*       LOGICAL FUNCTION LSAME7(CA,CB)
+*       LOGICAL FUNCTION LSAME(CA,CB)
 * 
 *       .. Scalar Arguments ..
 *       CHARACTER CA,CB
@@ -51,7 +51,7 @@
 *> \ingroup aux_blas
 *
 *  =====================================================================
-      LOGICAL FUNCTION LSAME7(CA,CB)
+      LOGICAL FUNCTION LSAME(CA,CB)
 *
 *  -- Reference BLAS level1 routine (version 3.1) --
 *  -- Reference BLAS is a software package provided by Univ. of Tennessee,    --
@@ -73,8 +73,8 @@
 *
 *     Test if the characters are equal
 *
-      LSAME7 = CA .EQ. CB
-      IF (LSAME7) RETURN
+      LSAME = CA .EQ. CB
+      IF (LSAME) RETURN
 *
 *     Now test for equivalence if both characters are alphabetic.
 *
@@ -116,10 +116,10 @@
           IF (INTA.GE.225 .AND. INTA.LE.250) INTA = INTA - 32
           IF (INTB.GE.225 .AND. INTB.LE.250) INTB = INTB - 32
       END IF
-      LSAME7 = INTA .EQ. INTB
+      LSAME = INTA .EQ. INTB
 *
 *     RETURN
 *
-*     End of LSAME7
+*     End of LSAME
 *
       END

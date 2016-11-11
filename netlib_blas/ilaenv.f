@@ -18,7 +18,7 @@
 *  Definition:
 *  ===========
 *
-*       INTEGER FUNCTION ILAENV7( ISPEC, NAME, OPTS, N1, N2, N3, N4 )
+*       INTEGER FUNCTION ILAENV( ISPEC, NAME, OPTS, N1, N2, N3, N4 )
 * 
 *       .. Scalar Arguments ..
 *       CHARACTER*( * )    NAME, OPTS
@@ -160,7 +160,7 @@
 *> \endverbatim
 *>
 *  =====================================================================
-      INTEGER FUNCTION ILAENV7( ISPEC, NAME, OPTS, N1, N2, N3, N4 )
+      INTEGER FUNCTION ILAENV( ISPEC, NAME, OPTS, N1, N2, N3, N4 )
 *
 *  -- LAPACK auxiliary routine (version 3.6.1) --
 *  -- LAPACK is a software package provided by Univ. of Tennessee,    --
@@ -183,8 +183,8 @@
       INTRINSIC          CHAR, ICHAR, INT, MIN, REAL
 *     ..
 *     .. External Functions ..
-      INTEGER            IEEECK7, IPARMQ7
-      EXTERNAL           IEEECK7, IPARMQ7
+      INTEGER            IEEECK, IPARMQ
+      EXTERNAL           IEEECK, IPARMQ
 *     ..
 *     .. Executable Statements ..
 *
@@ -193,14 +193,14 @@
 *
 *     Invalid value for ISPEC
 *
-      ILAENV7 = -1
+      ILAENV = -1
       RETURN
 *
    10 CONTINUE
 *
 *     Convert NAME to upper case if the first character is lower case.
 *
-      ILAENV7 = 1
+      ILAENV = 1
       SUBNAM = NAME
       IC = ICHAR( SUBNAM( 1: 1 ) )
       IZ = ICHAR( 'Z' )
@@ -426,7 +426,7 @@
             END IF
          END IF
       END IF
-      ILAENV7 = NB
+      ILAENV = NB
       RETURN
 *
    60 CONTINUE
@@ -509,7 +509,7 @@
             NBMIN = 2
          END IF
       END IF
-      ILAENV7 = NBMIN
+      ILAENV = NBMIN
       RETURN
 *
    70 CONTINUE
@@ -568,42 +568,42 @@
             NX = 128
          END IF
       END IF
-      ILAENV7 = NX
+      ILAENV = NX
       RETURN
 *
    80 CONTINUE
 *
 *     ISPEC = 4:  number of shifts (used by xHSEQR)
 *
-      ILAENV7 = 6
+      ILAENV = 6
       RETURN
 *
    90 CONTINUE
 *
 *     ISPEC = 5:  minimum column dimension (not used)
 *
-      ILAENV7 = 2
+      ILAENV = 2
       RETURN
 *
   100 CONTINUE
 *
 *     ISPEC = 6:  crossover point for SVD (used by xGELSS and xGESVD)
 *
-      ILAENV7 = INT( REAL( MIN( N1, N2 ) )*1.6E0 )
+      ILAENV = INT( REAL( MIN( N1, N2 ) )*1.6E0 )
       RETURN
 *
   110 CONTINUE
 *
 *     ISPEC = 7:  number of processors (not used)
 *
-      ILAENV7 = 1
+      ILAENV = 1
       RETURN
 *
   120 CONTINUE
 *
 *     ISPEC = 8:  crossover point for multishift (used by xHSEQR)
 *
-      ILAENV7 = 50
+      ILAENV = 50
       RETURN
 *
   130 CONTINUE
@@ -612,17 +612,17 @@
 *                 computation tree in the divide-and-conquer algorithm
 *                 (used by xGELSD and xGESDD)
 *
-      ILAENV7 = 25
+      ILAENV = 25
       RETURN
 *
   140 CONTINUE
 *
 *     ISPEC = 10: ieee NaN arithmetic can be trusted not to trap
 *
-*     ILAENV7 = 0
-      ILAENV7 = 1
-      IF( ILAENV7.EQ.1 ) THEN
-         ILAENV7 = IEEECK7( 1, 0.0, 1.0 )
+*     ILAENV = 0
+      ILAENV = 1
+      IF( ILAENV.EQ.1 ) THEN
+         ILAENV = IEEECK( 1, 0.0, 1.0 )
       END IF
       RETURN
 *
@@ -630,10 +630,10 @@
 *
 *     ISPEC = 11: infinity arithmetic can be trusted not to trap
 *
-*     ILAENV7 = 0
-      ILAENV7 = 1
-      IF( ILAENV7.EQ.1 ) THEN
-         ILAENV7 = IEEECK7( 0, 0.0, 1.0 )
+*     ILAENV = 0
+      ILAENV = 1
+      IF( ILAENV.EQ.1 ) THEN
+         ILAENV = IEEECK( 0, 0.0, 1.0 )
       END IF
       RETURN
 *
@@ -641,9 +641,9 @@
 *
 *     12 <= ISPEC <= 16: xHSEQR or related subroutines.
 *
-      ILAENV7 = IPARMQ7( ISPEC, NAME, OPTS, N1, N2, N3, N4 )
+      ILAENV = IPARMQ( ISPEC, NAME, OPTS, N1, N2, N3, N4 )
       RETURN
 *
-*     End of ILAENV7
+*     End of ILAENV
 *
       END

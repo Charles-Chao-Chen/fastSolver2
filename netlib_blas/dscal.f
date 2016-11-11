@@ -8,7 +8,7 @@
 *  Definition:
 *  ===========
 *
-*       SUBROUTINE DSCAL7(N,DA,DX,INCX)
+*       SUBROUTINE DSCAL(N,DA,DX,INCX)
 * 
 *       .. Scalar Arguments ..
 *       DOUBLE PRECISION DA
@@ -51,7 +51,7 @@
 *> \endverbatim
 *>
 *  =====================================================================
-      SUBROUTINE DSCAL7(N,DA,DX,INCX)
+      SUBROUTINE DSCAL(N,DA,DX,INCX)
 *
 *  -- Reference BLAS level1 routine (version 3.4.0) --
 *  -- Reference BLAS is a software package provided by Univ. of Tennessee,    --

@@ -8,7 +8,7 @@
 *  Definition:
 *  ===========
 *
-*      DOUBLE PRECISION FUNCTION DLAMCH7( CMACH )
+*      DOUBLE PRECISION FUNCTION DLAMCH( CMACH )
 *  
 *
 *> \par Purpose:
@@ -61,7 +61,7 @@
 *> \ingroup auxOTHERauxiliary
 *
 *  =====================================================================
-      DOUBLE PRECISION FUNCTION DLAMCH7( CMACH )
+      DOUBLE PRECISION FUNCTION DLAMCH( CMACH )
 *
 *  -- LAPACK auxiliary routine (version 3.6.0) --
 *  -- LAPACK is a software package provided by Univ. of Tennessee,    --
@@ -82,8 +82,8 @@
       DOUBLE PRECISION   RND, EPS, SFMIN, SMALL, RMACH
 *     ..
 *     .. External Functions ..
-      LOGICAL            LSAME7
-      EXTERNAL           LSAME7
+      LOGICAL            LSAME
+      EXTERNAL           LSAME
 *     ..
 *     .. Intrinsic Functions ..
       INTRINSIC          DIGITS, EPSILON, HUGE, MAXEXPONENT,
@@ -102,9 +102,9 @@
          EPS = EPSILON(ZERO)
       END IF
 *
-      IF( LSAME7( CMACH, 'E' ) ) THEN
+      IF( LSAME( CMACH, 'E' ) ) THEN
          RMACH = EPS
-      ELSE IF( LSAME7( CMACH, 'S' ) ) THEN
+      ELSE IF( LSAME( CMACH, 'S' ) ) THEN
          SFMIN = TINY(ZERO)
          SMALL = ONE / HUGE(ZERO)
          IF( SMALL.GE.SFMIN ) THEN
@@ -115,30 +115,30 @@
             SFMIN = SMALL*( ONE+EPS )
          END IF
          RMACH = SFMIN
-      ELSE IF( LSAME7( CMACH, 'B' ) ) THEN
+      ELSE IF( LSAME( CMACH, 'B' ) ) THEN
          RMACH = RADIX(ZERO)
-      ELSE IF( LSAME7( CMACH, 'P' ) ) THEN
+      ELSE IF( LSAME( CMACH, 'P' ) ) THEN
          RMACH = EPS * RADIX(ZERO)
-      ELSE IF( LSAME7( CMACH, 'N' ) ) THEN
+      ELSE IF( LSAME( CMACH, 'N' ) ) THEN
          RMACH = DIGITS(ZERO)
-      ELSE IF( LSAME7( CMACH, 'R' ) ) THEN
+      ELSE IF( LSAME( CMACH, 'R' ) ) THEN
          RMACH = RND
-      ELSE IF( LSAME7( CMACH, 'M' ) ) THEN
+      ELSE IF( LSAME( CMACH, 'M' ) ) THEN
          RMACH = MINEXPONENT(ZERO)
-      ELSE IF( LSAME7( CMACH, 'U' ) ) THEN
+      ELSE IF( LSAME( CMACH, 'U' ) ) THEN
          RMACH = tiny(zero)
-      ELSE IF( LSAME7( CMACH, 'L' ) ) THEN
+      ELSE IF( LSAME( CMACH, 'L' ) ) THEN
          RMACH = MAXEXPONENT(ZERO)
-      ELSE IF( LSAME7( CMACH, 'O' ) ) THEN
+      ELSE IF( LSAME( CMACH, 'O' ) ) THEN
          RMACH = HUGE(ZERO)
       ELSE
          RMACH = ZERO
       END IF
 *
-      DLAMCH7 = RMACH
+      DLAMCH = RMACH
       RETURN
 *
-*     End of DLAMCH7
+*     End of DLAMCH
 *
       END
 ************************************************************************
@@ -165,25 +165,25 @@
 *>          The values A and B.
 *> \endverbatim
 *>
-c      DOUBLE PRECISION FUNCTION DLAMC3( A, B )
+      DOUBLE PRECISION FUNCTION DLAMC3( A, B )
 *
 *  -- LAPACK auxiliary routine (version 3.6.0) --
 *     Univ. of Tennessee, Univ. of California Berkeley and NAG Ltd..
 *     November 2010
 *
 *     .. Scalar Arguments ..
-c      DOUBLE PRECISION   A, B
+      DOUBLE PRECISION   A, B
 *     ..
 * =====================================================================
 *
 *     .. Executable Statements ..
 *
-c      DLAMC3 = A + B
+      DLAMC3 = A + B
 *
-c      RETURN
+      RETURN
 *
 *     End of DLAMC3
 *
-c      END
+      END
 *
 ************************************************************************

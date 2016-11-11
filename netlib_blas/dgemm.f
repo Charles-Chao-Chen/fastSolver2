@@ -8,7 +8,7 @@
 *  Definition:
 *  ===========
 *
-*       SUBROUTINE DGEMM7(TRANSA,TRANSB,M,N,K,ALPHA,A,LDA,B,LDB,BETA,C,LDC)
+*       SUBROUTINE DGEMM(TRANSA,TRANSB,M,N,K,ALPHA,A,LDA,B,LDB,BETA,C,LDC)
 * 
 *       .. Scalar Arguments ..
 *       DOUBLE PRECISION ALPHA,BETA
@@ -185,8 +185,7 @@
 *> \endverbatim
 *>
 *  =====================================================================
-      SUBROUTINE DGEMM7(TRANSA,TRANSB,M,N,K,ALPHA,A,LDA,B,LDB,BETA,C,LDC
-     +                 )
+      SUBROUTINE DGEMM(TRANSA,TRANSB,M,N,K,ALPHA,A,LDA,B,LDB,BETA,C,LDC)
 *
 *  -- Reference BLAS level3 routine (version 3.6.0) --
 *  -- Reference BLAS is a software package provided by Univ. of Tennessee,    --
@@ -205,11 +204,11 @@
 *  =====================================================================
 *
 *     .. External Functions ..
-      LOGICAL LSAME7
-      EXTERNAL LSAME7
+      LOGICAL LSAME
+      EXTERNAL LSAME
 *     ..
 *     .. External Subroutines ..
-      EXTERNAL XERBLA7
+      EXTERNAL XERBLA
 *     ..
 *     .. Intrinsic Functions ..
       INTRINSIC MAX
@@ -228,8 +227,8 @@
 *     transposed and set  NROWA, NCOLA and  NROWB  as the number of rows
 *     and  columns of  A  and the  number of  rows  of  B  respectively.
 *
-      NOTA = LSAME7(TRANSA,'N')
-      NOTB = LSAME7(TRANSB,'N')
+      NOTA = LSAME(TRANSA,'N')
+      NOTB = LSAME(TRANSB,'N')
       IF (NOTA) THEN
           NROWA = M
           NCOLA = K
@@ -246,11 +245,11 @@
 *     Test the input parameters.
 *
       INFO = 0
-      IF ((.NOT.NOTA) .AND. (.NOT.LSAME7(TRANSA,'C')) .AND.
-     +    (.NOT.LSAME7(TRANSA,'T'))) THEN
+      IF ((.NOT.NOTA) .AND. (.NOT.LSAME(TRANSA,'C')) .AND.
+     +    (.NOT.LSAME(TRANSA,'T'))) THEN
           INFO = 1
-      ELSE IF ((.NOT.NOTB) .AND. (.NOT.LSAME7(TRANSB,'C')) .AND.
-     +         (.NOT.LSAME7(TRANSB,'T'))) THEN
+      ELSE IF ((.NOT.NOTB) .AND. (.NOT.LSAME(TRANSB,'C')) .AND.
+     +         (.NOT.LSAME(TRANSB,'T'))) THEN
           INFO = 2
       ELSE IF (M.LT.0) THEN
           INFO = 3
@@ -266,7 +265,7 @@
           INFO = 13
       END IF
       IF (INFO.NE.0) THEN
-          CALL XERBLA7('DGEMM ',INFO)
+          CALL XERBLA('DGEMM ',INFO)
           RETURN
       END IF
 *
