@@ -8,7 +8,7 @@
 *  Definition:
 *  ===========
 *
-*       RECURSIVE SUBROUTINE DGETRF27( M, N, A, LDA, IPIV, INFO )
+*       RECURSIVE SUBROUTINE DGETRF2( M, N, A, LDA, IPIV, INFO )
 * 
 *       .. Scalar Arguments ..
 *       INTEGER            INFO, LDA, M, N
@@ -111,7 +111,7 @@
 *> \ingroup doubleGEcomputational
 *
 *  =====================================================================
-      RECURSIVE SUBROUTINE DGETRF27( M, N, A, LDA, IPIV, INFO )
+      RECURSIVE SUBROUTINE DGETRF2( M, N, A, LDA, IPIV, INFO )
 *
 *  -- LAPACK computational routine (version 3.6.1) --
 *  -- LAPACK is a software package provided by Univ. of Tennessee,    --
@@ -137,12 +137,12 @@
       INTEGER            I, IINFO, N1, N2
 *     ..
 *     .. External Functions ..
-      DOUBLE PRECISION   DLAMCH7
-      INTEGER            IDAMAX7
-      EXTERNAL           DLAMCH7, IDAMAX7
+      DOUBLE PRECISION   DLAMCH
+      INTEGER            IDAMAX
+      EXTERNAL           DLAMCH, IDAMAX
 *     ..
 *     .. External Subroutines ..
-      EXTERNAL           DGEMM7, DSCAL7, DLASWP7, DTRSM7, XERBLA7
+      EXTERNAL           DGEMM, DSCAL, DLASWP, DTRSM, XERBLA
 *     ..
 *     .. Intrinsic Functions ..
       INTRINSIC          MAX, MIN
@@ -160,7 +160,7 @@
          INFO = -4
       END IF
       IF( INFO.NE.0 ) THEN
-         CALL XERBLA7( 'DGETRF2', -INFO )
+         CALL XERBLA( 'DGETRF2', -INFO )
          RETURN
       END IF
 *
@@ -185,11 +185,11 @@
 *
 *        Compute machine safe minimum
 *
-         SFMIN = DLAMCH7('S')
+         SFMIN = DLAMCH('S')
 *
 *        Find pivot and test for singularity
 *
-         I = IDAMAX7( M, A( 1, 1 ), 1 )
+         I = IDAMAX( M, A( 1, 1 ), 1 )
          IPIV( 1 ) = I
          IF( A( I, 1 ).NE.ZERO ) THEN
 *
@@ -204,7 +204,7 @@
 *           Compute elements 2:M of the column
 *
             IF( ABS(A( 1, 1 )) .GE. SFMIN ) THEN
-               CALL DSCAL7( M-1, ONE / A( 1, 1 ), A( 2, 1 ), 1 )
+               CALL DSCAL( M-1, ONE / A( 1, 1 ), A( 2, 1 ), 1 )
             ELSE
                DO 10 I = 1, M-1
                   A( 1+I, 1 ) = A( 1+I, 1 ) / A( 1, 1 )
@@ -226,7 +226,7 @@
 *        Factor [ --- ]
 *               [ A21 ]
 *
-         CALL DGETRF27( M, N1, A, LDA, IPIV, IINFO )
+         CALL DGETRF2( M, N1, A, LDA, IPIV, IINFO )
 
          IF ( INFO.EQ.0 .AND. IINFO.GT.0 )
      $      INFO = IINFO
@@ -235,21 +235,21 @@
 *        Apply interchanges to [ --- ]
 *                              [ A22 ]
 *
-         CALL DLASWP7( N2, A( 1, N1+1 ), LDA, 1, N1, IPIV, 1 )
+         CALL DLASWP( N2, A( 1, N1+1 ), LDA, 1, N1, IPIV, 1 )
 *
 *        Solve A12
 *
-         CALL DTRSM7( 'L', 'L', 'N', 'U', N1, N2, ONE, A, LDA, 
+         CALL DTRSM( 'L', 'L', 'N', 'U', N1, N2, ONE, A, LDA, 
      $               A( 1, N1+1 ), LDA )
 *
 *        Update A22
 *
-         CALL DGEMM7( 'N', 'N', M-N1, N2, N1, -ONE, A( N1+1, 1 ), LDA, 
+         CALL DGEMM( 'N', 'N', M-N1, N2, N1, -ONE, A( N1+1, 1 ), LDA, 
      $               A( 1, N1+1 ), LDA, ONE, A( N1+1, N1+1 ), LDA )
 *
 *        Factor A22
 *
-         CALL DGETRF27( M-N1, N2, A( N1+1, N1+1 ), LDA, IPIV( N1+1 ),
+         CALL DGETRF2( M-N1, N2, A( N1+1, N1+1 ), LDA, IPIV( N1+1 ),
      $                 IINFO )
 *
 *        Adjust INFO and the pivot indices
@@ -262,7 +262,7 @@
 *
 *        Apply interchanges to A21
 *
-         CALL DLASWP7( N1, A( 1, 1 ), LDA, N1+1, MIN( M, N), IPIV, 1 )
+         CALL DLASWP( N1, A( 1, 1 ), LDA, N1+1, MIN( M, N), IPIV, 1 )
 *
       END IF
       RETURN

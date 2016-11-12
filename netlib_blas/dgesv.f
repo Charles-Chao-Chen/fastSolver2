@@ -18,7 +18,7 @@
 *  Definition:
 *  ===========
 *
-*       SUBROUTINE DGESV7( N, NRHS, A, LDA, IPIV, B, LDB, INFO )
+*       SUBROUTINE DGESV( N, NRHS, A, LDA, IPIV, B, LDB, INFO )
 * 
 *       .. Scalar Arguments ..
 *       INTEGER            INFO, LDA, LDB, N, NRHS
@@ -120,7 +120,7 @@
 *> \ingroup doubleGEsolve
 *
 *  =====================================================================
-      SUBROUTINE DGESV7( N, NRHS, A, LDA, IPIV, B, LDB, INFO )
+      SUBROUTINE DGESV( N, NRHS, A, LDA, IPIV, B, LDB, INFO )
 *
 *  -- LAPACK driver routine (version 3.4.0) --
 *  -- LAPACK is a software package provided by Univ. of Tennessee,    --
@@ -138,7 +138,7 @@
 *  =====================================================================
 *
 *     .. External Subroutines ..
-      EXTERNAL           DGETRF7, DGETRS7, XERBLA7
+      EXTERNAL           DGETRF, DGETRS, XERBLA
 *     ..
 *     .. Intrinsic Functions ..
       INTRINSIC          MAX
@@ -158,18 +158,18 @@
          INFO = -7
       END IF
       IF( INFO.NE.0 ) THEN
-         CALL XERBLA7( 'DGESV ', -INFO )
+         CALL XERBLA( 'DGESV ', -INFO )
          RETURN
       END IF
 *
 *     Compute the LU factorization of A.
 *
-      CALL DGETRF7( N, N, A, LDA, IPIV, INFO )
+      CALL DGETRF( N, N, A, LDA, IPIV, INFO )
       IF( INFO.EQ.0 ) THEN
 *
 *        Solve the system A*X = B, overwriting B with X.
 *
-         CALL DGETRS7( 'No transpose', N, NRHS, A, LDA, IPIV, B, LDB,
+         CALL DGETRS( 'No transpose', N, NRHS, A, LDA, IPIV, B, LDB,
      $                INFO )
       END IF
       RETURN

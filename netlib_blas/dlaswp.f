@@ -18,7 +18,7 @@
 *  Definition:
 *  ===========
 *
-*       SUBROUTINE DLASWP7( N, A, LDA, K1, K2, IPIV, INCX )
+*       SUBROUTINE DLASWP( N, A, LDA, K1, K2, IPIV, INCX )
 * 
 *       .. Scalar Arguments ..
 *       INTEGER            INCX, K1, K2, LDA, N
@@ -112,7 +112,7 @@
 *> \endverbatim
 *>
 *  =====================================================================
-      SUBROUTINE DLASWP7( N, A, LDA, K1, K2, IPIV, INCX )
+      SUBROUTINE DLASWP( N, A, LDA, K1, K2, IPIV, INCX )
 *
 *  -- LAPACK auxiliary routine (version 3.4.2) --
 *  -- LAPACK is a software package provided by Univ. of Tennessee,    --

@@ -29,7 +29,7 @@ namespace blas {
   extern "C" {
     // Declaration for BLAS matrix-vector multiply
     // note op(A) is m x k and op(B) is k x n, so C is m x n
-    void dgemm7_(char *transa, char *transb, int *m, int *n, int *k, double *alpha,
+    void dgemm_(char *transa, char *transb, int *m, int *n, int *k, double *alpha,
 		double *A, int *lda, double *B, int *ldb, double *beta,
 		double *C, int *ldc);
   }
@@ -41,19 +41,19 @@ namespace lapack {
     // Declaration for lapack LU solve routine
     // On exit, A is overwritten by the factors L and U from the factorization
     // A = P*L*U; the unit diagonal elements of L are not stored.
-    void dgesv7_(int *N, int *NRHS, double *A, int *LDA, int *IPIV,
+    void dgesv_(int *N, int *NRHS, double *A, int *LDA, int *IPIV,
 		double *B, int *LDB, int *INFO);
 
     // LU factorize
     // note: pivoting array IPIV also needs to be stored
-    void dgetrf7_(int *M, int *N, double *A, int *LDA, int *IPIV,
+    void dgetrf_(int *M, int *N, double *A, int *LDA, int *IPIV,
 		 int *INFO);
 
     // LU solve (with existing factorization)
-    void dgetrs7_(char *TRANS, int *N, int *NRHS, double *A, int *LDA,
+    void dgetrs_(char *TRANS, int *N, int *NRHS, double *A, int *LDA,
 		 int *IPIV, double *B, int *LDB, int *INFO);
     
-   }
+  }
 }
 
 

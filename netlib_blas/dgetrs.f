@@ -18,7 +18,7 @@
 *  Definition:
 *  ===========
 *
-*       SUBROUTINE DGETRS7( TRANS, N, NRHS, A, LDA, IPIV, B, LDB, INFO )
+*       SUBROUTINE DGETRS( TRANS, N, NRHS, A, LDA, IPIV, B, LDB, INFO )
 * 
 *       .. Scalar Arguments ..
 *       CHARACTER          TRANS
@@ -119,7 +119,7 @@
 *> \ingroup doubleGEcomputational
 *
 *  =====================================================================
-      SUBROUTINE DGETRS7( TRANS, N, NRHS, A, LDA, IPIV, B, LDB, INFO )
+      SUBROUTINE DGETRS( TRANS, N, NRHS, A, LDA, IPIV, B, LDB, INFO )
 *
 *  -- LAPACK computational routine (version 3.4.0) --
 *  -- LAPACK is a software package provided by Univ. of Tennessee,    --
@@ -145,11 +145,11 @@
       LOGICAL            NOTRAN
 *     ..
 *     .. External Functions ..
-      LOGICAL            LSAME7
-      EXTERNAL           LSAME7
+      LOGICAL            LSAME
+      EXTERNAL           LSAME
 *     ..
 *     .. External Subroutines ..
-      EXTERNAL           DLASWP7, DTRSM7, XERBLA7
+      EXTERNAL           DLASWP, DTRSM, XERBLA
 *     ..
 *     .. Intrinsic Functions ..
       INTRINSIC          MAX
@@ -159,9 +159,9 @@
 *     Test the input parameters.
 *
       INFO = 0
-      NOTRAN = LSAME7( TRANS, 'N' )
-      IF( .NOT.NOTRAN .AND. .NOT.LSAME7( TRANS, 'T' ) .AND. .NOT.
-     $    LSAME7( TRANS, 'C' ) ) THEN
+      NOTRAN = LSAME( TRANS, 'N' )
+      IF( .NOT.NOTRAN .AND. .NOT.LSAME( TRANS, 'T' ) .AND. .NOT.
+     $    LSAME( TRANS, 'C' ) ) THEN
          INFO = -1
       ELSE IF( N.LT.0 ) THEN
          INFO = -2
@@ -173,7 +173,7 @@
          INFO = -8
       END IF
       IF( INFO.NE.0 ) THEN
-         CALL XERBLA7( 'DGETRS', -INFO )
+         CALL XERBLA( 'DGETRS', -INFO )
          RETURN
       END IF
 *
@@ -188,16 +188,16 @@
 *
 *        Apply row interchanges to the right hand sides.
 *
-         CALL DLASWP7( NRHS, B, LDB, 1, N, IPIV, 1 )
+         CALL DLASWP( NRHS, B, LDB, 1, N, IPIV, 1 )
 *
 *        Solve L*X = B, overwriting B with X.
 *
-         CALL DTRSM7( 'Left', 'Lower', 'No transpose', 'Unit', N, NRHS,
+         CALL DTRSM( 'Left', 'Lower', 'No transpose', 'Unit', N, NRHS,
      $               ONE, A, LDA, B, LDB )
 *
 *        Solve U*X = B, overwriting B with X.
 *
-         CALL DTRSM7( 'Left', 'Upper', 'No transpose', 'Non-unit', N,
+         CALL DTRSM( 'Left', 'Upper', 'No transpose', 'Non-unit', N,
      $               NRHS, ONE, A, LDA, B, LDB )
       ELSE
 *
@@ -205,17 +205,17 @@
 *
 *        Solve U**T *X = B, overwriting B with X.
 *
-         CALL DTRSM7( 'Left', 'Upper', 'Transpose', 'Non-unit', N, NRHS,
+         CALL DTRSM( 'Left', 'Upper', 'Transpose', 'Non-unit', N, NRHS,
      $               ONE, A, LDA, B, LDB )
 *
 *        Solve L**T *X = B, overwriting B with X.
 *
-         CALL DTRSM7( 'Left', 'Lower', 'Transpose', 'Unit', N, NRHS, ONE,
+         CALL DTRSM( 'Left', 'Lower', 'Transpose', 'Unit', N, NRHS, ONE,
      $               A, LDA, B, LDB )
 *
 *        Apply row interchanges to the solution vectors.
 *
-         CALL DLASWP7( NRHS, B, LDB, 1, N, IPIV, -1 )
+         CALL DLASWP( NRHS, B, LDB, 1, N, IPIV, -1 )
       END IF
 *
       RETURN
