@@ -16,18 +16,18 @@
 export GASNET_IB_SPAWNER=mpi
 export GASNET_BACKTRACE=1
 
-time srun --nodes=$SLURM_NODES\
+time srun --nodes=$SLURM_NNODES \
 	--ntasks-per-node=$SLURM_NTASKS_PER_NODE \
 	--cpus-per-task=$SLURM_CPUS_PER_TASK \
 	--cpu_bind=none \
 	./solver                \
-	-machine   $SLURM_NODES	\
+	-machine   $SLURM_NNODES	\
 	-core      $SLURM_CPUS_PER_TASK	\
 	-mtxlvl    ${1} 	\
 	-ll:cpu	   $SLURM_CPUS_PER_TASK	\
 	-ll:csize  60000        \
 	-hl:sched  1024		\
-	-hl:prof   $SLURM_NODES	\
+	-hl:prof   $SLURM_NNODES	\
 	-logfile   prof_%.log
 
 #	-level inst=2,metadata=2 \
