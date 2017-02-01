@@ -248,14 +248,9 @@ void top_level_task(const Task *task,
       if (!strcmp(command_args.argv[i],"-mtxlvl"))
 	matrix_level = atoi(command_args.argv[++i]);
     }
-    assert(is_power_of_two(num_machines));
-    assert(is_power_of_two(num_cores_per_machine));
-    assert(rank         > 0);
-    assert(leaf_size    > 0);
   }
   int spmd_level = (int)log2(num_machines);
   int task_level = (int)log2(num_cores_per_machine);
-  assert(spmd_level<=MAX_TREE_LEVEL);
   if(matrix_level < task_level+spmd_level) {
     matrix_level  = task_level+spmd_level;
     std::cout<<"--------------------------------------------------"<<std::endl
@@ -276,6 +271,12 @@ void top_level_task(const Task *task,
            <<"\n========================\n"
 	   <<std::endl;
 
+  assert(is_power_of_two(num_machines));
+  assert(is_power_of_two(num_cores_per_machine));
+  assert(rank         > 0);
+  assert(leaf_size    > 0);
+  assert(spmd_level<=MAX_TREE_LEVEL);
+  
   // create phase barriers
   SPMDargs arg;
   arg.leaf_size = leaf_size;
