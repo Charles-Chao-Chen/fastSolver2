@@ -42,8 +42,16 @@ CC_FLAGS	:= \
 NVCC_FLAGS	:=
 GASNET_FLAGS	:=
 
-# gnu blas and lapack
+ifneq (${CRAYPE_VERSION},)
+# Cray systems include a special version of BLAS and LAPACK which is
+# automatically linked into every application. Unfortunately, these
+# versions include automatic multi-threading which breaks the
+# application. To avoid this breakage, we use a custom version of BLAS.
+LD_FLAGS 	:= ../netlib_blas/dgemm.o ../netlib_blas/dgesv.o ../netlib_blas/dgetrf.o ../netlib_blas/dgetrf2.o ../netlib_blas/dgetrs.o ../netlib_blas/dlamch.o ../netlib_blas/dlaswp.o ../netlib_blas/dscal.o ../netlib_blas/dtrsm.o ../netlib_blas/idamax.o ../netlib_blas/ieeeck.o ../netlib_blas/ilaenv.o ../netlib_blas/iparmq.o ../netlib_blas/lsame.o ../netlib_blas/xerbla.o
+else
+# otherwise use system BLAS/LAPACK
 LD_FLAGS 	:= -llapack -lblas
+endif
 
 # enable legion spy
 ifeq ($(strip $(DEBUG)),1)

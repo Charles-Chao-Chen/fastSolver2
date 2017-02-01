@@ -1,0 +1,57 @@
+#!/bin/bash
+#PBS -N solver
+#PBS -e solver.err
+#PBS -o solver.out
+###PBS -m aeb
+#PBS -l nodes=16:ppn=24
+#PBS -l walltime=00:10:00
+#PBS -V
+
+Nn=16
+Ofile=$Nn"node_%.log"
+
+PBS_O_WORKDIR='/home/cchen10/lgsolver/spmd_benchMark'
+export PBS_O_WORKDIR
+
+PROG=""
+ARGS=""
+
+### ---------------------------------------
+### BEGINNING OF EXECUTION
+### ---------------------------------------
+
+echo The master node of this job is `hostname`
+echo The working directory is `echo $PBS_O_WORKDIR`
+echo This job runs on the following nodes:
+echo `cat $PBS_NODEFILE`
+
+# Select a launcher to use, mpiexec for small jobs, mpirun_rsh for large jobs
+
+# Define number of processors
+NPROCS=`wc -l < $PBS_NODEFILE`
+
+cd $PBS_O_WORKDIR
+
+# Select a launcher to use, mpiexec for small jobs, mpirun_rsh for large jobs
+
+# cmd="mpiexec $PROG $ARGS"
+# echo "Running MPIEXEC with: $cmd in directory "`pwd`
+# echo "Running MPIRUN_RSH with: $cmd in directory "`pwd`
+#	-x LEGION_FREEZE_ON_ERROR=1 \
+#	-level inst=2,metadata=2 \
+
+# Certainty has 36GB memory every node
+time mpirun -np $Nn -pernode \
+	-bind-to none -report-bindings \
+	-x GASNET_BACKTRACE=1 \
+	./solver \
+	-machine $Nn \
+	-core 8 \
+	-mtxlvl 12 \
+	-ll:cpu 8 \
+	-ll:csize  30000 \
+	-hl:sched  1024	\
+	-hl:prof $Nn \
+	-level 4,legion_prof=2 \
+	-logfile $Ofile
+
