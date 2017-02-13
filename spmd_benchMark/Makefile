@@ -54,11 +54,11 @@ LD_FLAGS 	:= -llapack -lblas
 endif
 
 # enable legion spy
-ifeq ($(strip $(DEBUG)),1)
-CC_FLAGS += -DLEGION_SPY \
-	-DPRIVILEGE_CHECKS \
-	-DBOUNDS_CHECKS
-endif
+# ifeq ($(strip $(DEBUG)),1)
+# CC_FLAGS += -DLEGION_SPY \
+# 	-DPRIVILEGE_CHECKS \
+# 	-DBOUNDS_CHECKS
+# endif
 
 # dynamic linking on daint
 ifeq ($(findstring daint,$(shell uname -n)),daint)
