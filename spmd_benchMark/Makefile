@@ -36,9 +36,7 @@ GEN_GPU_SRC	:=				# .cu files
 
 # You can modify these variables, some will be appended to by the runtime makefile
 INC_FLAGS	:= -I ../include/ -I ../include/tasks/
-CC_FLAGS	:= \
-		-DLEGION_IDS_ARE_64BIT \
-
+CC_FLAGS	:=
 NVCC_FLAGS	:=
 GASNET_FLAGS	:=
 
