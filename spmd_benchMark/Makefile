@@ -35,12 +35,10 @@ GEN_SRC	:= 	solver.cc \
 GEN_GPU_SRC	:=				# .cu files
 
 # You can modify these variables, some will be appended to by the runtime makefile
-INC_FLAGS	:= -I ../include/ -I ../include/tasks/
-CC_FLAGS	:= \
-		-DLEGION_IDS_ARE_64BIT \
-
-NVCC_FLAGS	:=
-GASNET_FLAGS	:=
+INC_FLAGS	?= -I ../include/ -I ../include/tasks/
+CC_FLAGS	?=
+NVCC_FLAGS	?=
+GASNET_FLAGS	?=
 
 ifneq (${CRAYPE_VERSION},)
 # Cray systems include a special version of BLAS and LAPACK which is
@@ -54,11 +52,11 @@ LD_FLAGS 	:= -llapack -lblas
 endif
 
 # enable legion spy
-ifeq ($(strip $(DEBUG)),1)
-CC_FLAGS += -DLEGION_SPY \
-	-DPRIVILEGE_CHECKS \
-	-DBOUNDS_CHECKS
-endif
+# ifeq ($(strip $(DEBUG)),1)
+# CC_FLAGS += -DLEGION_SPY \
+# 	-DPRIVILEGE_CHECKS \
+# 	-DBOUNDS_CHECKS
+# endif
 
 # dynamic linking on daint
 ifeq ($(findstring daint,$(shell uname -n)),daint)
