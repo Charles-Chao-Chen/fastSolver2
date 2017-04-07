@@ -8,8 +8,6 @@
 #SBATCH --mem=60GB
 #SBATCH --constraint=gpu
 
-###SBATCH --constraint=mc
-###SBATCH --cpus-per-task=8
 # 1 process per core (2 enables hyperthreading)
 ###SBATCH --ntasks-per-core=1
 
@@ -22,14 +20,11 @@ time srun --nodes=$SLURM_NNODES \
 	--cpu_bind=none \
 	./solver                \
 	-machine   $SLURM_NNODES	\
-	-core      $SLURM_CPUS_PER_TASK	\
+	-core      8	\
 	-mtxlvl    ${1} 	\
-	-ll:cpu	   $SLURM_CPUS_PER_TASK	\
+	-ll:cpu	   8	\
 	-ll:csize  60000        \
 	-hl:sched  1024		\
 	-hl:prof   $SLURM_NNODES	\
-	-logfile   prof_%.log
-
-#	-level inst=2,metadata=2 \
-#	-level 4,legion_prof=2	\
+	-logfile   ${SLURM_NNODES}nodes_prof_%.log
 

@@ -53,8 +53,11 @@ void spmd_fast_solver(const Task *task,
 		      const std::vector<PhysicalRegion> &regions,
 		      Context ctx, HighLevelRuntime *runtime) {
 
+  char hostname[100];
+  gethostname(hostname, 100);
   int spmd_point = task->index_point.get_index();
-  std::cout<<"Inside spmd_task["<<spmd_point<<"]\n";
+  std::cout<<"spmd_task["<<spmd_point<<"] is running on machine"
+	   <<hostname<<std::endl;
 
   runtime->unmap_all_regions(ctx);
   SPMDargs *args       = (SPMDargs*)task->args;
