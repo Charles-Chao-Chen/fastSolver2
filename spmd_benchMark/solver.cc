@@ -56,7 +56,7 @@ void spmd_fast_solver(const Task *task,
   char hostname[100];
   gethostname(hostname, 100);
   int spmd_point = task->index_point.get_index();
-  std::cout<<"spmd_task["<<spmd_point<<"] is running on machine"
+  std::cout<<"spmd_task["<<spmd_point<<"] is running on machine "
 	   <<hostname<<std::endl;
 
   runtime->unmap_all_regions(ctx);

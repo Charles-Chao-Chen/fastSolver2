@@ -25,6 +25,6 @@ time srun --nodes=$SLURM_NNODES \
 	-ll:cpu	   8	\
 	-ll:csize  60000        \
 	-hl:sched  1024		\
-	-hl:prof   $SLURM_NNODES	\
+	-hl:prof   8	\
 	-logfile   ${SLURM_NNODES}nodes_prof_%.log
 

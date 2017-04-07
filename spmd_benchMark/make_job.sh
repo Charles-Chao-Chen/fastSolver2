@@ -1,9 +1,9 @@
 #!/bin/sh
 
-NumNodes=4 #512
+NumNodes=8 #512
 NumCore=12
-Mtxlvl=8 #17
-Time=00:05:00
+Mtxlvl=9 #17
+Time=00:10:00
 
 echo Run legion solver on `echo $NumNodes` nodes...
 sbatch --nodes=${NumNodes} \

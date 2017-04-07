@@ -1,1 +1,14 @@
+
+------
+4/7/17
+------
+
+- Avoid merging regions going up the tree, which can save 1/#core portion of time
+
+- Add GPU support
+
+------
+before 4/7/17
+------
+
 debuge recursive mapper on Sapling machine.
