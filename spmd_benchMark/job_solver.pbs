@@ -3,11 +3,14 @@
 #PBS -e solver.err
 #PBS -o solver.out
 ###PBS -m aeb
-#PBS -l nodes=16:ppn=24
-#PBS -l walltime=00:10:00
+#PBS -l nodes=256:ppn=24
+#PBS -l walltime=01:30:00
 #PBS -V
 
-Nn=16
+Nn=256
+TreeLevel=19
+ncpu=8
+
 Ofile=$Nn"node_%.log"
 
 PBS_O_WORKDIR='/home/cchen10/lgsolver/spmd_benchMark'
@@ -43,15 +46,16 @@ cd $PBS_O_WORKDIR
 # Certainty has 36GB memory every node
 time mpirun -np $Nn -pernode \
 	-bind-to none -report-bindings \
+	-x LEGION_FREEZE_ON_ERROR=1 \
 	-x GASNET_BACKTRACE=1 \
 	./solver \
 	-machine $Nn \
-	-core 8 \
-	-mtxlvl 12 \
-	-ll:cpu 8 \
-	-ll:csize  30000 \
+	-core $ncpu \
+	-mtxlvl $TreeLevel \
+	-ll:cpu $ncpu \
+	-ll:csize  32000 \
 	-hl:sched  1024	\
-	-hl:prof $Nn \
+	-hl:prof 8 \
 	-level 4,legion_prof=2 \
 	-logfile $Ofile
 
