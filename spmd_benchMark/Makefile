@@ -60,7 +60,7 @@ endif
 
 # dynamic linking on daint
 ifeq ($(findstring daint,$(shell uname -n)),daint)
-LD_FLAGS = -dynamic
+LD_FLAGS += -dynamic
 endif
 
 # mkl linking flags
