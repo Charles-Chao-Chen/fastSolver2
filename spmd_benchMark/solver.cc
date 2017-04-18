@@ -13,7 +13,7 @@ enum {
   SPMD_TASK_ID = 1,
 };
 
-const int MAX_TREE_LEVEL = 10;
+const int MAX_TREE_LEVEL = 20;
 
 struct SPMDargs {
   PhaseBarrier reduction[MAX_TREE_LEVEL];
