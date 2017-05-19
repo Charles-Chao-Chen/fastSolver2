@@ -1,24 +1,23 @@
 #!/bin/bash
 
-Nn=128
-TreeLevel=18
+Nodes="n0000,n0001,n0002,n0003"
+NumNodes=4
+NumCores=8
 
-Ofile=$Nn"node_%.log"
+TreeLevel=8
+Ofile=$NumNodes"node_%.log"
 
-#	-x GASNET_IB_SPAWNER=mpi  \
-#	-level inst=2,metadata=2 \
-
-mpirun -np $Nn -pernode \
+time mpirun -H $Nodes \
 	-bind-to none \
-	-x GASNET_BACKTRACE=1     \
+	-x GASNET_BACKTRACE=1 -x GASNET_IB_SPAWNER=mpi \
 	-x LEGION_FREEZE_ON_ERROR=1 \
 	./solver \
-	-machine $Nn \
-	-core 8 \
+	-machine $NumNodes \
+	-core $NumCores \
 	-mtxlvl $TreeLevel \
-	-ll:cpu 8 \
-	-ll:csize 32000 \
-	-hl:sched 1024 \
-	-hl:prof 8 \
-	-level 4,legion_prof=2 \
-	-logfile $Ofile &
+	-ll:cpu $NumCores \
+	-ll:csize 2000 \
+    	-hl:prof 4 \
+	-logfile $Ofile
+
+

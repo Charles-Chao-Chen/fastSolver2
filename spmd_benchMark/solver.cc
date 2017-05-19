@@ -417,6 +417,9 @@ void top_level_task(const Task *task,
       runtime->destroy_logical_region(ctx, VTd_all[i][j]);
     }
   }
+  std::cout<<"----------------"<<std::endl
+	   <<"Solver finished."<<std::endl
+	   <<"----------------"<<std::endl;
 }
 
 int main(int argc, char *argv[]) {
