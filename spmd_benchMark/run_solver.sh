@@ -1,8 +1,10 @@
 #!/bin/bash
 
-Nodes="n0000,n0001,n0002,n0003"
-NumNodes=4
-NumCores=8
+#Nodes="n0000,n0001,n0002,n0003"
+#NumNodes=4
+Nodes="n0000"
+NumNodes=1
+NumCores=2
 
 TreeLevel=8
 Ofile=$NumNodes"node_%.log"
