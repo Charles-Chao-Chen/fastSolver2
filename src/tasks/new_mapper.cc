@@ -2,6 +2,8 @@
 
 #include "new_mapper.hpp"
 
+using namespace LegionRuntime::Arrays;
+
 Realm::Logger log_solver_mapper("solver_mapper");
 
 SolverMapper::SolverMapper(Machine machine, Runtime *rt, Processor local,
