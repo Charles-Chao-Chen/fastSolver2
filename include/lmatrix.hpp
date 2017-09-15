@@ -4,6 +4,7 @@
 #include <string>
 
 #include "legion.h"
+using namespace LegionRuntime;
 using namespace LegionRuntime::HighLevel;
 
 #include "utility.hpp" // for WAIT_DEFAULT and FIELDID_V
