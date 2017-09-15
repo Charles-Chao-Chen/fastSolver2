@@ -4,6 +4,7 @@
 
 // legion stuff
 #include "legion.h"
+using namespace LegionRuntime;
 using namespace LegionRuntime::HighLevel;
 
 #include "matrix.hpp"  // for Matrix  class
@@ -316,9 +317,9 @@ void top_level_task(const Task *task,
   }
   
   // create ghost regions: VTu0, VTu1(r x r) and VTd0, VTd1(r x .)
-  Point<2> lo = make_point(0, 0);
-  Point<2> hi = make_point(rank-1, rank-1);
-  Rect<2>  rect(lo, hi);
+  Arrays::Point<2> lo = Arrays::make_point(0, 0);
+  Arrays::Point<2> hi = Arrays::make_point(rank-1, rank-1);
+  Arrays::Rect<2>  rect(lo, hi);
   IndexSpace VTu_is = runtime->create_index_space
     (ctx, Domain::from_rect<2>(rect));
   runtime->attach_name(VTu_is, "VTu_ghost_is");
@@ -347,9 +348,9 @@ void top_level_task(const Task *task,
       VTu_ghosts[i].push_back(runtime->create_logical_region(ctx, VTu_is, fs));
     }
     // create VTd regions
-    Point<2> lo = make_point(0, 0);
-    Point<2> hi = make_point(rank-1, nRhs+l*rank-1);
-    Rect<2>  rect(lo, hi);
+    Arrays::Point<2> lo = Arrays::make_point(0, 0);
+    Arrays::Point<2> hi = Arrays::make_point(rank-1, nRhs+l*rank-1);
+    Arrays::Rect<2>  rect(lo, hi);
     IndexSpace VTd_is = runtime->create_index_space
       (ctx, Domain::from_rect<2>(rect));
     for (int i=0; i<num_ghosts; i++) {

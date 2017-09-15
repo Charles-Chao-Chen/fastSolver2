@@ -81,9 +81,9 @@ void LMatrix::create
   this->mRows = rows;
   this->mCols = cols;
   this->colIdx = 0;
-  Point<2> lo = make_point(0, 0);
-  Point<2> hi = make_point(mRows-1, mCols-1);
-  Rect<2> rect(lo, hi);
+  Arrays::Point<2> lo = Arrays::make_point(0, 0);
+  Arrays::Point<2> hi = Arrays::make_point(mRows-1, mCols-1);
+  Arrays::Rect<2> rect(lo, hi);
   this->fspace = runtime->create_field_space(ctx);
   this->ispace = runtime->
     create_index_space(ctx, Domain::from_rect<2>(rect));
@@ -335,7 +335,7 @@ ArgumentMap LMatrix::MapSeed(const Matrix& matrix) {
     for (int j = 0; j < blk; j++) {
       vec.push_back( matrix.rand_seed(i*blk+j) );
     }
-    argMap.set_point(DomainPoint::from_point<1>(Point<1>(i)),
+    argMap.set_point(DomainPoint::from_point<1>(Arrays::Point<1>(i)),
 		     TaskArgument(&vec[0],sizeof(long)*(blk+1)));
   }
   return argMap;
@@ -354,7 +354,7 @@ ArgumentMap LMatrix::MapSeed
       vec.push_back(V.rand_seed(i*blk+j));
       vec.push_back(D.rand_seed(i*blk+j));
     }
-    argMap.set_point(DomainPoint::from_point<1>(Point<1>(i)),
+    argMap.set_point(DomainPoint::from_point<1>(Arrays::Point<1>(i)),
 		     TaskArgument(&vec[0],sizeof(long)*(3*blk+1)));
   }
   return argMap;
@@ -365,7 +365,7 @@ ArgumentMap LMatrix::MapSeed(int nPart, const Matrix& matrix) {
   ArgumentMap argMap;
   for (int i = 0; i < nPart; i++) {
     long s = matrix.rand_seed(i);
-    argMap.set_point(DomainPoint::from_point<1>(Point<1>(i)),
+    argMap.set_point(DomainPoint::from_point<1>(Arrays::Point<1>(i)),
 		     TaskArgument(&s,sizeof(s)));
   }
   return argMap;
@@ -375,7 +375,7 @@ ArgumentMap LMatrix::MapSeed(int nPart, const Matrix& U, const Matrix& V, const 
   ArgumentMap argMap;
   for (int i = 0; i < nPart; i++) {
     ThreeSeeds  threeSeeds = {U.rand_seed(i), V.rand_seed(i), D.rand_seed(i)};
-    argMap.set_point(DomainPoint::from_point<1>(Point<1>(i)),
+    argMap.set_point(DomainPoint::from_point<1>(Arrays::Point<1>(i)),
 		     TaskArgument(&threeSeeds,sizeof(threeSeeds)));
   }
   return argMap;
@@ -384,15 +384,15 @@ ArgumentMap LMatrix::MapSeed(int nPart, const Matrix& U, const Matrix& V, const 
 IndexPartition LMatrix::UniformRowPartition
 (Context ctx, HighLevelRuntime *runtime) {
 
-  Rect<1> bounds(Point<1>(0),Point<1>(nPart-1));
+  Arrays::Rect<1> bounds(Arrays::Point<1>(0),Arrays::Point<1>(nPart-1));
   Domain  domain = Domain::from_rect<1>(bounds);
 
   int size = rblock;
   DomainColoring coloring;
   for (int i = 0; i < nPart; i++) {
-    Point<2> lo = make_point(  i   *size,   0);
-    Point<2> hi = make_point( (i+1)*size-1, mCols-1);
-    Rect<2> subrect(lo, hi);
+    Arrays::Point<2> lo = Arrays::make_point(  i   *size,   0);
+    Arrays::Point<2> hi = Arrays::make_point( (i+1)*size-1, mCols-1);
+    Arrays::Rect<2> subrect(lo, hi);
     coloring[i] = Domain::from_rect<2>(subrect);
   }
   return runtime->create_index_partition(ctx, ispace, domain, coloring, true);
@@ -402,15 +402,15 @@ IndexPartition LMatrix::UniformRowPartition
 (int num_subregions, int col0, int col1,
  Context ctx, HighLevelRuntime *runtime) {
 
-  Rect<1> bounds(Point<1>(0),Point<1>(num_subregions-1));
+  Arrays::Rect<1> bounds(Arrays::Point<1>(0),Arrays::Point<1>(num_subregions-1));
   Domain  domain = Domain::from_rect<1>(bounds);
 
   int size = mRows / num_subregions;
   DomainColoring coloring;
   for (int i = 0; i < num_subregions; i++) {
-    Point<2> lo = make_point(  i   *size,   col0);
-    Point<2> hi = make_point( (i+1)*size-1, col1-1);
-    Rect<2> subrect(lo, hi);
+    Arrays::Point<2> lo = Arrays::make_point(  i   *size,   col0);
+    Arrays::Point<2> hi = Arrays::make_point( (i+1)*size-1, col1-1);
+    Arrays::Rect<2> subrect(lo, hi);
     coloring[i] = Domain::from_rect<2>(subrect);
   }
   return runtime->create_index_partition(ctx, ispace, domain, coloring, true);
@@ -501,14 +501,14 @@ void LMatrix::two_level_partition
   for (int i=0; i<nPart; i++) {
     LogicalRegion lr = runtime->get_logical_subregion_by_color(ctx, lpart, i);
 
-    Rect<1> bounds(Point<1>(0),Point<1>(1));
+    Arrays::Rect<1> bounds(Arrays::Point<1>(0),Arrays::Point<1>(1));
     Domain  domain = Domain::from_rect<1>(bounds);
     int size = rblock/2;
     DomainColoring coloring;
     for (int j = 0; j < 2; j++) {
-      Point<2> lo = make_point( i*rblock+j*size,   0);
-      Point<2> hi = make_point( i*rblock+(j+1)*size-1, mCols-1);
-      Rect<2> subrect(lo, hi);
+      Arrays::Point<2> lo = Arrays::make_point( i*rblock+j*size,   0);
+      Arrays::Point<2> hi = Arrays::make_point( i*rblock+(j+1)*size-1, mCols-1);
+      Arrays::Rect<2> subrect(lo, hi);
       coloring[j] = Domain::from_rect<2>(subrect);
     }
     IndexSpace is = lr.get_index_space();

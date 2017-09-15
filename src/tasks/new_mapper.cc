@@ -2,7 +2,7 @@
 
 #include "new_mapper.hpp"
 
-using namespace LegionRuntime::Arrays;
+using namespace LegionRuntime;
 
 Realm::Logger log_solver_mapper("solver_mapper");
 
@@ -47,8 +47,8 @@ void SolverMapper::default_slice_task(const Task &task,
   }
 
   assert(input.domain.get_dim() == 1);
-  Rect<1> point_rect = input.domain.get_rect<1>();
-  Point<1> num_blocks(local.size());
+  Arrays::Rect<1> point_rect = input.domain.get_rect<1>();
+  Arrays::Point<1> num_blocks(local.size());
   default_decompose_points<1>(point_rect, local,
 			      num_blocks, false/*recurse*/,
 			      stealing_enabled, output.slices);  
