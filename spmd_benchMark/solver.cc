@@ -20,7 +20,8 @@ struct SPMDargs {
   PhaseBarrier reduction[MAX_TREE_LEVEL];
   PhaseBarrier node_solve[MAX_TREE_LEVEL];
   int leaf_size;
-  int rank;
+  int rank0;
+  int rank1;
   int nRhs;
   int spmd_level;
   int my_matrix_level;
@@ -50,6 +51,15 @@ LMatrix create_legion_matrix(LogicalRegion region, int rows, int cols) {
   return LMatrix(region, rows, cols);
 }
 
+LMatrix create_legion_matrix(LogicalRegion region,
+			    Context ctx, HighLevelRuntime *runtime) {
+  Domain dom = runtime->get_index_space_domain(ctx,region.get_index_space());
+  Rect<2> rect = dom.get_rect<2>();
+  int rows = rect.dim_size(0);
+  int cols = rect.dim_size(1);
+  return LMatrix(region, rows, cols);
+}
+
 void spmd_fast_solver(const Task *task,
 		      const std::vector<PhysicalRegion> &regions,
 		      Context ctx, HighLevelRuntime *runtime) {
@@ -63,11 +73,20 @@ void spmd_fast_solver(const Task *task,
   runtime->unmap_all_regions(ctx);
   SPMDargs *args       = (SPMDargs*)task->args;
   int leaf_size        = args->leaf_size;
-  int rank             = args->rank;
   int nRhs             = args->nRhs;
   int spmd_level       = args->spmd_level;
   int matrix_level     = args->my_matrix_level;
   int task_level       = args->my_task_level;
+  
+  int rank = 0, rankp = 0; // rank prime corresponds to the sibling
+  if (spmd_point == 0) {
+    rank  = args->rank0;
+    rankp = args->rank1;
+  }
+  if (spmd_point == 1) {
+    rank  = args->rank1;
+    rankp = args->rank0;
+  }
   
   // ======= Problem configuration =======
   // solve: A x = b where A = U * V' + D
@@ -77,9 +96,11 @@ void spmd_fast_solver(const Task *task,
   Matrix UMat(leaf_size, matrix_level, rank, has_entry);
   Matrix Rhs (leaf_size, matrix_level, nRhs, has_entry);
   Vector DVec(leaf_size, matrix_level,       has_entry);
+  Matrix VMatp(leaf_size, matrix_level, rankp, has_entry);
 
   // randomly generate entries
   VMat.rand();
+  VMatp.rand();
   UMat.rand();
   Rhs.rand();
   int mean = 1e3;
@@ -90,11 +111,13 @@ void spmd_fast_solver(const Task *task,
   UTree uTree; uTree.init( global_tree_level, UMat, ctx, runtime );
   VTree vTree; vTree.init( global_tree_level, VMat, ctx, runtime );
   KTree kTree; kTree.init( matrix_level, UMat, VMat, DVec, ctx, runtime );
+  VTree vTreep; vTreep.init( global_tree_level, VMatp, ctx, runtime );
   
   // data partition
   uTree.horizontal_partition( task_level, ctx, runtime );
   vTree.horizontal_partition( task_level, ctx, runtime );
   kTree.horizontal_partition( task_level, ctx, runtime );
+  vTreep.horizontal_partition( task_level, ctx, runtime );
   
   // init rhs and wait
   uTree.init_rhs(Rhs, ctx, runtime, true/*wait*/);
@@ -133,15 +156,15 @@ void spmd_fast_solver(const Task *task,
   // spmd level
   int ghost_idx = 0;
   for (int l=spmd_level-1; l>=0; l--) {
-    LMatrix& V = vTree.level_new(l);
+    LMatrix& V = vTreep.level_new(l);
     LMatrix& u = uTree.uMat_level_new(l);
     LMatrix& d = uTree.dMat_level_new(l);    
 
     // compute local results
     LogicalRegion VTu_ghost = task->regions[ghost_idx].region;
     LogicalRegion VTd_ghost = task->regions[ghost_idx+1].region;
-    LMatrix VTu = create_local_region(VTu_ghost, rank, rank, ctx, runtime);
-    LMatrix VTd = create_local_region(VTd_ghost, rank, nRhs+l*rank, ctx, runtime);
+    LMatrix VTu = create_local_region(VTu_ghost, rankp, rank, ctx, runtime);
+    LMatrix VTd = create_local_region(VTd_ghost, rankp, nRhs+l*rank, ctx, runtime);
 
     LMatrix::gemm('t', 'n', 1.0, V, u, 0.0, VTu, ctx, runtime );
     LMatrix::gemm('t', 'n', 1.0, V, d, 0.0, VTd, ctx, runtime );
@@ -169,12 +192,12 @@ void spmd_fast_solver(const Task *task,
     
     // node solve
     if (is_master_task(spmd_point, l, spmd_level)) {
-      LMatrix VTu0 = create_legion_matrix(VTu_ghost,rank,rank);
-      LMatrix VTd0 = create_legion_matrix(VTd_ghost,rank,nRhs+rank*l);
+      LMatrix VTu0 = create_legion_matrix(VTu_ghost, ctx, runtime);
+      LMatrix VTd0 = create_legion_matrix(VTd_ghost, ctx, runtime);
       LogicalRegion VTu1_ghost = task->regions[ghost_idx+2].region;
       LogicalRegion VTd1_ghost = task->regions[ghost_idx+3].region;
-      LMatrix VTu1 = create_legion_matrix(VTu1_ghost,rank,rank);
-      LMatrix VTd1 = create_legion_matrix(VTd1_ghost,rank,nRhs+rank*l);
+      LMatrix VTu1 = create_legion_matrix(VTu1_ghost, ctx, runtime);
+      LMatrix VTd1 = create_legion_matrix(VTd1_ghost, ctx, runtime);
       args->reduction[l] = 
 	runtime->advance_phase_barrier(ctx, args->reduction[l]);
       assert(args->node_solve[l]!=PhaseBarrier());
@@ -202,10 +225,10 @@ void spmd_fast_solver(const Task *task,
     // local update: d -= u * VTd
     LMatrix VTd_lmtx;
     if (is_master_task(spmd_point, l, spmd_level)) {
-      VTd_lmtx = create_legion_matrix(VTd_ghost,rank,nRhs+rank*l);    
+      VTd_lmtx = create_legion_matrix(VTd_ghost, ctx, runtime);    
     }
     else {
-      VTd_lmtx = create_legion_matrix(VTd_local,rank,nRhs+rank*l);    
+      VTd_lmtx = create_legion_matrix(VTd_local, ctx, runtime); 
     }
 
     bool wait = (l==0 ? true : false);
@@ -226,11 +249,12 @@ void top_level_task(const Task *task,
 		    Context ctx, HighLevelRuntime *runtime) {
  
   // machine configuration
-  int num_machines = 1;
+  const int num_machines = 2;
   int num_cores_per_machine = 1;
  
   // HODLR configuration
-  int rank = 100;
+  int rank0 = 100;
+  int rank1 = 100;
   int leaf_size = 400;
   int matrix_level = 1;
 
@@ -241,12 +265,14 @@ void top_level_task(const Task *task,
   const InputArgs &command_args = HighLevelRuntime::get_input_args();
   if (command_args.argc > 1) {
     for (int i = 1; i < command_args.argc; i++) {
-      if (!strcmp(command_args.argv[i],"-machine"))
-	num_machines = atoi(command_args.argv[++i]);
+      //if (!strcmp(command_args.argv[i],"-machine"))
+	//num_machines = atoi(command_args.argv[++i]);
       if (!strcmp(command_args.argv[i],"-core"))
 	num_cores_per_machine = atoi(command_args.argv[++i]);
-      if (!strcmp(command_args.argv[i],"-rank"))
-	rank = atoi(command_args.argv[++i]);
+      if (!strcmp(command_args.argv[i],"-rank0"))
+	rank0 = atoi(command_args.argv[++i]);
+      if (!strcmp(command_args.argv[i],"-rank1"))
+	rank1 = atoi(command_args.argv[++i]);
       if (!strcmp(command_args.argv[i],"-leaf"))
 	leaf_size = atoi(command_args.argv[++i]);
       if (!strcmp(command_args.argv[i],"-mtxlvl"))
@@ -269,7 +295,7 @@ void top_level_task(const Task *task,
 	   <<"\n# cores/machine: "<<num_cores_per_machine
     	   <<", level: "<<task_level
            <<"\n---------------------"
-	   <<"\noff-diagonal rank: "<<rank
+	   <<"\noff-diagonal rank: "<<rank0<<", "<<rank1
 	   <<"\nleaf size: "<<leaf_size
 	   <<"\nmatrix level: "<<matrix_level
            <<"\n========================\n"
@@ -277,19 +303,22 @@ void top_level_task(const Task *task,
 
   assert(is_power_of_two(num_machines));
   assert(is_power_of_two(num_cores_per_machine));
-  assert(rank         > 0);
-  assert(leaf_size    > 0);
+  assert(rank0         > 0);
+  assert(rank1         > 0);
+  assert(leaf_size     > 0);
   assert(spmd_level<=MAX_TREE_LEVEL);
   
   // create phase barriers
   SPMDargs arg;
   arg.leaf_size = leaf_size;
-  arg.rank = rank;
+  arg.rank0 = rank0;
+  arg.rank1 = rank1;
   arg.nRhs = nRhs;
   arg.spmd_level = spmd_level;
   arg.my_matrix_level = matrix_level - spmd_level;
   arg.my_task_level = task_level;
   std::vector<SPMDargs> args(num_machines, arg);
+
   for (int l=0; l<spmd_level; l++) {
     int num_barriers = (int)pow(2, l); 
     int num_shards_per_barrier = (int)pow(2, spmd_level-l);
@@ -315,13 +344,17 @@ void top_level_task(const Task *task,
       (TaskLauncher(SPMD_TASK_ID, TaskArgument(&args[i], sizeof(SPMDargs))));
   }
   
-  // create ghost regions: VTu0, VTu1(r x r) and VTd0, VTd1(r x .)
+  // create ghost regions: VTu0(r1 x r0), VTu1(r0 x r1) and VTd0(r1 x ...), VTd1(r0 x ...)
   Point<2> lo = make_point(0, 0);
-  Point<2> hi = make_point(rank-1, rank-1);
-  Rect<2>  rect(lo, hi);
-  IndexSpace VTu_is = runtime->create_index_space
-    (ctx, Domain::from_rect<2>(rect));
-  runtime->attach_name(VTu_is, "VTu_ghost_is");
+  Point<2> hi0 = make_point(rank1-1, rank0-1);
+  Point<2> hi1 = make_point(rank0-1, rank1-1);
+  Rect<2>  rect0(lo, hi0);
+  Rect<2>  rect1(lo, hi1);
+  IndexSpace VTu0_is = runtime->create_index_space
+    (ctx, Domain::from_rect<2>(rect0));
+  IndexSpace VTu1_is = runtime->create_index_space
+    (ctx, Domain::from_rect<2>(rect1));
+  runtime->attach_name(VTu0_is, "VTu0_ghost_is");
   FieldSpace fs = runtime->create_field_space(ctx);
   runtime->attach_name(fs, "VTu_ghost_fs");
   {
@@ -342,21 +375,25 @@ void top_level_task(const Task *task,
     std::vector<std::vector<LogicalRegion> > VTd_ghosts(num_ghosts);
     for (int i=0; i<num_ghosts; i++) {
       // VTu0
-      VTu_ghosts[i].push_back(runtime->create_logical_region(ctx, VTu_is, fs));
+      VTu_ghosts[i].push_back(runtime->create_logical_region(ctx, VTu0_is, fs));
       // VTu1
-      VTu_ghosts[i].push_back(runtime->create_logical_region(ctx, VTu_is, fs));
+      VTu_ghosts[i].push_back(runtime->create_logical_region(ctx, VTu1_is, fs));
     }
     // create VTd regions
     Point<2> lo = make_point(0, 0);
-    Point<2> hi = make_point(rank-1, nRhs+l*rank-1);
-    Rect<2>  rect(lo, hi);
-    IndexSpace VTd_is = runtime->create_index_space
-      (ctx, Domain::from_rect<2>(rect));
+    Point<2> hi0 = make_point(rank1-1, nRhs+l*rank0-1);
+    Point<2> hi1 = make_point(rank0-1, nRhs+l*rank1-1);
+    Rect<2>  rect0(lo, hi0);
+    Rect<2>  rect1(lo, hi1);
+    IndexSpace VTd0_is = runtime->create_index_space
+      (ctx, Domain::from_rect<2>(rect0));
+    IndexSpace VTd1_is = runtime->create_index_space
+      (ctx, Domain::from_rect<2>(rect1));
     for (int i=0; i<num_ghosts; i++) {
       // VTd0
-      VTd_ghosts[i].push_back(runtime->create_logical_region(ctx, VTd_is, fs));
+      VTd_ghosts[i].push_back(runtime->create_logical_region(ctx, VTd0_is, fs));
       // VTd1
-      VTd_ghosts[i].push_back(runtime->create_logical_region(ctx, VTd_is, fs));
+      VTd_ghosts[i].push_back(runtime->create_logical_region(ctx, VTd1_is, fs));
     }
     VTu_all.insert(VTu_all.end(), VTu_ghosts.begin(), VTu_ghosts.end());
     VTd_all.insert(VTd_all.end(), VTd_ghosts.begin(), VTd_ghosts.end());

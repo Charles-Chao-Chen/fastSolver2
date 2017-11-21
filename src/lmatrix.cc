@@ -610,13 +610,13 @@ void LMatrix::node_solve
 #endif
   assert(VTu0.rows() == VTu0.cols());
   assert(VTu1.rows() == VTu1.cols());
-  assert(VTu0.rows() == VTu1.rows());
-  assert(VTd0.rows() == VTd1.rows());
   assert(VTd0.cols() == VTd1.cols());
   assert(VTu0.rows() == VTd0.rows());
-  int rank = VTd0.rows();
+  assert(VTu1.rows() == VTd1.rows());
+  int rank0 = VTu0.rows();
+  int rank1 = VTu1.rows();
   int nRhs = VTd0.cols();
-  NodeSolveRegionTask::TaskArgs args = {rank, nRhs};
+  NodeSolveRegionTask::TaskArgs args = {rank0, rank1, nRhs};
   NodeSolveRegionTask launcher(TaskArgument(&args, sizeof(args)));
   //RegionRequirement AReq(ARegion, 0, READ_ONLY,  EXCLUSIVE, ARegion);
   RegionRequirement VTu0_rq(VTu0_rg, READ_ONLY, EXCLUSIVE, VTu0_rg);
