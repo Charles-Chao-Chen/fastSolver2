@@ -219,10 +219,10 @@ void spmd_fast_solver(const Task *task,
       cp_node_solve.add_dst_field(0, FIELDID_V);
       cp_node_solve.add_wait_barrier(args->node_solve[l]);
       runtime->issue_copy_operation(ctx, cp_node_solve);
-      ghost_idx += 2;
+      ghost_idx += local;
     }
 
-    // local update: d -= u * VTd
+    // update: d -= u * VTd
     LMatrix VTd_lmtx;
     if (is_master_task(spmd_point, l, spmd_level)) {
       VTd_lmtx = create_legion_matrix(VTd_ghost, ctx, runtime);    

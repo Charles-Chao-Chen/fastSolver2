@@ -608,13 +608,13 @@ void LMatrix::node_solve
 	 VTd1_rg.get_field_space().get_id(),
 	 VTd1_rg.get_tree_id());
 #endif
-  assert(VTu0.rows() == VTu0.cols());
-  assert(VTu1.rows() == VTu1.cols());
+  assert(VTu0.rows() == VTu1.cols());
+  assert(VTu1.rows() == VTu0.cols());
   assert(VTd0.cols() == VTd1.cols());
   assert(VTu0.rows() == VTd0.rows());
   assert(VTu1.rows() == VTd1.rows());
-  int rank0 = VTu0.rows();
-  int rank1 = VTu1.rows();
+  int rank0 = VTu0.cols();
+  int rank1 = VTu1.cols();
   int nRhs = VTd0.cols();
   NodeSolveRegionTask::TaskArgs args = {rank0, rank1, nRhs};
   NodeSolveRegionTask launcher(TaskArgument(&args, sizeof(args)));
