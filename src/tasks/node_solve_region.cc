@@ -81,7 +81,6 @@ void NodeSolveRegionTask::cpu_task(const Task *task,
   PtrMatrix S(N, N);
   PtrMatrix B(N, nRhs);
   
-  // assume V0'*u0 and V1'*u1 have the same number of rows
   S.identity(); // initialize to identity matrix
   for (int i=0; i<rank0; i++) {
     for (int j=0; j<rank1; j++) {
@@ -95,8 +94,18 @@ void NodeSolveRegionTask::cpu_task(const Task *task,
       B(i,   j) = VTd1(i, j);
     }
     for (int i=0; i<rank1; i++) {
-      B(i+rank0, j) = VTd0(i, j);
+      B(rank0+i, j) = VTd0(i, j);
     }
   }  
   S.solve( B );
+  
+  // copy back the results
+  for (int j=0; j<nRhs; j++) {
+    for (int i=0; i<rank0; i++) {
+      VTd1(i, j) = B(i, j);
+    }
+    for (int i=0; i<rank1; i++) {
+      VTd0(i, j) = B(rank0+i, j);
+    }
+  }    
 }

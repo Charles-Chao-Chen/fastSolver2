@@ -33,6 +33,7 @@ bool is_master_task(int point, int current_level, int total_level) {
   return (point % (int) pow(2, total_level - current_level) == 0);
 }
 
+/*
 LMatrix create_local_region(LogicalRegion ghost, int rows, int cols,
 			    Context ctx, HighLevelRuntime *runtime) {
   IndexSpace is = ghost.get_index_space();
@@ -45,6 +46,19 @@ LMatrix create_local_region(LogicalRegion ghost, int rows, int cols,
   LogicalRegion region = 
     runtime->create_logical_region(ctx, is, fs);  
   return LMatrix(rows, cols, region, is, fs);
+}
+*/
+
+LogicalRegion create_local_region(LogicalRegion ghost,
+			    Context ctx, HighLevelRuntime *runtime) {
+  IndexSpace is = ghost.get_index_space();
+  FieldSpace fs = runtime->create_field_space(ctx);
+  {
+    FieldAllocator allocator = 
+      runtime->create_field_allocator(ctx, fs);
+    allocator.allocate_field(sizeof(double), FIELDID_V);
+  }
+  return runtime->create_logical_region(ctx, is, fs);  
 }
 
 LMatrix create_legion_matrix(LogicalRegion region, int rows, int cols) {
@@ -70,6 +84,10 @@ void spmd_fast_solver(const Task *task,
   std::cout<<"spmd_task["<<spmd_point<<"] is running on machine "
 	   <<hostname<<std::endl;
 
+  assert(regions.size() == 4);
+  assert(task->regions.size() == 4);
+  assert(task->arglen == sizeof(SPMDargs));
+  
   runtime->unmap_all_regions(ctx);
   SPMDargs *args       = (SPMDargs*)task->args;
   int leaf_size        = args->leaf_size;
@@ -163,8 +181,10 @@ void spmd_fast_solver(const Task *task,
     // compute local results
     LogicalRegion VTu_ghost = task->regions[ghost_idx].region;
     LogicalRegion VTd_ghost = task->regions[ghost_idx+1].region;
-    LMatrix VTu = create_local_region(VTu_ghost, rankp, rank, ctx, runtime);
-    LMatrix VTd = create_local_region(VTd_ghost, rankp, nRhs+l*rank, ctx, runtime);
+    LogicalRegion VTu_local = create_local_region(VTu_ghost, ctx, runtime);
+    LogicalRegion VTd_local = create_local_region(VTd_ghost, ctx, runtime);
+    LMatrix VTu = create_legion_matrix(VTu_local, ctx, runtime);
+    LMatrix VTd = create_legion_matrix(VTd_local, ctx, runtime);
 
     LMatrix::gemm('t', 'n', 1.0, V, u, 0.0, VTu, ctx, runtime );
     LMatrix::gemm('t', 'n', 1.0, V, d, 0.0, VTd, ctx, runtime );
@@ -172,8 +192,6 @@ void spmd_fast_solver(const Task *task,
     // copy
     CopyLauncher  cp_VTu;
     CopyLauncher  cp_VTd;
-    LogicalRegion VTu_local = VTu.logical_region();
-    LogicalRegion VTd_local = VTd.logical_region();
     cp_VTu.add_copy_requirements
       (RegionRequirement(VTu_local, READ_ONLY, EXCLUSIVE, VTu_local),
        RegionRequirement(VTu_ghost, REDOP_ADD, EXCLUSIVE, VTu_ghost));
@@ -191,48 +209,45 @@ void spmd_fast_solver(const Task *task,
     runtime->issue_copy_operation(ctx, cp_VTd);
     
     // node solve
+    LMatrix VTdp;
+    LogicalRegion VTup_ghost = task->regions[ghost_idx+2].region;
+    LogicalRegion VTdp_ghost = task->regions[ghost_idx+3].region;
     if (is_master_task(spmd_point, l, spmd_level)) {
       LMatrix VTu0 = create_legion_matrix(VTu_ghost, ctx, runtime);
       LMatrix VTd0 = create_legion_matrix(VTd_ghost, ctx, runtime);
-      LogicalRegion VTu1_ghost = task->regions[ghost_idx+2].region;
-      LogicalRegion VTd1_ghost = task->regions[ghost_idx+3].region;
-      LMatrix VTu1 = create_legion_matrix(VTu1_ghost, ctx, runtime);
-      LMatrix VTd1 = create_legion_matrix(VTd1_ghost, ctx, runtime);
+      LMatrix VTu1 = create_legion_matrix(VTup_ghost, ctx, runtime);
+      LMatrix VTd1 = create_legion_matrix(VTdp_ghost, ctx, runtime);
       args->reduction[l] = 
 	runtime->advance_phase_barrier(ctx, args->reduction[l]);
       assert(args->node_solve[l]!=PhaseBarrier());
       LMatrix::node_solve( VTu0, VTu1, VTd0, VTd1,
 			   args->reduction[l], args->node_solve[l],
 			   ctx, runtime );
-      ghost_idx += 4;
+
+      VTdp = VTd1;
     }
 
     // copy data
     else {
+      LogicalRegion VTdp_local = create_local_region(VTdp_ghost,ctx,runtime);
+      VTdp = create_legion_matrix(VTdp_local, ctx, runtime); 
       args->node_solve[l] = 
 	runtime->advance_phase_barrier(ctx, args->node_solve[l]);
       CopyLauncher cp_node_solve;
       cp_node_solve.add_copy_requirements
-	(RegionRequirement(VTd_ghost, READ_ONLY, EXCLUSIVE, VTd_ghost),
-	 RegionRequirement(VTd_local, WRITE_DISCARD, EXCLUSIVE, VTd_local));
+	(RegionRequirement(VTdp_ghost, READ_ONLY, EXCLUSIVE, VTdp_ghost),
+	 RegionRequirement(VTdp_local, WRITE_DISCARD, EXCLUSIVE, VTdp_local));
       cp_node_solve.add_src_field(0, FIELDID_V);
       cp_node_solve.add_dst_field(0, FIELDID_V);
       cp_node_solve.add_wait_barrier(args->node_solve[l]);
       runtime->issue_copy_operation(ctx, cp_node_solve);
-      ghost_idx += local;
     }
 
+    ghost_idx += 4;      
+    
     // update: d -= u * VTd
-    LMatrix VTd_lmtx;
-    if (is_master_task(spmd_point, l, spmd_level)) {
-      VTd_lmtx = create_legion_matrix(VTd_ghost, ctx, runtime);    
-    }
-    else {
-      VTd_lmtx = create_legion_matrix(VTd_local, ctx, runtime); 
-    }
-
     bool wait = (l==0 ? true : false);
-    LMatrix::gemm_inplace('n', 'n', -1.0, u, VTd_lmtx, 1.0, d,
+    LMatrix::gemm_inplace('n', 'n', -1.0, u, VTdp, 1.0, d,
 			  ctx, runtime, wait );
     std::cout<<"launched solver tasks at level: "<<l<<std::endl;
   }
@@ -363,7 +378,7 @@ void top_level_task(const Task *task,
     allocator.allocate_field(sizeof(double), FIELDID_V);
     runtime->attach_name(fs, FIELDID_V, "GHOST");
   }
-  // go upward, this order should be consistant with task
+  // go upward (leaf -> root), this order should be consistant with task
   // launches, so the right ghost region can be referred to.
   std::vector<std::vector<LogicalRegion> > VTu_all;
   std::vector<std::vector<LogicalRegion> > VTd_all;
@@ -406,30 +421,55 @@ void top_level_task(const Task *task,
       // master task owns all ghost regions
       if (is_master_task(shard, l, spmd_level)) {
 	assert(subidx==0);
-	for (int i=0; i<2; i++) {
-	  LogicalRegion VTu = VTu_ghosts[idx][i];
-	  LogicalRegion VTd = VTd_ghosts[idx][i];
-	  RegionRequirement VTu_req(VTu,READ_WRITE,SIMULTANEOUS,VTu);
-	  RegionRequirement VTd_req(VTd,READ_WRITE,SIMULTANEOUS,VTd);
-	  VTu_req.add_field(FIELDID_V);
-	  VTd_req.add_field(FIELDID_V);
-	  spmd_tasks[shard].add_region_requirement(VTu_req);
-	  spmd_tasks[shard].add_region_requirement(VTd_req);
-	}
+	LogicalRegion VTu0 = VTu_ghosts[idx][0];
+	LogicalRegion VTd0 = VTd_ghosts[idx][0];
+	LogicalRegion VTu1 = VTu_ghosts[idx][1];
+	LogicalRegion VTd1 = VTd_ghosts[idx][1];
+	// reduce and then read
+	RegionRequirement VTu0_req(VTu0,READ_WRITE,SIMULTANEOUS,VTu0);
+	// read and then write
+	RegionRequirement VTd0_req(VTd0,READ_WRITE,SIMULTANEOUS,VTd0);
+	// read only
+	RegionRequirement VTu1_req(VTu1,READ_ONLY,SIMULTANEOUS,VTu1);
+	// read and then write
+	RegionRequirement VTd1_req(VTd1,READ_WRITE,SIMULTANEOUS,VTd1);
+	VTu0_req.add_field(FIELDID_V);
+	VTd0_req.add_field(FIELDID_V);
+	VTu1_req.add_field(FIELDID_V);
+	VTd1_req.add_field(FIELDID_V);
+	spmd_tasks[shard].add_region_requirement(VTu0_req);
+	spmd_tasks[shard].add_region_requirement(VTd0_req);
+	spmd_tasks[shard].add_region_requirement(VTu1_req);
+	spmd_tasks[shard].add_region_requirement(VTd1_req);
       }
 
       // declare no access to ghost regions
       else {
+	int subidxp = 1 - subidx;
 	LogicalRegion VTu = VTu_ghosts[idx][subidx];
 	LogicalRegion VTd = VTd_ghosts[idx][subidx];
+	LogicalRegion VTup = VTu_ghosts[idx][subidxp];
+	LogicalRegion VTdp = VTd_ghosts[idx][subidxp];
+	// reduce
 	RegionRequirement VTu_req(VTu,READ_WRITE,SIMULTANEOUS,VTu);
+	// reduce and then read
 	RegionRequirement VTd_req(VTd,READ_WRITE,SIMULTANEOUS,VTd);
+	// nothing actually
+	RegionRequirement VTup_req(VTup,READ_ONLY,SIMULTANEOUS,VTup);
+	// read only
+	RegionRequirement VTdp_req(VTdp,READ_ONLY,SIMULTANEOUS,VTdp);
 	VTu_req.flags = NO_ACCESS_FLAG;
 	VTd_req.flags = NO_ACCESS_FLAG;
+	VTup_req.flags = NO_ACCESS_FLAG;
+	VTdp_req.flags = NO_ACCESS_FLAG;
 	VTu_req.add_field(FIELDID_V);
 	VTd_req.add_field(FIELDID_V);
+	VTup_req.add_field(FIELDID_V);
+	VTdp_req.add_field(FIELDID_V);
 	spmd_tasks[shard].add_region_requirement(VTu_req);
 	spmd_tasks[shard].add_region_requirement(VTd_req);
+	spmd_tasks[shard].add_region_requirement(VTup_req);
+	spmd_tasks[shard].add_region_requirement(VTdp_req);
       }
     }
   }
