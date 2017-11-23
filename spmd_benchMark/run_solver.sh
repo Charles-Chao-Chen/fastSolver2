@@ -9,13 +9,13 @@ Ofile=$Nn"node_%.log"
 #	-level inst=2,metadata=2 \
 
 #mpirun -np $Nn -pernode \
-mpirun -np $Nn \
-	-bind-to none \
+mpirun -np $Nn -npersocket 1 \
+	-bind-to socket --report-bindings \
 	-x GASNET_BACKTRACE=1     \
 	-x LEGION_FREEZE_ON_ERROR=1 \
 	./solver \
 	-machine $Nn \
-	-core 1 \
+	-core 2 \
 	-mtxlvl $TreeLevel \
 	-rank0 10 \
 	-rank1 100 \
@@ -27,5 +27,6 @@ mpirun -np $Nn \
 
 #	-ll:csize 32000 \
 #	-hl:sched 1024 \
+#	-bind-to none --report-bindings \
 
 
