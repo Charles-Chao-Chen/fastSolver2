@@ -67,33 +67,45 @@ void NodeSolveRegionTask::cpu_task(const Task *task,
   assert(task->arglen == sizeof(TaskArgs));
 
   const TaskArgs args = *((const TaskArgs*)task->args);
-  int rank = args.rank;
-  int nRhs = args.nRhs;
+  int rank0 = args.rank0;
+  int rank1 = args.rank1;
+  int nRhs  = args.nRhs;
   //printf("rank=%d, nRhs=%d\n", rank, nRhs);
 
-  PtrMatrix VTu0 = get_raw_pointer(regions[0], 0, rank, 0, rank);
-  PtrMatrix VTu1 = get_raw_pointer(regions[1], 0, rank, 0, rank);
-  PtrMatrix VTd0 = get_raw_pointer(regions[2], 0, rank, 0, nRhs);
-  PtrMatrix VTd1 = get_raw_pointer(regions[3], 0, rank, 0, nRhs);
+  PtrMatrix VTu0 = get_raw_pointer(regions[0], 0, rank1, 0, rank0);
+  PtrMatrix VTu1 = get_raw_pointer(regions[1], 0, rank0, 0, rank1);
+  PtrMatrix VTd0 = get_raw_pointer(regions[2], 0, rank1, 0, nRhs);
+  PtrMatrix VTd1 = get_raw_pointer(regions[3], 0, rank0, 0, nRhs);
  
-  PtrMatrix S(2*rank, 2*rank);
-  PtrMatrix B(2*rank, nRhs);
+  int N = rank0 + rank1;
+  PtrMatrix S(N, N);
+  PtrMatrix B(N, nRhs);
   
-  // assume V0'*u0 and V1'*u1 have the same number of rows
   S.identity(); // initialize to identity matrix
-  int r = rank;
-  for (int i=0; i<r; i++) {
-    for (int j=0; j<r; j++) {
-      S(r+i, j) = VTu0(i, j);
-      S(i, r+j) = VTu1(i, j);
+  for (int i=0; i<rank0; i++) {
+    for (int j=0; j<rank1; j++) {
+      S(i, rank0+j) = VTu1(i, j);
+      S(rank0+j, i) = VTu0(j, i);
     }
   }
   // set the right hand side
   for (int j=0; j<nRhs; j++) {
-    for (int i=0; i<r; i++) {
+    for (int i=0; i<rank0; i++) {
       B(i,   j) = VTd1(i, j);
-      B(i+r, j) = VTd0(i, j);
+    }
+    for (int i=0; i<rank1; i++) {
+      B(rank0+i, j) = VTd0(i, j);
     }
   }  
   S.solve( B );
+  
+  // copy back the results
+  for (int j=0; j<nRhs; j++) {
+    for (int i=0; i<rank0; i++) {
+      VTd1(i, j) = B(i, j);
+    }
+    for (int i=0; i<rank1; i++) {
+      VTd0(i, j) = B(rank0+i, j);
+    }
+  }    
 }
