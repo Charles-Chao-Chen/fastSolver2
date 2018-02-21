@@ -15,7 +15,7 @@ USE_HDF ?= 0
 OUTFILE	:= 	solver
 
 # List all the application source files here
-GEN_SRC	:= 	solver.cc \
+GEN_SRC	:= 	solver_irregular_part.cc \
 		../src/hmatrix.cc ../src/tree.cc \
 		../src/lmatrix.cc ../src/matrix.cc \
 		../src/tasks/leaf_solve.cc ../src/tasks/node_solve.cc \

@@ -74,7 +74,7 @@ void register_solver_tasks() {
   GemmRedTask::register_tasks();
   GemmBroTask::register_tasks();
   Add::register_operator();
-#if 0
+#if 1
   HighLevelRuntime::set_registration_callback(create_projector);
 #else
   HighLevelRuntime::set_registration_callback(create_solver_mapper);
