@@ -15,7 +15,7 @@ USE_HDF ?= 0
 OUTFILE	:= 	solver
 
 # List all the application source files here
-GEN_SRC	:= 	solver.cc \
+GEN_SRC	:= 	solver_irregular_part.cc \
 		../src/hmatrix.cc ../src/tree.cc \
 		../src/lmatrix.cc ../src/matrix.cc \
 		../src/tasks/leaf_solve.cc ../src/tasks/node_solve.cc \
@@ -28,7 +28,8 @@ GEN_SRC	:= 	solver.cc \
 		../src/tasks/dense_block.cc ../src/tasks/add_matrix.cc \
 		../src/ptr_matrix.cc ../src/utility.cc \
 		../src/tasks/scale_matrix.cc \
-		../src/tasks/new_mapper.cc
+		../src/tasks/new_mapper.cc \
+		../src/tasks/random_mapper.cc \
 #		../src/tasks/mapper.cc \
 		../src/tasks/dist_mapper.cc ../src/tasks/spmd_mapper.cc
 
@@ -36,7 +37,7 @@ GEN_GPU_SRC	:=				# .cu files
 
 # You can modify these variables, some will be appended to by the runtime makefile
 INC_FLAGS	?= -I ../include/ -I ../include/tasks/
-CC_FLAGS	?=
+CC_FLAGS	?= -std=c++11
 NVCC_FLAGS	?=
 GASNET_FLAGS	?=
 

@@ -1,7 +1,7 @@
 #!/bin/bash -l
 
+#SBATCH --partition=debug
 #SBATCH --job-name=legion_solver
-#SBATCH --ntasks-per-node=1
 #SBATCH --mem=60GB
 #SBATCH --constraint=gpu
 
@@ -11,19 +11,19 @@
 export GASNET_IB_SPAWNER=mpi
 export GASNET_BACKTRACE=1
 
-Core_Per_Node=8
+let "NumRanks = $SLURM_NNODES*$SLURM_NTASKS_PER_NODE"
 
 time srun --nodes=$SLURM_NNODES \
 	--ntasks-per-node=$SLURM_NTASKS_PER_NODE \
 	--cpus-per-task=$SLURM_CPUS_PER_TASK \
 	--cpu_bind=none \
 	./solver                \
-	-machine   $SLURM_NNODES	\
-	-core      $Core_Per_Node	\
+	-machine   $NumRanks	\
+	-core      ${2}		\
 	-mtxlvl    ${1} 	\
-	-ll:cpu	   $Core_Per_Node	\
+	-ll:cpu	   $SLURM_CPUS_PER_TASK		\
 	-ll:csize  40000        \
 	-hl:sched  1024		\
-	-hl:prof   8	\
-	-logfile   ${SLURM_NNODES}node_%.log
+	-hl:prof   16	\
+	-logfile   ${NumRanks}rank_ref${2}_%.log
 

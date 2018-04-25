@@ -19,6 +19,7 @@
 #include "reduce_add.hpp"
 
 #include "new_mapper.hpp"
+#include "random_mapper.hpp"
 //#include "mapper.hpp"
 //#include "spmd_mapper.hpp"
 //#include "dist_mapper.hpp"

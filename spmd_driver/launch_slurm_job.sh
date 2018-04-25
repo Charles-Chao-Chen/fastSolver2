@@ -1,17 +1,23 @@
 #!/bin/sh
 
-NumNodes=1
+NumNodes=4
+NumRanksPerNode=8
+NumCoresPerRank=1
+NumTasksPerRank=1
 Mtxlvl=11
-NumCore=12
-Time=00:10:00
+Time=00:30:00
+
+let "NumRanks = $NumNodes*$NumRanksPerNode"
 
 echo Run legion solver on `echo $NumNodes` nodes...
 sbatch --nodes=${NumNodes} \
-	--cpus-per-task=${NumCore} \
+	--ntasks-per-node=${NumRanksPerNode} \
+	--cpus-per-task=${NumCoresPerRank} \
 	--time=${Time} \
-	--output=${NumNodes}node_job.out \
-	--error=${NumNodes}node_job.err \
+	--output=${NumRanks}rank_ref${NumTasksPerRank}_job.out \
+	--error=${NumRanks}rank_ref${NumTasksPerRank}_job.err \
 	job_solver.slm \
-	${Mtxlvl}
+	${Mtxlvl} \
+	${NumTasksPerRank}
 
 
