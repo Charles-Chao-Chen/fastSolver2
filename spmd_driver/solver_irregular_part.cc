@@ -444,18 +444,23 @@ void top_level_task(const Task *task,
 int main(int argc, char *argv[]) {
   // register top level task
   HighLevelRuntime::set_top_level_task_id(TOP_LEVEL_TASK_ID);
-  HighLevelRuntime::register_legion_task<top_level_task>(
-    TOP_LEVEL_TASK_ID,   /* task id */
-    Processor::LOC_PROC, /* cpu */
-    true,  /* single */
-    false, /* index  */
-    AUTO_GENERATE_ID,
-    TaskConfigOptions(false /*leaf task*/),
-    "master-task"
-  );
-  HighLevelRuntime::register_legion_task<spmd_fast_solver>(SPMD_TASK_ID,
-      Processor::LOC_PROC, true/*single*/, true/*single*/,
-      AUTO_GENERATE_ID, TaskConfigOptions(false), "spmd");
+  HighLevelRuntime::register_legion_task<top_level_task>
+    (TOP_LEVEL_TASK_ID,   /* task id */
+     Processor::LOC_PROC, /* cpu */
+     true,  /* single */
+     false, /* index  */
+     AUTO_GENERATE_ID,
+     TaskConfigOptions(false /*leaf task*/),
+     "master-task");
+  
+  HighLevelRuntime::register_legion_task<spmd_fast_solver>
+    (SPMD_TASK_ID,
+     Processor::LOC_PROC,
+     true/*single*/,
+     true/*single*/,
+     AUTO_GENERATE_ID,
+     TaskConfigOptions(false),
+     "spmd");
 
   // register solver tasks
   register_solver_tasks();
