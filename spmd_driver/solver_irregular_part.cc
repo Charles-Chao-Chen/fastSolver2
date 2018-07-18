@@ -24,6 +24,7 @@ struct SPMDargs {
   int rank;
   int nRhs;
   int spmd_level;
+  int heavy_tasks;
   int my_matrix_level;
   int my_task_level;
 };
@@ -51,9 +52,10 @@ LMatrix create_legion_matrix(LogicalRegion region, int rows, int cols) {
   return LMatrix(region, rows, cols);
 }
 
-void spmd_fast_solver(const Task *task,
-		      const std::vector<PhysicalRegion> &regions,
-		      Context ctx, HighLevelRuntime *runtime) {
+void spmd_fast_solver
+(const Task *task,
+const std::vector<PhysicalRegion> &regions,
+Context ctx, HighLevelRuntime *runtime) {
 
   char hostname[100];
   gethostname(hostname, 100);
@@ -66,10 +68,12 @@ void spmd_fast_solver(const Task *task,
   int spmd_level       = args->spmd_level;
   int matrix_level     = args->my_matrix_level;
   int task_level       = args->my_task_level;
+  int spmd_heavy       = args->heavy_tasks;
   int spmd_point       = task->index_point.get_index();
 
   // draw 'leaf_size' from a Bernoulli distribution
-  leaf_size = spmd_point%2 ? leaf_size*2: leaf_size;
+  //leaf_size = spmd_point%2 ? leaf_size*4: leaf_size;
+  leaf_size = spmd_point<spmd_heavy ? leaf_size*10: leaf_size;
   
   std::cout<<"spmd_task["<<spmd_point<<"] is running on machine "
 	   <<hostname
@@ -236,12 +240,15 @@ void top_level_task(const Task *task,
   int num_cores_per_machine = 1;
  
   // HODLR configuration
-  int rank = 100;
-  int leaf_size = 400;
+  int rank = 10;
+  int leaf_size = 40;
   int matrix_level = 1;
 
   // right hand side
   const int nRhs = 1;
+
+  // number of heavy tasks
+  int num_heavy_tasks = 1;
 
   // parse input arguments
   const InputArgs &command_args = HighLevelRuntime::get_input_args();
@@ -257,6 +264,8 @@ void top_level_task(const Task *task,
 	leaf_size = atoi(command_args.argv[++i]);
       if (!strcmp(command_args.argv[i],"-mtxlvl"))
 	matrix_level = atoi(command_args.argv[++i]);
+      if (!strcmp(command_args.argv[i],"-heavy"))
+	num_heavy_tasks = atoi(command_args.argv[++i]);
     }
   }
   int spmd_level = (int)log2(num_machines);
@@ -278,6 +287,7 @@ void top_level_task(const Task *task,
 	   <<"\noff-diagonal rank: "<<rank
 	   <<"\nleaf size: "<<leaf_size
 	   <<"\nmatrix level: "<<matrix_level
+	   <<"\nheavy tasks: "<<num_heavy_tasks
            <<"\n========================\n"
 	   <<std::endl;
 
@@ -287,6 +297,7 @@ void top_level_task(const Task *task,
   assert(leaf_size    > 0);
   assert(spmd_level   > 0);
   assert(spmd_level<=MAX_TREE_LEVEL);
+  assert(num_heavy_tasks > 0);
   
   // create phase barriers
   SPMDargs arg;
@@ -294,6 +305,7 @@ void top_level_task(const Task *task,
   arg.rank = rank;
   arg.nRhs = nRhs;
   arg.spmd_level = spmd_level;
+  arg.heavy_tasks = num_heavy_tasks;
   arg.my_matrix_level = matrix_level - spmd_level;
   arg.my_task_level = task_level;
   std::vector<SPMDargs> args(num_machines, arg);

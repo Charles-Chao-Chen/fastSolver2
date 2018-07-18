@@ -10,20 +10,25 @@
 
 export GASNET_IB_SPAWNER=mpi
 export GASNET_BACKTRACE=1
+export REALM_SYNTHETIC_CORE_MAP=
 
 let "NumRanks = $SLURM_NNODES*$SLURM_NTASKS_PER_NODE"
 
 time srun --nodes=$SLURM_NNODES \
 	--ntasks-per-node=$SLURM_NTASKS_PER_NODE \
-	--cpus-per-task=$SLURM_CPUS_PER_TASK \
-	--cpu_bind=none \
+	--cpus-per-task=$(( 12 / $SLURM_NTASKS_PER_NODE * 2 )) \
+	--cpu_bind=thread,verbose \
 	./solver                \
 	-machine   $NumRanks	\
 	-core      ${2}		\
 	-mtxlvl    ${1} 	\
-	-ll:cpu	   $SLURM_CPUS_PER_TASK		\
-	-ll:csize  40000        \
-	-hl:sched  1024		\
-	-hl:prof   16	\
-	-logfile   ${NumRanks}rank_ref${2}_%.log
+	-leaf	   400		\
+	-heavy	   16		\
+	-ll:cpu	   1		\
+	-ll:csize  20000        \
+	-lg:sched  1024		\
+	-lg:prof   32	\
+	-lg:prof_logfile   ${NumRanks}rank_ref${2}_%.gz
+
+#	--cpu_bind=none \
 
