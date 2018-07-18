@@ -32,3 +32,4 @@ time srun --nodes=$SLURM_NNODES \
 
 #	--cpu_bind=none \
 
+

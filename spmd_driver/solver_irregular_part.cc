@@ -295,7 +295,7 @@ void top_level_task(const Task *task,
   assert(is_power_of_two(num_cores_per_machine));
   assert(rank         > 0);
   assert(leaf_size    > 0);
-  assert(spmd_level   > 0);
+  assert(spmd_level   >= 0);
   assert(spmd_level<=MAX_TREE_LEVEL);
   assert(num_heavy_tasks > 0);
   
