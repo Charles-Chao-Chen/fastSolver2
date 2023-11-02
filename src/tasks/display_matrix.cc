@@ -20,7 +20,7 @@ DisplayMatrixTask::DisplayMatrixTask
 
 void DisplayMatrixTask::register_tasks(void)
 {
-  TASKID = HighLevelRuntime::register_legion_task
+  TASKID = Runtime::register_legion_task
     <DisplayMatrixTask::cpu_task>(AUTO_GENERATE_ID,
 				  Processor::LOC_PROC, 
 				  true,
@@ -36,7 +36,7 @@ void DisplayMatrixTask::register_tasks(void)
 
 void DisplayMatrixTask::cpu_task
 (const Task *task, const std::vector<PhysicalRegion> &regions,
- Context ctx, HighLevelRuntime *runtime) {
+ Context ctx, Runtime *runtime) {
   
   assert(regions.size() == 1);
   assert(task->regions.size() == 1);

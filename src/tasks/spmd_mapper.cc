@@ -4,7 +4,7 @@
 
 //Realm::Logger log_solver_mapper("solver_mapper");
 
-SPMDsolverMapper::SPMDsolverMapper(Machine machine, HighLevelRuntime *rt, Processor local,
+SPMDsolverMapper::SPMDsolverMapper(Machine machine, Runtime *rt, Processor local,
 				   std::vector<Processor>* _procs_list,
 				   std::vector<Memory>* _sysmems_list,
 				   std::map<Memory, std::vector<Processor> >* _sysmem_local_procs,

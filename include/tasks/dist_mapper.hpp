@@ -3,11 +3,11 @@
 
 #include "default_mapper.h"
 
-using namespace LegionRuntime::HighLevel;
+using namespace Legion;
 
 class DistMapper : public DefaultMapper {
 public:
-  DistMapper(Machine machine, HighLevelRuntime *rt,
+  DistMapper(Machine machine, Runtime *rt,
 	     Processor local, int radix_=2);
 public:
   virtual void select_task_options(Task *task);

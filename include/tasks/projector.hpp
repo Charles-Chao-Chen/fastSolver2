@@ -2,14 +2,14 @@
 #define _projector_hpp
 
 #include "legion.h"
-using namespace LegionRuntime::HighLevel;
+using namespace Legion;
 
 extern const ProjectionID CONTRACTION;
 
 class Contraction : public ProjectionFunctor {
 public:
   
-  Contraction(HighLevelRuntime *runtime);
+  Contraction(Runtime *runtime);
 
   virtual LogicalRegion project(Context ctx, Task *task,
                                 unsigned index,

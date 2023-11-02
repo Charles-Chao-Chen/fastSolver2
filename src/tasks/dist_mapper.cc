@@ -1,7 +1,7 @@
 #include "dist_mapper.hpp"
 
 DistMapper::DistMapper
-(Machine m, HighLevelRuntime *rt, Processor p, int radix_)
+(Machine m, Runtime *rt, Processor p, int radix_)
   : DefaultMapper(m, rt, p) {
 
   this->radix = radix_;

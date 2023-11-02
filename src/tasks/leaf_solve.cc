@@ -24,7 +24,7 @@ LeafSolveTask::LeafSolveTask(Domain domain,
 
 void LeafSolveTask::register_tasks(void)
 {
-  TASKID = HighLevelRuntime::register_legion_task
+  TASKID = Runtime::register_legion_task
     <LeafSolveTask::cpu_task>(AUTO_GENERATE_ID,
 			    Processor::LOC_PROC, 
 			    false,
@@ -40,12 +40,12 @@ void LeafSolveTask::register_tasks(void)
 
 void LeafSolveTask::cpu_task(const Task *task,
 			     const std::vector<PhysicalRegion> &regions,
-			     Context ctx, HighLevelRuntime *runtime) {
+			     Context ctx, Runtime *runtime) {
 
   assert(regions.size() == 3);
   assert(task->regions.size() == 3);
   assert(task->arglen == sizeof(TaskArgs));
-  Point<1> p = task->index_point.get_point<1>();  
+  Point<1> p(task->index_point);  
   log_solver_tasks.print("Inside leaf solve tasks.");
 
   const TaskArgs args = *((const TaskArgs*)task->args);

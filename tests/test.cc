@@ -3,7 +3,7 @@
 
 // legion stuff
 #include "legion.h"
-using namespace LegionRuntime::HighLevel;
+using namespace Legion;
 
 #include "matrix.hpp"  // for Matrix  class
 #include "hmatrix.hpp" // for HMatrix class
@@ -14,19 +14,19 @@ enum {
 
 void test_vector();
 void test_matrix();
-void test_lmatrix_init(Context, HighLevelRuntime*);
-void test_leaf_solve(Context, HighLevelRuntime*);
-void test_gemm_reduce(Context, HighLevelRuntime*);
-void test_gemm_broadcast(Context, HighLevelRuntime*);
-void test_node_solve(Context, HighLevelRuntime*);
-void test_two_level_reduce(Context, HighLevelRuntime*);
-void test_two_level_broadcast(Context, HighLevelRuntime*);
-void test_two_level_node_solve(Context, HighLevelRuntime*);
-void test_solver(int, int, int, Context, HighLevelRuntime*);
+void test_lmatrix_init(Context, Runtime*);
+void test_leaf_solve(Context, Runtime*);
+void test_gemm_reduce(Context, Runtime*);
+void test_gemm_broadcast(Context, Runtime*);
+void test_node_solve(Context, Runtime*);
+void test_two_level_reduce(Context, Runtime*);
+void test_two_level_broadcast(Context, Runtime*);
+void test_two_level_node_solve(Context, Runtime*);
+void test_solver(int, int, int, Context, Runtime*);
 
 void top_level_task(const Task *task,
 		    const std::vector<PhysicalRegion> &regions,
-		    Context ctx, HighLevelRuntime *runtime) {  
+		    Context ctx, Runtime *runtime) {  
 
   std::cout<<"In top_level_task()"<<std::endl;
     
@@ -44,7 +44,7 @@ void top_level_task(const Task *task,
   int rank = 50;
   int treelvl = 3; // assume 8 cores on every machine
   int launchlvl = 3;
-  const InputArgs &command_args = HighLevelRuntime::get_input_args();
+  const InputArgs &command_args = Runtime::get_input_args();
   if (command_args.argc > 1) {
     for (int i = 1; i < command_args.argc; i++) {
       if (!strcmp(command_args.argv[i],"-rank"))
@@ -115,18 +115,18 @@ int main(int argc, char *argv[], char *envp[]) {
   }
   
   // register top level task
-  HighLevelRuntime::set_top_level_task_id(TOP_LEVEL_TASK_ID);
-  HighLevelRuntime::register_legion_task<top_level_task>
+  Runtime::set_top_level_task_id(TOP_LEVEL_TASK_ID);
+  Runtime::register_legion_task<top_level_task>
     (TOP_LEVEL_TASK_ID, Processor::LOC_PROC, true/*single*/, false/*index*/);
 
   // register solver tasks
   register_solver_tasks();
 
   // register mapper
-  HighLevelRuntime::set_registration_callback(registration_callback);
+  Runtime::set_registration_callback(registration_callback);
 
   // start legion master task
-  return HighLevelRuntime::start(argc, argv);
+  return Runtime::start(argc, argv);
 }
 
 void test_vector() {
@@ -213,7 +213,7 @@ void test_matrix() {
   std::cout << "Test for Matrix passed!" << std::endl;
 }
 
-void test_lmatrix_init(Context ctx, HighLevelRuntime *runtime) {
+void test_lmatrix_init(Context ctx, Runtime *runtime) {
 
   int treelvl = 5, launchlvl = 3;
   int base = 3;
@@ -266,7 +266,7 @@ void test_lmatrix_init(Context ctx, HighLevelRuntime *runtime) {
 	      << std::endl;
 }
 
-void test_leaf_solve(Context ctx, HighLevelRuntime *runtime) {
+void test_leaf_solve(Context ctx, Runtime *runtime) {
 
   int level = 3;
   int m = (1<<10)*pow(2, level), n = 10;
@@ -313,7 +313,7 @@ void test_leaf_solve(Context ctx, HighLevelRuntime *runtime) {
   */
 }
 
-void test_gemm_reduce(Context ctx, HighLevelRuntime *runtime) {
+void test_gemm_reduce(Context ctx, Runtime *runtime) {
   int m=16, n=3;
   int nProc = 4;
   int level = 2;
@@ -343,7 +343,7 @@ void test_gemm_reduce(Context ctx, HighLevelRuntime *runtime) {
   }
 }
 
-void test_gemm_broadcast(Context ctx, HighLevelRuntime *runtime) {
+void test_gemm_broadcast(Context ctx, Runtime *runtime) {
   int m=16, n=3;
   int nProc = 8;
   Matrix UMat(m, n), VMat(2*n, n);
@@ -371,7 +371,7 @@ void test_gemm_broadcast(Context ctx, HighLevelRuntime *runtime) {
   }
 }
 
-void test_node_solve(Context ctx, HighLevelRuntime *runtime) {
+void test_node_solve(Context ctx, Runtime *runtime) {
   int level = 2;
   int r = 3;
   int nProc = 2;
@@ -424,7 +424,7 @@ void test_node_solve(Context ctx, HighLevelRuntime *runtime) {
     std::cout << "Test for node solve passed!" << std::endl;
 }
 
-void test_two_level_reduce(Context ctx, HighLevelRuntime *runtime) {
+void test_two_level_reduce(Context ctx, Runtime *runtime) {
   int m=16, n=3;
   int nProc = 4;
   int level = 2;
@@ -455,7 +455,7 @@ void test_two_level_reduce(Context ctx, HighLevelRuntime *runtime) {
   }
 }
 
-void test_two_level_broadcast(Context ctx, HighLevelRuntime *runtime) {
+void test_two_level_broadcast(Context ctx, Runtime *runtime) {
   int m=16, n=3;
   int nProc = 8;
   Matrix UMat(m, n), VMat(2*n, n);
@@ -484,7 +484,7 @@ void test_two_level_broadcast(Context ctx, HighLevelRuntime *runtime) {
   }
 }
 
-void test_two_level_node_solve(Context ctx, HighLevelRuntime *runtime) {
+void test_two_level_node_solve(Context ctx, Runtime *runtime) {
   int level = 2;
   int r = 3;
   int nProc = 2;
@@ -541,7 +541,7 @@ void test_two_level_node_solve(Context ctx, HighLevelRuntime *runtime) {
 }
 //#endif
 
-void test_solver(int rank, int treelvl, int launchlvl, Context ctx, HighLevelRuntime *runtime) {
+void test_solver(int rank, int treelvl, int launchlvl, Context ctx, Runtime *runtime) {
   // The number of processors should be 8 * #machines, i.e., 2^launchlvl
   // and the number of partitioning, i.e., the number of leaf nodes
   // should be 2^treelvl

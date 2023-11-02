@@ -2,7 +2,7 @@
 #define _gemm_inplace_hpp
 
 #include "legion.h"
-using namespace LegionRuntime::HighLevel;
+using namespace Legion;
 
 class GemmInplaceTask : public TaskLauncher {
 public:
@@ -31,7 +31,7 @@ public:
   static void
   cpu_task(const Task *task,
 	   const std::vector<PhysicalRegion> &regions,
-	   Context ctx, HighLevelRuntime *runtime);
+	   Context ctx, Runtime *runtime);
 };
 
 #endif

@@ -4,11 +4,11 @@
 #include "default_mapper.h"
 #include "shim_mapper.h"
 
-using namespace LegionRuntime::HighLevel;
+using namespace Legion;
 
 class SPMDsolverMapper : public ShimMapper {
 public:
-  SPMDsolverMapper(Machine machine, HighLevelRuntime *rt, Processor local,
+  SPMDsolverMapper(Machine machine, Runtime *rt, Processor local,
 		   std::vector<Processor>* procs_list,
 		   std::vector<Memory>* sysmems_list,
 		   std::map<Memory, std::vector<Processor> >* sysmem_local_procs,

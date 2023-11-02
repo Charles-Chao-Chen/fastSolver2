@@ -14,7 +14,7 @@ NodeSolveRegionTask::NodeSolveRegionTask(TaskArgument arg,
 
 void NodeSolveRegionTask::register_tasks(void)
 {
-  TASKID = HighLevelRuntime::register_legion_task
+  TASKID = Runtime::register_legion_task
     <NodeSolveRegionTask::cpu_task>(AUTO_GENERATE_ID,
 				    Processor::LOC_PROC, 
 				    true,
@@ -37,7 +37,7 @@ void NodeSolveRegionTask::register_tasks(void)
 // note the reverse order in VTd
 void NodeSolveRegionTask::cpu_task(const Task *task,
 			     const std::vector<PhysicalRegion> &regions,
-			     Context ctx, HighLevelRuntime *runtime) {
+			     Context ctx, Runtime *runtime) {
 
   //printf("Inside node solve tasks.\n");
 #if 0

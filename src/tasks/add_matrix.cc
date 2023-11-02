@@ -17,7 +17,7 @@ AddMatrixTask::AddMatrixTask(Domain domain,
 
 void AddMatrixTask::register_tasks(void)
 {
-  TASKID = HighLevelRuntime::register_legion_task
+  TASKID = Runtime::register_legion_task
     <AddMatrixTask::cpu_task>(AUTO_GENERATE_ID,
 			    Processor::LOC_PROC, 
 			    false,
@@ -33,13 +33,13 @@ void AddMatrixTask::register_tasks(void)
 
 void AddMatrixTask::cpu_task(const Task *task,
 			     const std::vector<PhysicalRegion> &regions,
-			     Context ctx, HighLevelRuntime *runtime) {
+			     Context ctx, Runtime *runtime) {
 
   assert(regions.size() == 3);
   assert(task->regions.size() == 3);
   assert(task->arglen == sizeof(TaskArgs));
 
-  Point<1> p = task->index_point.get_point<1>();
+  Point<1> p(task->index_point);
   //printf("point = %d\n", p[0]);
 
   const TaskArgs args = *((const TaskArgs*)task->args);

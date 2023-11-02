@@ -14,7 +14,7 @@ GemmTask::GemmTask(TaskArgument arg,
 
 void GemmTask::register_tasks(void)
 {
-  TASKID = HighLevelRuntime::register_legion_task
+  TASKID = Runtime::register_legion_task
     <GemmTask::cpu_task>(AUTO_GENERATE_ID,
 			 Processor::LOC_PROC, 
 			 true,
@@ -30,7 +30,7 @@ void GemmTask::register_tasks(void)
 
 void GemmTask::cpu_task(const Task *task,
 			   const std::vector<PhysicalRegion> &regions,
-			   Context ctx, HighLevelRuntime *runtime) {
+			   Context ctx, Runtime *runtime) {
   assert(regions.size() == 3);
   assert(task->regions.size() == 3);
   assert(task->arglen == sizeof(TaskArgs));

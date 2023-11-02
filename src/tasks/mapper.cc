@@ -5,7 +5,7 @@
 Realm::Logger log_solver_mapper("solver_mapper");
 
 SolverMapper::SolverMapper
-(Machine m, HighLevelRuntime *rt, Processor p)
+(Machine m, Runtime *rt, Processor p)
   : DefaultMapper(m, rt, p) {
 
   // select and store all SYSTEM_MEM's in valid_mems

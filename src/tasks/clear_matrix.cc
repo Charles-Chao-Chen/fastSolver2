@@ -17,7 +17,7 @@ ClearMatrixTask::ClearMatrixTask(Domain domain,
 
 void ClearMatrixTask::register_tasks(void)
 {
-  TASKID = HighLevelRuntime::register_legion_task
+  TASKID = Runtime::register_legion_task
     <ClearMatrixTask::cpu_task>(AUTO_GENERATE_ID,
 			       Processor::LOC_PROC, 
 			       false,
@@ -33,12 +33,12 @@ void ClearMatrixTask::register_tasks(void)
 
 void ClearMatrixTask::cpu_task(const Task *task,
 			      const std::vector<PhysicalRegion> &regions,
-			      Context ctx, HighLevelRuntime *runtime) {
+			      Context ctx, Runtime *runtime) {
   assert(regions.size() == 1);
   assert(task->regions.size() == 1);
   assert(task->arglen == sizeof(TaskArgs));
 
-  Point<1> p = task->index_point.get_point<1>();
+  Point<1> p(task->index_point.get_point<1>());
   //printf("point = %d\n", p[0]);
 
   const TaskArgs args = *((const TaskArgs*)task->args);

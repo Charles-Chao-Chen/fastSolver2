@@ -21,7 +21,7 @@ DenseBlockTask::DenseBlockTask(Domain domain,
 
 void DenseBlockTask::register_tasks(void)
 {
-  TASKID = HighLevelRuntime::register_legion_task
+  TASKID = Runtime::register_legion_task
     <DenseBlockTask::cpu_task>(AUTO_GENERATE_ID,
 			       Processor::LOC_PROC, 
 			       false,
@@ -37,7 +37,7 @@ void DenseBlockTask::register_tasks(void)
 
 void DenseBlockTask::cpu_task(const Task *task,
 			      const std::vector<PhysicalRegion> &regions,
-			      Context ctx, HighLevelRuntime *runtime) {
+			      Context ctx, Runtime *runtime) {
 
   assert(regions.size() == 1);
   assert(task->regions.size() == 1);
@@ -45,7 +45,7 @@ void DenseBlockTask::cpu_task(const Task *task,
   //  assert(task->local_arglen == sizeof(ThreeSeeds));
   log_solver_tasks.print("Inside init dense block tasks.");
   
-  Point<1> p = task->index_point.get_point<1>();
+  Point<1> p(task->index_point);
   //printf("point = %d\n", p[0]);
 
   //const ThreeSeeds seeds = *((const ThreeSeeds*)task->local_args);

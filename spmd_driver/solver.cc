@@ -4,8 +4,7 @@
 
 // legion stuff
 #include "legion.h"
-using namespace LegionRuntime;
-using namespace LegionRuntime::HighLevel;
+using namespace Legion;
 
 #include "matrix.hpp"  // for Matrix  class
 #include "hmatrix.hpp" // for HMatrix class
@@ -34,7 +33,7 @@ bool is_master_task(int point, int current_level, int total_level) {
 }
 
 LMatrix create_local_region(LogicalRegion ghost, int rows, int cols,
-			    Context ctx, HighLevelRuntime *runtime) {
+			    Context ctx, Runtime *runtime) {
   IndexSpace is = ghost.get_index_space();
   FieldSpace fs = runtime->create_field_space(ctx);
   {
@@ -53,7 +52,7 @@ LMatrix create_legion_matrix(LogicalRegion region, int rows, int cols) {
 
 void spmd_fast_solver(const Task *task,
 		      const std::vector<PhysicalRegion> &regions,
-		      Context ctx, HighLevelRuntime *runtime) {
+		      Context ctx, Runtime *runtime) {
 
   char hostname[100];
   gethostname(hostname, 100);
@@ -224,7 +223,7 @@ void spmd_fast_solver(const Task *task,
 
 void top_level_task(const Task *task,
 		    const std::vector<PhysicalRegion> &regions,
-		    Context ctx, HighLevelRuntime *runtime) {
+		    Context ctx, Runtime *runtime) {
  
   // machine configuration
   int num_machines = 1;
@@ -239,7 +238,7 @@ void top_level_task(const Task *task,
   const int nRhs = 1;
 
   // parse input arguments
-  const InputArgs &command_args = HighLevelRuntime::get_input_args();
+  const InputArgs &command_args = Runtime::get_input_args();
   if (command_args.argc > 1) {
     for (int i = 1; i < command_args.argc; i++) {
       if (!strcmp(command_args.argv[i],"-machine"))
@@ -425,8 +424,8 @@ void top_level_task(const Task *task,
 
 int main(int argc, char *argv[]) {
   // register top level task
-  HighLevelRuntime::set_top_level_task_id(TOP_LEVEL_TASK_ID);
-  HighLevelRuntime::register_legion_task<top_level_task>(
+  Runtime::set_top_level_task_id(TOP_LEVEL_TASK_ID);
+  Runtime::register_legion_task<top_level_task>(
     TOP_LEVEL_TASK_ID,   /* task id */
     Processor::LOC_PROC, /* cpu */
     true,  /* single */
@@ -435,7 +434,7 @@ int main(int argc, char *argv[]) {
     TaskConfigOptions(false /*leaf task*/),
     "master-task"
   );
-  HighLevelRuntime::register_legion_task<spmd_fast_solver>(SPMD_TASK_ID,
+  Runtime::register_legion_task<spmd_fast_solver>(SPMD_TASK_ID,
       Processor::LOC_PROC, true/*single*/, true/*single*/,
       AUTO_GENERATE_ID, TaskConfigOptions(false), "spmd");
 
@@ -443,5 +442,5 @@ int main(int argc, char *argv[]) {
   register_solver_tasks();
 
   // start legion master task
-  return HighLevelRuntime::start(argc, argv);
+  return Runtime::start(argc, argv);
 }

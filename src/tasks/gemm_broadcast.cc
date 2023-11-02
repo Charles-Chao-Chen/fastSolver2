@@ -19,7 +19,7 @@ GemmBroTask::GemmBroTask(Domain domain,
 
 void GemmBroTask::register_tasks(void)
 {
-  TASKID = HighLevelRuntime::register_legion_task
+  TASKID = Runtime::register_legion_task
     <GemmBroTask::cpu_task>(AUTO_GENERATE_ID,
 			    Processor::LOC_PROC, 
 			    false,
@@ -35,14 +35,14 @@ void GemmBroTask::register_tasks(void)
 
 void GemmBroTask::cpu_task(const Task *task,
 			   const std::vector<PhysicalRegion> &regions,
-			   Context ctx, HighLevelRuntime *runtime) {
+			   Context ctx, Runtime *runtime) {
 
   //assert(regions.size() == 3);
   //assert(task->regions.size() == 3);
   assert(regions.size() == 2);
   assert(task->regions.size() == 2);
   assert(task->arglen == sizeof(TaskArgs));
-  Point<1> p = task->index_point.get_point<1>();
+  Point<1> p(task->index_point);
   //printf("point = %d\n", p[0]);
 
   log_solver_tasks.print("Inside gemm broadcast tasks.");
