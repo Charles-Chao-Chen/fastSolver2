@@ -441,23 +441,18 @@ void top_level_task(const Task *task,
 int main(int argc, char *argv[]) {
   // register top level task
   Runtime::set_top_level_task_id(TOP_LEVEL_TASK_ID);
-  Runtime::register_legion_task<top_level_task>
-    (TOP_LEVEL_TASK_ID,   /* task id */
-     Processor::LOC_PROC, /* cpu */
-     true,  /* single */
-     false, /* index  */
-     AUTO_GENERATE_ID,
-     TaskConfigOptions(false /*leaf task*/),
-     "master-task");
-  
-  Runtime::register_legion_task<spmd_fast_solver>
-    (SPMD_TASK_ID,
-     Processor::LOC_PROC,
-     true/*single*/,
-     true/*single*/,
-     AUTO_GENERATE_ID,
-     TaskConfigOptions(false),
-     "spmd");
+
+  {
+    TaskVariantRegistrar registrar(TOP_LEVEL_TASK_ID, "master-task");
+    registrar.add_constraint(ProcessorConstraint(Processor::LOC_PROC));
+    Runtime::preregister_task_variant<top_level_task>(registrar, "cpu");
+  }
+
+  {
+    TaskVariantRegistrar registrar(SPMD_TASK_ID, "spmd");
+    registrar.add_constraint(ProcessorConstraint(Processor::LOC_PROC));
+    Runtime::preregister_task_variant<spmd_fast_solver>(registrar, "cpu");
+  }
 
   // register solver tasks
   register_solver_tasks();

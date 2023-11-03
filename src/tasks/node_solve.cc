@@ -16,14 +16,11 @@ NodeSolveTask::NodeSolveTask(Domain domain,
 
 void NodeSolveTask::register_tasks(void)
 {
-  TASKID = Runtime::register_legion_task
-    <NodeSolveTask::cpu_task>(AUTO_GENERATE_ID,
-			      Processor::LOC_PROC, 
-			      false,
-			      true,
-			      AUTO_GENERATE_ID,
-			      TaskConfigOptions(true/*leaf*/),
-			      "Node_Solve");
+  TASKID = Runtime::generate_static_task_id();
+  TaskVariantRegistrar registrar(TASKID, "Node_Solve");
+  registrar.add_constraint(ProcessorConstraint(Processor::LOC_PROC));
+  registrar.set_leaf(true);
+  Runtime::preregister_task_variant<NodeSolveTask::cpu_task>(registrar, "cpu");
 
 #ifdef SHOW_REGISTER_TASKS
   printf("Register task %d : Node_Solve\n", TASKID);

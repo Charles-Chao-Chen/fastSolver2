@@ -14,14 +14,11 @@ NodeSolveRegionTask::NodeSolveRegionTask(TaskArgument arg,
 
 void NodeSolveRegionTask::register_tasks(void)
 {
-  TASKID = Runtime::register_legion_task
-    <NodeSolveRegionTask::cpu_task>(AUTO_GENERATE_ID,
-				    Processor::LOC_PROC, 
-				    true,
-				    false,
-				    AUTO_GENERATE_ID,
-				    TaskConfigOptions(true/*leaf*/),
-				    "Node_Solve_Region");
+  TASKID = Runtime::generate_static_task_id();
+  TaskVariantRegistrar registrar(TASKID, "Node_Solve_Region");
+  registrar.add_constraint(ProcessorConstraint(Processor::LOC_PROC));
+  registrar.set_leaf(true);
+  Runtime::preregister_task_variant<NodeSolveRegionTask::cpu_task>(registrar, "cpu");
 
 #ifdef SHOW_REGISTER_TASKS
   printf("Register task %d : Node_Solve_Region\n", TASKID);

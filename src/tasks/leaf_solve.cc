@@ -24,14 +24,11 @@ LeafSolveTask::LeafSolveTask(Domain domain,
 
 void LeafSolveTask::register_tasks(void)
 {
-  TASKID = Runtime::register_legion_task
-    <LeafSolveTask::cpu_task>(AUTO_GENERATE_ID,
-			    Processor::LOC_PROC, 
-			    false,
-			    true,
-			    AUTO_GENERATE_ID,
-			    TaskConfigOptions(true/*leaf*/),
-			    "Leaf_Solve");
+  TASKID = Runtime::generate_static_task_id();
+  TaskVariantRegistrar registrar(TASKID, "Leaf_Solve");
+  registrar.add_constraint(ProcessorConstraint(Processor::LOC_PROC));
+  registrar.set_leaf(true);
+  Runtime::preregister_task_variant<LeafSolveTask::cpu_task>(registrar, "cpu");
 
 #ifdef SHOW_REGISTER_TASKS
   printf("Register task %d : Leaf_Solve\n", TASKID);

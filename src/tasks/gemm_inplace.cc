@@ -12,14 +12,11 @@ GemmInplaceTask::GemmInplaceTask
 
 void GemmInplaceTask::register_tasks(void)
 {
-  TASKID = Runtime::register_legion_task
-    <GemmInplaceTask::cpu_task>(AUTO_GENERATE_ID,
-			 Processor::LOC_PROC, 
-			 true,
-			 false,
-			 AUTO_GENERATE_ID,
-			 TaskConfigOptions(true/*leaf*/),
-			 "GemmInplace");
+  TASKID = Runtime::generate_static_task_id();
+  TaskVariantRegistrar registrar(TASKID, "Gemm_Inplace");
+  registrar.add_constraint(ProcessorConstraint(Processor::LOC_PROC));
+  registrar.set_leaf(true);
+  Runtime::preregister_task_variant<GemmInplaceTask::cpu_task>(registrar, "cpu");
 
 #ifdef SHOW_REGISTER_TASKS
   printf("Register task %d : GemmInplace\n", TASKID);

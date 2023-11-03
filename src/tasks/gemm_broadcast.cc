@@ -19,14 +19,11 @@ GemmBroTask::GemmBroTask(Domain domain,
 
 void GemmBroTask::register_tasks(void)
 {
-  TASKID = Runtime::register_legion_task
-    <GemmBroTask::cpu_task>(AUTO_GENERATE_ID,
-			    Processor::LOC_PROC, 
-			    false,
-			    true,
-			    AUTO_GENERATE_ID,
-			    TaskConfigOptions(true/*leaf*/),
-			    "GemmBroadcast");
+  TASKID = Runtime::generate_static_task_id();
+  TaskVariantRegistrar registrar(TASKID, "Gemm_Bro");
+  registrar.add_constraint(ProcessorConstraint(Processor::LOC_PROC));
+  registrar.set_leaf(true);
+  Runtime::preregister_task_variant<GemmBroTask::cpu_task>(registrar, "cpu");
 
 #ifdef SHOW_REGISTER_TASKS
   printf("Register task %d : GemmBroadcast\n", TASKID);

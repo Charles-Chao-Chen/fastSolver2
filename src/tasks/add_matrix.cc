@@ -17,14 +17,11 @@ AddMatrixTask::AddMatrixTask(Domain domain,
 
 void AddMatrixTask::register_tasks(void)
 {
-  TASKID = Runtime::register_legion_task
-    <AddMatrixTask::cpu_task>(AUTO_GENERATE_ID,
-			    Processor::LOC_PROC, 
-			    false,
-			    true,
-			    AUTO_GENERATE_ID,
-			    TaskConfigOptions(true/*leaf*/),
-			    "add_matrix");
+  TASKID = Runtime::generate_static_task_id();
+  TaskVariantRegistrar registrar(TASKID, "Add_Matrix");
+  registrar.add_constraint(ProcessorConstraint(Processor::LOC_PROC));
+  registrar.set_leaf(true);
+  Runtime::preregister_task_variant<AddMatrixTask::cpu_task>(registrar, "cpu");
 
 #ifdef SHOW_REGISTER_TASKS
   printf("Register task %d : add_matrix\n", TASKID);

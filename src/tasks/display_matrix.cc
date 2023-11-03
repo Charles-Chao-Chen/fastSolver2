@@ -20,14 +20,11 @@ DisplayMatrixTask::DisplayMatrixTask
 
 void DisplayMatrixTask::register_tasks(void)
 {
-  TASKID = Runtime::register_legion_task
-    <DisplayMatrixTask::cpu_task>(AUTO_GENERATE_ID,
-				  Processor::LOC_PROC, 
-				  true,
-				  false,
-				  AUTO_GENERATE_ID,
-				  TaskConfigOptions(true/*leaf*/),
-				  "Display_Matrix");
+  TASKID = Runtime::generate_static_task_id();
+  TaskVariantRegistrar registrar(TASKID, "Display_Matrix");
+  registrar.add_constraint(ProcessorConstraint(Processor::LOC_PROC));
+  registrar.set_leaf(true);
+  Runtime::preregister_task_variant<DisplayMatrixTask::cpu_task>(registrar, "cpu");
 
 #ifdef SHOW_REGISTER_TASKS
   printf("Register task %d : Display_Matrix\n", TASKID);

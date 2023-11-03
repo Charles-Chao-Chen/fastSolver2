@@ -19,14 +19,11 @@ GemmRedTask::GemmRedTask(Domain domain,
 
 void GemmRedTask::register_tasks(void)
 {
-  TASKID = Runtime::register_legion_task
-    <GemmRedTask::cpu_task>(AUTO_GENERATE_ID,
-			    Processor::LOC_PROC, 
-			    false,
-			    true,
-			    AUTO_GENERATE_ID,
-			    TaskConfigOptions(true/*leaf*/),
-			    "GemmRed");
+  TASKID = Runtime::generate_static_task_id();
+  TaskVariantRegistrar registrar(TASKID, "Gemm_Red");
+  registrar.add_constraint(ProcessorConstraint(Processor::LOC_PROC));
+  registrar.set_leaf(true);
+  Runtime::preregister_task_variant<GemmRedTask::cpu_task>(registrar, "cpu");
 
 #ifdef SHOW_REGISTER_TASKS
   printf("Register task %d : GemmRed\n", TASKID);

@@ -21,14 +21,11 @@ DenseBlockTask::DenseBlockTask(Domain domain,
 
 void DenseBlockTask::register_tasks(void)
 {
-  TASKID = Runtime::register_legion_task
-    <DenseBlockTask::cpu_task>(AUTO_GENERATE_ID,
-			       Processor::LOC_PROC, 
-			       false,
-			       true,
-			       AUTO_GENERATE_ID,
-			       TaskConfigOptions(true/*leaf*/),
-			       "Dense_Block");
+  TASKID = Runtime::generate_static_task_id();
+  TaskVariantRegistrar registrar(TASKID, "Dense_Block");
+  registrar.add_constraint(ProcessorConstraint(Processor::LOC_PROC));
+  registrar.set_leaf(true);
+  Runtime::preregister_task_variant<DenseBlockTask::cpu_task>(registrar, "cpu");
 
 #ifdef SHOW_REGISTER_TASKS
   printf("Register task %d : Dense_Block\n", TASKID);

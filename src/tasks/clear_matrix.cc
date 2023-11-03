@@ -17,14 +17,11 @@ ClearMatrixTask::ClearMatrixTask(Domain domain,
 
 void ClearMatrixTask::register_tasks(void)
 {
-  TASKID = Runtime::register_legion_task
-    <ClearMatrixTask::cpu_task>(AUTO_GENERATE_ID,
-			       Processor::LOC_PROC, 
-			       false,
-			       true,
-			       AUTO_GENERATE_ID,
-			       TaskConfigOptions(true/*leaf*/),
-			       "Clear_Matrix");
+  TASKID = Runtime::generate_static_task_id();
+  TaskVariantRegistrar registrar(TASKID, "Clear_Matrix");
+  registrar.add_constraint(ProcessorConstraint(Processor::LOC_PROC));
+  registrar.set_leaf(true);
+  Runtime::preregister_task_variant<ClearMatrixTask::cpu_task>(registrar, "cpu");
 
 #ifdef SHOW_REGISTER_TASKS
   printf("Register task %d : Clear_Matrix\n", TASKID);

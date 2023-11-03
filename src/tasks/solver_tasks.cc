@@ -127,9 +127,9 @@ void register_solver_tasks() {
   GemmBroTask::register_tasks();
   Add::register_operator();
 #if 1
-  Runtime::set_registration_callback(create_projector);
+  Runtime::add_registration_callback(create_projector);
 #else
-  //Runtime::set_registration_callback(create_solver_mapper);
-  Runtime::set_registration_callback(create_random_mapper);
+  //Runtime::add_registration_callback(create_solver_mapper);
+  Runtime::add_registration_callback(create_random_mapper);
 #endif
 }
