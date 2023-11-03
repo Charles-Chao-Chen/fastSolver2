@@ -384,17 +384,17 @@ IndexPartition LMatrix::UniformRowPartition
 (Context ctx, Runtime *runtime) {
 
   Rect<1> bounds(Point<1>(0),Point<1>(nPart-1));
-  Domain  domain(bounds);
+  IndexSpace color_space = runtime->create_index_space(ctx, bounds);
 
   int size = rblock;
-  DomainColoring coloring;
+  std::map<DomainPoint,Domain> coloring;
   for (int i = 0; i < nPart; i++) {
     Point<2> lo(  i   *size,   0);
     Point<2> hi( (i+1)*size-1, mCols-1);
     Rect<2> subrect(lo, hi);
     coloring[i] = Domain(subrect);
   }
-  return runtime->create_index_partition(ctx, ispace, domain, coloring, true);
+  return runtime->create_partition_by_domain(ctx, ispace, coloring, color_space);
 }
 
 IndexPartition LMatrix::UniformRowPartition
@@ -402,17 +402,17 @@ IndexPartition LMatrix::UniformRowPartition
  Context ctx, Runtime *runtime) {
 
   Rect<1> bounds(Point<1>(0),Point<1>(num_subregions-1));
-  Domain  domain(bounds);
+  IndexSpace color_space = runtime->create_index_space(ctx, bounds);
 
   int size = mRows / num_subregions;
-  DomainColoring coloring;
+  std::map<DomainPoint,Domain> coloring;
   for (int i = 0; i < num_subregions; i++) {
     Point<2> lo(  i   *size,   col0);
     Point<2> hi( (i+1)*size-1, col1-1);
     Rect<2> subrect(lo, hi);
     coloring[i] = Domain(subrect);
   }
-  return runtime->create_index_partition(ctx, ispace, domain, coloring, true);
+  return runtime->create_partition_by_domain(ctx, ispace, coloring, color_space);
 }
 
 Vector LMatrix::to_vector() {
@@ -501,9 +501,9 @@ void LMatrix::two_level_partition
     LogicalRegion lr = runtime->get_logical_subregion_by_color(ctx, lpart, i);
 
     Rect<1> bounds(Point<1>(0),Point<1>(1));
-    Domain  domain(bounds);
+    IndexSpace color_space = runtime->create_index_space(ctx, bounds);
     int size = rblock/2;
-    DomainColoring coloring;
+    std::map<DomainPoint,Domain> coloring;
     for (int j = 0; j < 2; j++) {
       Point<2> lo( i*rblock+j*size,   0);
       Point<2> hi( i*rblock+(j+1)*size-1, mCols-1);
@@ -511,7 +511,7 @@ void LMatrix::two_level_partition
       coloring[j] = Domain(subrect);
     }
     IndexSpace is = lr.get_index_space();
-    IndexPartition ip = runtime->create_index_partition(ctx, is, domain, coloring, true,0);
+    IndexPartition ip = runtime->create_partition_by_domain(ctx, is, coloring, color_space, true, LEGION_COMPUTE_KIND, 0);
     LogicalPartition lp = runtime->get_logical_partition(ctx, lr, ip);
     (void)lp;
   }
