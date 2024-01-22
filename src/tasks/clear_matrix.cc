@@ -35,7 +35,7 @@ void ClearMatrixTask::cpu_task(const Task *task,
   assert(task->regions.size() == 1);
   assert(task->arglen == sizeof(TaskArgs));
 
-  Point<1> p(task->index_point.get_point<1>());
+  Point<1> p = task->index_point;
   //printf("point = %d\n", p[0]);
 
   const TaskArgs args = *((const TaskArgs*)task->args);

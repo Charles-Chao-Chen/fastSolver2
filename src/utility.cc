@@ -11,7 +11,7 @@ double* region_pointer
   bounds.hi[0] = rhi-1;
   bounds.lo[1] = clo;
   bounds.hi[1] = chi-1;
-  FieldAccessor<READ_WRITE,double,2,coord_t,Realm::AffineAccessor<double,2,coord_t> > accessor(region, FIELDID_V);
+  FieldAccessor<LEGION_READ_WRITE,double,2,coord_t,Realm::AffineAccessor<double,2,coord_t> > accessor(region, FIELDID_V);
   size_t offset[2];
   double *base = accessor.ptr(bounds, offset, 2);
   assert(offset[0] == sizeof(double));
@@ -29,7 +29,7 @@ PtrMatrix get_raw_pointer
   bounds.hi[0] = rhi-1;
   bounds.lo[1] = clo;
   bounds.hi[1] = chi-1;
-  FieldAccessor<READ_WRITE,double,2,coord_t,Realm::AffineAccessor<double,2,coord_t> > accessor(region, FIELDID_V);
+  FieldAccessor<LEGION_READ_WRITE,double,2,coord_t,Realm::AffineAccessor<double,2,coord_t> > accessor(region, FIELDID_V);
   size_t offset[2];
   double *base = accessor.ptr(bounds, offset, 2);
   assert(offset[0] == sizeof(double));
@@ -45,7 +45,7 @@ PtrMatrix reduction_pointer
   bounds.hi[0] = rhi-1;
   bounds.lo[1] = clo;
   bounds.hi[1] = chi-1;
-  FieldAccessor<READ_WRITE,double,2,coord_t,Realm::AffineAccessor<double,2,coord_t> > accessor(region, FIELDID_V);
+  FieldAccessor<LEGION_READ_WRITE,double,2,coord_t,Realm::AffineAccessor<double,2,coord_t> > accessor(region, FIELDID_V);
   size_t offset[2];
   double *base = accessor.ptr(bounds, offset, 2);
   assert(offset[0] == sizeof(double));

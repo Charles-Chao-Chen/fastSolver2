@@ -6,7 +6,6 @@
 
 #include "legion.h"
 using namespace Legion;
-using namespace LegionRuntime::Accessor;
 
 enum {
   FIELDID_V,

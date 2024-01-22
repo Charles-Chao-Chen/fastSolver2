@@ -3,7 +3,6 @@
 
 #include "legion.h"
 using namespace Legion;
-using namespace LegionRuntime::Accessor;
 
 class InitMatrixTask : public IndexLauncher {
 public:

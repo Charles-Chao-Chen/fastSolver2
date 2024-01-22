@@ -131,7 +131,7 @@ void UTree::clear(Context ctx, Runtime* runtime) {
 Matrix UTree::solution(Context ctx, Runtime *runtime) {
   Matrix sln(UMat.rows(), nRhs);
   LogicalRegion lr = U.logical_region();
-  RegionRequirement req(lr, READ_ONLY, EXCLUSIVE, lr);
+  RegionRequirement req(lr, LEGION_READ_ONLY, LEGION_EXCLUSIVE, lr);
   req.add_field(FIELDID_V);
  
   InlineLauncher launcher(req);

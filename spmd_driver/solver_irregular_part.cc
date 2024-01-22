@@ -161,11 +161,11 @@ Context ctx, Runtime *runtime) {
     LogicalRegion VTu_local = VTu.logical_region();
     LogicalRegion VTd_local = VTd.logical_region();
     cp_VTu.add_copy_requirements
-      (RegionRequirement(VTu_local, READ_ONLY, EXCLUSIVE, VTu_local),
-       RegionRequirement(VTu_ghost, REDOP_ADD, EXCLUSIVE, VTu_ghost));
+      (RegionRequirement(VTu_local, LEGION_READ_ONLY, LEGION_EXCLUSIVE, VTu_local),
+       RegionRequirement(VTu_ghost, REDOP_ADD, LEGION_EXCLUSIVE, VTu_ghost));
     cp_VTd.add_copy_requirements
-      (RegionRequirement(VTd_local, READ_ONLY, EXCLUSIVE, VTd_local),
-       RegionRequirement(VTd_ghost, REDOP_ADD, EXCLUSIVE, VTd_ghost));
+      (RegionRequirement(VTd_local, LEGION_READ_ONLY, LEGION_EXCLUSIVE, VTd_local),
+       RegionRequirement(VTd_ghost, REDOP_ADD, LEGION_EXCLUSIVE, VTd_ghost));
     cp_VTu.add_src_field(0, FIELDID_V);
     cp_VTu.add_dst_field(0, FIELDID_V);
     cp_VTd.add_src_field(0, FIELDID_V);
@@ -199,8 +199,8 @@ Context ctx, Runtime *runtime) {
 	runtime->advance_phase_barrier(ctx, args->node_solve[l]);
       CopyLauncher cp_node_solve;
       cp_node_solve.add_copy_requirements
-	(RegionRequirement(VTd_ghost, READ_ONLY, EXCLUSIVE, VTd_ghost),
-	 RegionRequirement(VTd_local, WRITE_DISCARD, EXCLUSIVE, VTd_local));
+	(RegionRequirement(VTd_ghost, LEGION_READ_ONLY, LEGION_EXCLUSIVE, VTd_ghost),
+	 RegionRequirement(VTd_local, LEGION_WRITE_DISCARD, LEGION_EXCLUSIVE, VTd_local));
       cp_node_solve.add_src_field(0, FIELDID_V);
       cp_node_solve.add_dst_field(0, FIELDID_V);
       cp_node_solve.add_wait_barrier(args->node_solve[l]);
@@ -388,8 +388,8 @@ void top_level_task(const Task *task,
 	for (int i=0; i<2; i++) {
 	  LogicalRegion VTu = VTu_ghosts[idx][i];
 	  LogicalRegion VTd = VTd_ghosts[idx][i];
-	  RegionRequirement VTu_req(VTu,READ_WRITE,SIMULTANEOUS,VTu);
-	  RegionRequirement VTd_req(VTd,READ_WRITE,SIMULTANEOUS,VTd);
+	  RegionRequirement VTu_req(VTu,LEGION_READ_WRITE,LEGION_SIMULTANEOUS,VTu);
+	  RegionRequirement VTd_req(VTd,LEGION_READ_WRITE,LEGION_SIMULTANEOUS,VTd);
 	  VTu_req.add_field(FIELDID_V);
 	  VTd_req.add_field(FIELDID_V);
 	  spmd_tasks[shard].add_region_requirement(VTu_req);
@@ -401,10 +401,10 @@ void top_level_task(const Task *task,
       else {
 	LogicalRegion VTu = VTu_ghosts[idx][subidx];
 	LogicalRegion VTd = VTd_ghosts[idx][subidx];
-	RegionRequirement VTu_req(VTu,READ_WRITE,SIMULTANEOUS,VTu);
-	RegionRequirement VTd_req(VTd,READ_WRITE,SIMULTANEOUS,VTd);
-	VTu_req.flags = NO_ACCESS_FLAG;
-	VTd_req.flags = NO_ACCESS_FLAG;
+	RegionRequirement VTu_req(VTu,LEGION_READ_WRITE,LEGION_SIMULTANEOUS,VTu);
+	RegionRequirement VTd_req(VTd,LEGION_READ_WRITE,LEGION_SIMULTANEOUS,VTd);
+	VTu_req.flags = LEGION_NO_ACCESS_FLAG;
+	VTd_req.flags = LEGION_NO_ACCESS_FLAG;
 	VTu_req.add_field(FIELDID_V);
 	VTd_req.add_field(FIELDID_V);
 	spmd_tasks[shard].add_region_requirement(VTu_req);
