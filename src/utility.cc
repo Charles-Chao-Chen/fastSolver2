@@ -1,4 +1,5 @@
 #include "utility.hpp"
+#include "tasks/reduce_add.hpp"
 
 bool is_power_of_two(int x) {
   return (x > 0) && !(x & (x-1));
@@ -45,7 +46,7 @@ PtrMatrix reduction_pointer
   bounds.hi[0] = rhi-1;
   bounds.lo[1] = clo;
   bounds.hi[1] = chi-1;
-  FieldAccessor<LEGION_READ_WRITE,double,2,coord_t,Realm::AffineAccessor<double,2,coord_t> > accessor(region, FIELDID_V);
+  ReductionAccessor<Add,true,2,coord_t,Realm::AffineAccessor<double,2,coord_t> > accessor(region, FIELDID_V, REDOP_ADD);
   size_t offset[2];
   double *base = accessor.ptr(bounds, offset);
 #ifdef DEBUG_POINTERS
