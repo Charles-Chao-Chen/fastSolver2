@@ -69,10 +69,10 @@ void NodeSolveRegionTask::cpu_task(const Task *task,
   int nRhs  = args.nRhs;
   //printf("rank=%d, nRhs=%d\n", rank, nRhs);
 
-  PtrMatrix VTu0 = get_raw_pointer(regions[0], 0, rank1, 0, rank0);
-  PtrMatrix VTu1 = get_raw_pointer(regions[1], 0, rank0, 0, rank1);
-  PtrMatrix VTd0 = get_raw_pointer(regions[2], 0, rank1, 0, nRhs);
-  PtrMatrix VTd1 = get_raw_pointer(regions[3], 0, rank0, 0, nRhs);
+  PtrMatrix VTu0 = get_raw_pointer<LEGION_READ_WRITE>(regions[0], 0, rank1, 0, rank0);
+  PtrMatrix VTu1 = get_raw_pointer<LEGION_READ_WRITE>(regions[1], 0, rank0, 0, rank1);
+  PtrMatrix VTd0 = get_raw_pointer<LEGION_READ_WRITE>(regions[2], 0, rank1, 0, nRhs);
+  PtrMatrix VTd1 = get_raw_pointer<LEGION_READ_WRITE>(regions[3], 0, rank0, 0, nRhs);
  
   int N = rank0 + rank1;
   PtrMatrix S(N, N);

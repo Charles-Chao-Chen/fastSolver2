@@ -48,8 +48,8 @@ void AddMatrixTask::cpu_task(const Task *task,
   int rlo = p[0]*rblk;
   int rhi = (p[0] + 1) * rblk;
   
-  PtrMatrix AMat = get_raw_pointer(regions[0], rlo, rhi, 0, cols);
-  PtrMatrix BMat = get_raw_pointer(regions[1], rlo, rhi, 0, cols);
-  PtrMatrix CMat = get_raw_pointer(regions[2], rlo, rhi, 0, cols);
+  PtrMatrix AMat = get_raw_pointer<LEGION_READ_WRITE>(regions[0], rlo, rhi, 0, cols);
+  PtrMatrix BMat = get_raw_pointer<LEGION_READ_WRITE>(regions[1], rlo, rhi, 0, cols);
+  PtrMatrix CMat = get_raw_pointer<LEGION_READ_WRITE>(regions[2], rlo, rhi, 0, cols);
   PtrMatrix::add(alpha, AMat, beta, BMat, CMat);
 }

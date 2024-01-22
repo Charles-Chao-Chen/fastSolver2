@@ -54,8 +54,8 @@ void NodeSolveTask::cpu_task(const Task *task,
   int rhi = (p[0] + 1) * rblk;
   //printf("(rblock=%d, Acols=%d, Bcols=%d)\n", rblk, Acols, Bcols);
   
-  PtrMatrix AMat = get_raw_pointer(regions[0], rlo, rhi, 0, Acols);
-  PtrMatrix BMat = get_raw_pointer(regions[1], rlo, rhi, 0, Bcols);
+  PtrMatrix AMat = get_raw_pointer<LEGION_READ_WRITE>(regions[0], rlo, rhi, 0, Acols);
+  PtrMatrix BMat = get_raw_pointer<LEGION_READ_WRITE>(regions[1], rlo, rhi, 0, Bcols);
 
   PtrMatrix S(rblk, rblk);
   S.identity(); // initialize to identity matrix

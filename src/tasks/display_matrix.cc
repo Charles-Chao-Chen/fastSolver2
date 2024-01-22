@@ -45,7 +45,7 @@ void DisplayMatrixTask::cpu_task
   const int   cols = args.cols;
   const int   colIdx = args.colIdx;
   
-  PtrMatrix A = get_raw_pointer(regions[0], 0, rows, colIdx, colIdx+cols);
+  PtrMatrix A = get_raw_pointer<LEGION_READ_WRITE>(regions[0], 0, rows, colIdx, colIdx+cols);
   A.display(name);
 }
 

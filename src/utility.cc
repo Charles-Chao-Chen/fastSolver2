@@ -20,21 +20,23 @@ double* region_pointer
   return base;
 }
 
+template<PrivilegeMode PRIVILEGE>
 PtrMatrix get_raw_pointer
-(const PhysicalRegion &region, int rlo, int rhi, int clo, int chi,
- bool wait) {
+(const PhysicalRegion &region, int rlo, int rhi, int clo, int chi) {
   Rect<2> bounds, subrect;
   bounds.lo[0] = rlo;
   bounds.hi[0] = rhi-1;
   bounds.lo[1] = clo;
   bounds.hi[1] = chi-1;
-  FieldAccessor<LEGION_READ_WRITE,double,2,coord_t,Realm::AffineAccessor<double,2,coord_t> > accessor(region, FIELDID_V);
+  FieldAccessor<PRIVILEGE,double,2,coord_t,Realm::AffineAccessor<double,2,coord_t> > accessor(region, FIELDID_V);
   size_t offset[2];
-  double *base = accessor.ptr(bounds, offset, 2);
+  double *base = const_cast<double *>(accessor.ptr(bounds, offset, 2));
   int ld = offset[1];
   assert(ld>=rhi-rlo);
   return PtrMatrix(rhi-rlo, chi-clo, ld, base);
 }
+template PtrMatrix get_raw_pointer<LEGION_READ_ONLY>(const PhysicalRegion &, int, int, int, int);
+template PtrMatrix get_raw_pointer<LEGION_READ_WRITE>(const PhysicalRegion &, int, int, int, int);
 
 PtrMatrix reduction_pointer
 (const PhysicalRegion &region, int rlo, int rhi, int clo, int chi) {

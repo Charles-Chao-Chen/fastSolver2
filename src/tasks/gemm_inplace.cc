@@ -53,9 +53,9 @@ void GemmInplaceTask::cpu_task(const Task *task,
 	 Brows, Bcols,
 	 Crows, Ccols);
 #endif
-  PtrMatrix AMat = get_raw_pointer(regions[0], 0, Arows, AcolIdx, AcolIdx+Acols);
-  PtrMatrix BMat = get_raw_pointer(regions[1], 0, Brows, 0, Bcols);
-  PtrMatrix CMat = get_raw_pointer(regions[0], 0, Crows, 0, Ccols);
+  PtrMatrix AMat = get_raw_pointer<LEGION_READ_WRITE>(regions[0], 0, Arows, AcolIdx, AcolIdx+Acols);
+  PtrMatrix BMat = get_raw_pointer<LEGION_READ_WRITE>(regions[1], 0, Brows, 0, Bcols);
+  PtrMatrix CMat = get_raw_pointer<LEGION_READ_WRITE>(regions[0], 0, Crows, 0, Ccols);
   AMat.set_trans(transA);
   BMat.set_trans(transB);
 

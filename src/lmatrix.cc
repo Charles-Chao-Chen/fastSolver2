@@ -184,7 +184,7 @@ Matrix LMatrix::to_matrix(Context ctx, Runtime *runtime) {
   PhysicalRegion region = runtime->map_region(ctx, launcher);
   region.wait_until_valid();
  
-  PtrMatrix pMat = get_raw_pointer(region, 0, mRows, colIdx, colIdx+mCols);
+  PtrMatrix pMat = get_raw_pointer<LEGION_READ_WRITE>(region, 0, mRows, colIdx, colIdx+mCols);
   for (int j=0; j<mCols; j++)
     for (int i=0; i<mRows; i++)
       temp(i, j) = pMat(i, j);
@@ -204,7 +204,7 @@ Matrix LMatrix::to_matrix
   PhysicalRegion region = runtime->map_region(ctx, launcher);
   region.wait_until_valid();
  
-  PtrMatrix pMat = get_raw_pointer(region, 0, mRows, col0, col1);
+  PtrMatrix pMat = get_raw_pointer<LEGION_READ_WRITE>(region, 0, mRows, col0, col1);
   for (int j=0; j<temp.cols(); j++)
     for (int i=0; i<temp.rows(); i++)
       temp(i, j) = pMat(i, j);
@@ -225,7 +225,7 @@ Matrix LMatrix::to_matrix
   PhysicalRegion region = runtime->map_region(ctx, launcher);
   region.wait_until_valid();
  
-  PtrMatrix pMat = get_raw_pointer(region, rlo, rhi, clo, chi);
+  PtrMatrix pMat = get_raw_pointer<LEGION_READ_WRITE>(region, rlo, rhi, clo, chi);
   for (int j=0; j<temp.cols(); j++)
     for (int i=0; i<temp.rows(); i++)
       temp(i, j) = pMat(i, j);

@@ -138,7 +138,7 @@ Matrix UTree::solution(Context ctx, Runtime *runtime) {
   PhysicalRegion region = runtime->map_region(ctx, launcher);
   region.wait_until_valid();
  
-  PtrMatrix temp = get_raw_pointer(region, 0, U.rows(), 0, U.cols());
+  PtrMatrix temp = get_raw_pointer<LEGION_READ_WRITE>(region, 0, U.rows(), 0, U.cols());
   for (int j=0; j<nRhs; j++)
     for (int i=0; i<sln.rows(); i++)
       sln(i, j) = temp(i, j);

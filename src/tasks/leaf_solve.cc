@@ -54,9 +54,9 @@ void LeafSolveTask::cpu_task(const Task *task,
   //assert(rank*nPart==rblk);
   int rlo = p[0]*rblk;
   int rhi = (p[0] + 1) * rblk;
-  PtrMatrix KMat = get_raw_pointer(regions[0], rlo, rhi, 0, rblk/nPart);
-  PtrMatrix UMat = get_raw_pointer(regions[1], rlo, rhi, 0, nRhs);
-  PtrMatrix VMat = get_raw_pointer(regions[2], rlo, rhi, 0, rank);
+  PtrMatrix KMat = get_raw_pointer<LEGION_READ_ONLY>(regions[0], rlo, rhi, 0, rblk/nPart);
+  PtrMatrix UMat = get_raw_pointer<LEGION_READ_WRITE>(regions[1], rlo, rhi, 0, nRhs);
+  PtrMatrix VMat = get_raw_pointer<LEGION_READ_ONLY>(regions[2], rlo, rhi, 0, rank);
   assert(KMat.LD() == UMat.LD());
   assert(KMat.LD() == VMat.LD());
   //std::cout<<"nPart:"<<nPart<<", level:"<<level<<std::endl;

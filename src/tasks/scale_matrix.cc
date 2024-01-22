@@ -50,7 +50,7 @@ void ScaleMatrixTask::cpu_task(const Task *task,
 
   int rlo = (p[0]) * rblk;
   int rhi = (p[0] + 1) * rblk;
-  PtrMatrix A = get_raw_pointer(regions[0], rlo, rhi, 0, cols);
+  PtrMatrix A = get_raw_pointer<LEGION_READ_WRITE>(regions[0], rlo, rhi, 0, cols);
   A.scale(alpha);
   //A.display("After scaling");
 }

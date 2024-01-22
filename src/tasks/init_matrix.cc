@@ -63,7 +63,7 @@ void InitMatrixTask::cpu_task(const Task *task,
     //printf(" seed = %lu \n", seed);
     int clo   = blockSize.clo;
     while (clo+cblk <= chi) {
-      PtrMatrix A = get_raw_pointer(regions[0], rlo+i*blksmall, rlo+(i+1)*blksmall, clo, clo+cblk);
+      PtrMatrix A = get_raw_pointer<LEGION_READ_WRITE>(regions[0], rlo+i*blksmall, rlo+(i+1)*blksmall, clo, clo+cblk);
       A.rand(seed);
       //A.display("sub-mat");
       //std::cout<<"LD:"<<A.LD()<<std::endl;

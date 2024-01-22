@@ -65,10 +65,10 @@ void GemmBroTask::cpu_task(const Task *task,
   int Brlo = color*Brblk;
   int Brhi = (color + 1) * Brblk;
   
-  PtrMatrix AMat = get_raw_pointer(regions[0], Arlo, Arhi, AcolIdx, AcolIdx+Acols);
-  PtrMatrix BMat = get_raw_pointer(regions[1], Brlo, Brhi, 0, Bcols);
-  //PtrMatrix CMat = get_raw_pointer(regions[2], Crlo, Crhi, 0, Ccols);
-  PtrMatrix CMat = get_raw_pointer(regions[0], Crlo, Crhi, 0, Ccols);
+  PtrMatrix AMat = get_raw_pointer<LEGION_READ_WRITE>(regions[0], Arlo, Arhi, AcolIdx, AcolIdx+Acols);
+  PtrMatrix BMat = get_raw_pointer<LEGION_READ_WRITE>(regions[1], Brlo, Brhi, 0, Bcols);
+  //PtrMatrix CMat = get_raw_pointer<LEGION_READ_WRITE>(regions[2], Crlo, Crhi, 0, Ccols);
+  PtrMatrix CMat = get_raw_pointer<LEGION_READ_WRITE>(regions[0], Crlo, Crhi, 0, Ccols);
   AMat.set_trans(args.transa);
   BMat.set_trans(args.transb);
   double alpha = args.alpha;

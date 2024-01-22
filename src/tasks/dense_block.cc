@@ -61,7 +61,7 @@ void DenseBlockTask::cpu_task(const Task *task,
   const long nPart = *((const long*)task->local_args);
   int rblk = nrow / nPart;
   for (int i=0; i<nPart; i++) {
-    PtrMatrix K = get_raw_pointer(regions[0], rlo+i*rblk, rlo+(i+1)*rblk, 0, rblk);
+    PtrMatrix K = get_raw_pointer<LEGION_READ_WRITE>(regions[0], rlo+i*rblk, rlo+(i+1)*rblk, 0, rblk);
     // recover U, V and D
     PtrMatrix U(rblk, rank), V(rblk, rank), D(rblk, 1);
     const long uSeed = *((const long*)task->local_args + 1 + 3*i + 0);

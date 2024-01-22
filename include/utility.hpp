@@ -19,9 +19,9 @@ bool is_power_of_two(int x);
 
 double* region_pointer(const PhysicalRegion &region, int, int, int, int);
 
+template<PrivilegeMode PRIVILEGE>
 PtrMatrix get_raw_pointer
-(const PhysicalRegion &region, int rlo, int rhi, int clo, int chi,
- bool wait=false);
+(const PhysicalRegion &region, int rlo, int rhi, int clo, int chi);
 
 PtrMatrix reduction_pointer
 (const PhysicalRegion &region, int rlo, int rhi, int clo, int chi);
