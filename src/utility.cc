@@ -14,9 +14,8 @@ double* region_pointer
   FieldAccessor<LEGION_READ_WRITE,double,2,coord_t,Realm::AffineAccessor<double,2,coord_t> > accessor(region, FIELDID_V);
   size_t offset[2];
   double *base = accessor.ptr(bounds, offset, 2);
-  assert(offset[0] == sizeof(double));
 #ifdef DEBUG_POINTERS
-  printf("ptr = %p (%d, %d)\n", base, offset[0], offset[1]);
+  printf("ptr = %p (%d, %d)\n", base, offset[0]*sizeof(double), offset[1]*sizeof(double));
 #endif
   return base;
 }
@@ -32,8 +31,7 @@ PtrMatrix get_raw_pointer
   FieldAccessor<LEGION_READ_WRITE,double,2,coord_t,Realm::AffineAccessor<double,2,coord_t> > accessor(region, FIELDID_V);
   size_t offset[2];
   double *base = accessor.ptr(bounds, offset, 2);
-  assert(offset[0] == sizeof(double));
-  int ld = offset[1]/sizeof(double);
+  int ld = offset[1];
   assert(ld>=rhi-rlo);
   return PtrMatrix(rhi-rlo, chi-clo, ld, base);
 }
@@ -48,10 +46,9 @@ PtrMatrix reduction_pointer
   FieldAccessor<LEGION_READ_WRITE,double,2,coord_t,Realm::AffineAccessor<double,2,coord_t> > accessor(region, FIELDID_V);
   size_t offset[2];
   double *base = accessor.ptr(bounds, offset, 2);
-  assert(offset[0] == sizeof(double));
 #ifdef DEBUG_POINTERS
-  printf("ptr = %p (%d, %d)\n", base, offset[0], offset[1]);
+  printf("ptr = %p (%d, %d)\n", base, offset[0]*sizeof(double), offset[1]*sizeof(double));
 #endif
-  int ld = offset[1]/sizeof(double);
+  int ld = offset[1];
   return PtrMatrix(rhi-rlo, chi-clo, ld, base);
 }
