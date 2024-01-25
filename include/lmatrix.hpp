@@ -4,8 +4,7 @@
 #include <string>
 
 #include "legion.h"
-using namespace LegionRuntime;
-using namespace LegionRuntime::HighLevel;
+using namespace Legion;
 
 #include "utility.hpp" // for WAIT_DEFAULT and FIELDID_V
 #include "matrix.hpp"
@@ -15,14 +14,14 @@ using namespace LegionRuntime::HighLevel;
 class LMatrix {
 public:
   LMatrix();
-  LMatrix(int, int, int, Context, HighLevelRuntime*);
+  LMatrix(int, int, int, Context, Runtime*);
   LMatrix(int, int, LogicalRegion, IndexSpace, FieldSpace);
   LMatrix(LogicalRegion r, int rows, int cols);
 
   /*
   LMatrix
   (int, int, int, IndexPartition ip, LogicalRegion lr,
-   Context, HighLevelRuntime*); // to be removed
+   Context, Runtime*); // to be removed
   */
   ~LMatrix();
   
@@ -46,65 +45,65 @@ public:
   void set_logical_partition(LogicalPartition lp);
   
   // create logical region
-  void create(int, int, Context, HighLevelRuntime*);
+  void create(int, int, Context, Runtime*);
 
   // set the matrix to value
   void clear
-  (double, Context, HighLevelRuntime*, bool wait=WAIT_DEFAULT);
+  (double, Context, Runtime*, bool wait=WAIT_DEFAULT);
 
   // scale all the entries
   void scale
-  (double, Context, HighLevelRuntime*, bool wait=WAIT_DEFAULT);
+  (double, Context, Runtime*, bool wait=WAIT_DEFAULT);
 
   // initialize data from Matrix object
   void init_data
-  (const Matrix& mat, Context, HighLevelRuntime*,
+  (const Matrix& mat, Context, Runtime*,
    bool wait=WAIT_DEFAULT);
 
   // init part of the region
   void init_data
-  (int, int, const Matrix& mat, Context, HighLevelRuntime*,
+  (int, int, const Matrix& mat, Context, Runtime*,
    bool wait=WAIT_DEFAULT);
   
   // output region
-  Matrix to_matrix(Context, HighLevelRuntime*);
-  Matrix to_matrix(int, int, Context, HighLevelRuntime*);
-  Matrix to_matrix(int, int, int, int, Context, HighLevelRuntime*);
+  Matrix to_matrix(Context, Runtime*);
+  Matrix to_matrix(int, int, Context, Runtime*);
+  Matrix to_matrix(int, int, int, int, Context, Runtime*);
 
   // to be removed
   void init_data
-  (int, const Matrix& VMat, Context, HighLevelRuntime*,
+  (int, const Matrix& VMat, Context, Runtime*,
    bool wait=WAIT_DEFAULT);
 
   // specifies column range
   // for UTree init
   void init_data
-  (int, int, int, const Matrix& VMat, Context, HighLevelRuntime*,
+  (int, int, int, const Matrix& VMat, Context, Runtime*,
    bool wait=WAIT_DEFAULT);
   
   // for KTree::partition
   void init_dense_blocks
   (const Matrix& UMat, const Matrix& VMat, const Vector& DVec,
-   Context, HighLevelRuntime*, bool wait=WAIT_DEFAULT);
+   Context, Runtime*, bool wait=WAIT_DEFAULT);
 
   void init_dense_blocks
   (int, int, const Matrix& UMat, const Matrix& VMat, const Vector& DVec,
-   Context, HighLevelRuntime*, bool wait=WAIT_DEFAULT);
+   Context, Runtime*, bool wait=WAIT_DEFAULT);
 
   // uniform partition
   // Note: the first argument is level, NOT nPart
-  void partition(int level, Context, HighLevelRuntime*);
+  void partition(int level, Context, Runtime*);
 
   /*
   // return a new matrix with created partition,
   //  so no need to destroy region twice
   LMatrix partition
   (int level, int col0, int col1,
-   Context ctx, HighLevelRuntime *runtime);
+   Context ctx, Runtime *runtime);
   */
   
   // for node solve
-  void two_level_partition(Context, HighLevelRuntime*);
+  void two_level_partition(Context, Runtime*);
   
   // output the right hand side
   // for UTree::rhs()
@@ -113,60 +112,60 @@ public:
   // for KTree::partition()
   //void create_dense_partition
   //(int, const Matrix& U, const Matrix& V, const Vector& D,
-  //Context, HighLevelRuntime*, bool wait=WAIT_DEFAULT);
+  //Context, Runtime*, bool wait=WAIT_DEFAULT);
   
   // solve linear system
   // for KTree::solve()
   void solve
-  (LMatrix&, LMatrix&, Context, HighLevelRuntime*, bool wait=WAIT_DEFAULT);
+  (LMatrix&, LMatrix&, Context, Runtime*, bool wait=WAIT_DEFAULT);
 
   // solve node system
   // for HMatrix::solve()
   void node_solve
-  (LMatrix&, Context, HighLevelRuntime*, bool wait=WAIT_DEFAULT);
+  (LMatrix&, Context, Runtime*, bool wait=WAIT_DEFAULT);
 
   static void node_solve
   (LMatrix&, LMatrix&, LMatrix&, LMatrix&,
    PhaseBarrier pb_wait, PhaseBarrier pb_ready,
-   Context ctx, HighLevelRuntime* runtime, bool wait=WAIT_DEFAULT);
+   Context ctx, Runtime* runtime, bool wait=WAIT_DEFAULT);
 
   // print the values on screen
   // for debugging
   void display
-  (const std::string&, Context, HighLevelRuntime*,
+  (const std::string&, Context, Runtime*,
    bool wait=WAIT_DEFAULT);
 
   // free resources
-  void clear(Context, HighLevelRuntime*);
+  void clear(Context, Runtime*);
   
   // static methods
   // matrix subtraction
   static void add
   (double alpha, const LMatrix&,
    double beta,  const LMatrix&, LMatrix&,
-   Context, HighLevelRuntime*, bool wait=WAIT_DEFAULT);
+   Context, Runtime*, bool wait=WAIT_DEFAULT);
 
   // gemm reduction
   // C = alpha*op(A) * op(B) + beta*C
   static void gemmRed
   (char, char, double, const LMatrix&, const LMatrix&,
-   double, LMatrix&, Context, HighLevelRuntime*,
+   double, LMatrix&, Context, Runtime*,
    bool wait=WAIT_DEFAULT);
 
   static void gemm
   (char, char, double, const LMatrix&, const LMatrix&,
-   double, LMatrix&, Context, HighLevelRuntime*,
+   double, LMatrix&, Context, Runtime*,
    bool wait=WAIT_DEFAULT);
 
   static void gemm_inplace
   (char, char, double, const LMatrix&, const LMatrix&,
-   double, LMatrix&, Context, HighLevelRuntime*,
+   double, LMatrix&, Context, Runtime*,
    bool wait=WAIT_DEFAULT);
 
   // gemm broadcast
   static void gemmBro
   (char, char, double, const LMatrix&, const LMatrix&,
-   double, LMatrix&, Context, HighLevelRuntime*,
+   double, LMatrix&, Context, Runtime*,
    bool wait=WAIT_DEFAULT);
   
 private:
@@ -186,15 +185,15 @@ private:
 
   // partition the matrix along rows
   IndexPartition UniformRowPartition
-  (Context ctx, HighLevelRuntime *runtime);
+  (Context ctx, Runtime *runtime);
   
   IndexPartition UniformRowPartition
-  (int num_subregions, int, int, Context ctx, HighLevelRuntime *runtime);
+  (int num_subregions, int, int, Context ctx, Runtime *runtime);
 
   /*
   template <typename T>
   void solve
-  (LMatrix& b, Context ctx, HighLevelRuntime *runtime,
+  (LMatrix& b, Context ctx, Runtime *runtime,
    bool wait=WAIT_DEFAULT);
   */
   

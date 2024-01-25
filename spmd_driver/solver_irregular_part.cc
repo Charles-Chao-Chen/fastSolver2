@@ -4,8 +4,7 @@
 
 // legion stuff
 #include "legion.h"
-using namespace LegionRuntime;
-using namespace LegionRuntime::HighLevel;
+using namespace Legion;
 
 #include "matrix.hpp"  // for Matrix  class
 #include "hmatrix.hpp" // for HMatrix class
@@ -35,7 +34,7 @@ bool is_master_task(int point, int current_level, int total_level) {
 }
 
 LMatrix create_local_region(LogicalRegion ghost, int rows, int cols,
-			    Context ctx, HighLevelRuntime *runtime) {
+			    Context ctx, Runtime *runtime) {
   IndexSpace is = ghost.get_index_space();
   FieldSpace fs = runtime->create_field_space(ctx);
   {
@@ -55,7 +54,7 @@ LMatrix create_legion_matrix(LogicalRegion region, int rows, int cols) {
 void spmd_fast_solver
 (const Task *task,
 const std::vector<PhysicalRegion> &regions,
-Context ctx, HighLevelRuntime *runtime) {
+Context ctx, Runtime *runtime) {
 
   char hostname[100];
   gethostname(hostname, 100);
@@ -162,11 +161,11 @@ Context ctx, HighLevelRuntime *runtime) {
     LogicalRegion VTu_local = VTu.logical_region();
     LogicalRegion VTd_local = VTd.logical_region();
     cp_VTu.add_copy_requirements
-      (RegionRequirement(VTu_local, READ_ONLY, EXCLUSIVE, VTu_local),
-       RegionRequirement(VTu_ghost, REDOP_ADD, EXCLUSIVE, VTu_ghost));
+      (RegionRequirement(VTu_local, LEGION_READ_ONLY, LEGION_EXCLUSIVE, VTu_local),
+       RegionRequirement(VTu_ghost, REDOP_ADD, LEGION_EXCLUSIVE, VTu_ghost));
     cp_VTd.add_copy_requirements
-      (RegionRequirement(VTd_local, READ_ONLY, EXCLUSIVE, VTd_local),
-       RegionRequirement(VTd_ghost, REDOP_ADD, EXCLUSIVE, VTd_ghost));
+      (RegionRequirement(VTd_local, LEGION_READ_ONLY, LEGION_EXCLUSIVE, VTd_local),
+       RegionRequirement(VTd_ghost, REDOP_ADD, LEGION_EXCLUSIVE, VTd_ghost));
     cp_VTu.add_src_field(0, FIELDID_V);
     cp_VTu.add_dst_field(0, FIELDID_V);
     cp_VTd.add_src_field(0, FIELDID_V);
@@ -200,8 +199,8 @@ Context ctx, HighLevelRuntime *runtime) {
 	runtime->advance_phase_barrier(ctx, args->node_solve[l]);
       CopyLauncher cp_node_solve;
       cp_node_solve.add_copy_requirements
-	(RegionRequirement(VTd_ghost, READ_ONLY, EXCLUSIVE, VTd_ghost),
-	 RegionRequirement(VTd_local, WRITE_DISCARD, EXCLUSIVE, VTd_local));
+	(RegionRequirement(VTd_ghost, LEGION_READ_ONLY, LEGION_EXCLUSIVE, VTd_ghost),
+	 RegionRequirement(VTd_local, LEGION_WRITE_DISCARD, LEGION_EXCLUSIVE, VTd_local));
       cp_node_solve.add_src_field(0, FIELDID_V);
       cp_node_solve.add_dst_field(0, FIELDID_V);
       cp_node_solve.add_wait_barrier(args->node_solve[l]);
@@ -233,7 +232,7 @@ Context ctx, HighLevelRuntime *runtime) {
 
 void top_level_task(const Task *task,
 		    const std::vector<PhysicalRegion> &regions,
-		    Context ctx, HighLevelRuntime *runtime) {
+		    Context ctx, Runtime *runtime) {
  
   // machine configuration
   int num_machines = 1;
@@ -251,7 +250,7 @@ void top_level_task(const Task *task,
   int num_heavy_tasks = 1;
 
   // parse input arguments
-  const InputArgs &command_args = HighLevelRuntime::get_input_args();
+  const InputArgs &command_args = Runtime::get_input_args();
   if (command_args.argc > 1) {
     for (int i = 1; i < command_args.argc; i++) {
       if (!strcmp(command_args.argv[i],"-machine"))
@@ -335,11 +334,10 @@ void top_level_task(const Task *task,
   }
   
   // create ghost regions: VTu0, VTu1(r x r) and VTd0, VTd1(r x .)
-  Arrays::Point<2> lo = Arrays::make_point(0, 0);
-  Arrays::Point<2> hi = Arrays::make_point(rank-1, rank-1);
-  Arrays::Rect<2>  rect(lo, hi);
-  IndexSpace VTu_is = runtime->create_index_space
-    (ctx, Domain::from_rect<2>(rect));
+  Point<2> lo(0, 0);
+  Point<2> hi(rank-1, rank-1);
+  Rect<2>  rect(lo, hi);
+  IndexSpace VTu_is = runtime->create_index_space(ctx, rect);
   runtime->attach_name(VTu_is, "VTu_ghost_is");
   FieldSpace fs = runtime->create_field_space(ctx);
   runtime->attach_name(fs, "VTu_ghost_fs");
@@ -366,11 +364,10 @@ void top_level_task(const Task *task,
       VTu_ghosts[i].push_back(runtime->create_logical_region(ctx, VTu_is, fs));
     }
     // create VTd regions
-    Arrays::Point<2> lo = Arrays::make_point(0, 0);
-    Arrays::Point<2> hi = Arrays::make_point(rank-1, nRhs+l*rank-1);
-    Arrays::Rect<2>  rect(lo, hi);
-    IndexSpace VTd_is = runtime->create_index_space
-      (ctx, Domain::from_rect<2>(rect));
+    Point<2> lo(0, 0);
+    Point<2> hi(rank-1, nRhs+l*rank-1);
+    Rect<2>  rect(lo, hi);
+    IndexSpace VTd_is = runtime->create_index_space(ctx, rect);
     for (int i=0; i<num_ghosts; i++) {
       // VTd0
       VTd_ghosts[i].push_back(runtime->create_logical_region(ctx, VTd_is, fs));
@@ -391,8 +388,8 @@ void top_level_task(const Task *task,
 	for (int i=0; i<2; i++) {
 	  LogicalRegion VTu = VTu_ghosts[idx][i];
 	  LogicalRegion VTd = VTd_ghosts[idx][i];
-	  RegionRequirement VTu_req(VTu,READ_WRITE,SIMULTANEOUS,VTu);
-	  RegionRequirement VTd_req(VTd,READ_WRITE,SIMULTANEOUS,VTd);
+	  RegionRequirement VTu_req(VTu,LEGION_READ_WRITE,LEGION_SIMULTANEOUS,VTu);
+	  RegionRequirement VTd_req(VTd,LEGION_READ_WRITE,LEGION_SIMULTANEOUS,VTd);
 	  VTu_req.add_field(FIELDID_V);
 	  VTd_req.add_field(FIELDID_V);
 	  spmd_tasks[shard].add_region_requirement(VTu_req);
@@ -404,10 +401,10 @@ void top_level_task(const Task *task,
       else {
 	LogicalRegion VTu = VTu_ghosts[idx][subidx];
 	LogicalRegion VTd = VTd_ghosts[idx][subidx];
-	RegionRequirement VTu_req(VTu,READ_WRITE,SIMULTANEOUS,VTu);
-	RegionRequirement VTd_req(VTd,READ_WRITE,SIMULTANEOUS,VTd);
-	VTu_req.flags = NO_ACCESS_FLAG;
-	VTd_req.flags = NO_ACCESS_FLAG;
+	RegionRequirement VTu_req(VTu,LEGION_READ_WRITE,LEGION_SIMULTANEOUS,VTu);
+	RegionRequirement VTd_req(VTd,LEGION_READ_WRITE,LEGION_SIMULTANEOUS,VTd);
+	VTu_req.flags = LEGION_NO_ACCESS_FLAG;
+	VTd_req.flags = LEGION_NO_ACCESS_FLAG;
 	VTu_req.add_field(FIELDID_V);
 	VTd_req.add_field(FIELDID_V);
 	spmd_tasks[shard].add_region_requirement(VTu_req);
@@ -443,28 +440,23 @@ void top_level_task(const Task *task,
 
 int main(int argc, char *argv[]) {
   // register top level task
-  HighLevelRuntime::set_top_level_task_id(TOP_LEVEL_TASK_ID);
-  HighLevelRuntime::register_legion_task<top_level_task>
-    (TOP_LEVEL_TASK_ID,   /* task id */
-     Processor::LOC_PROC, /* cpu */
-     true,  /* single */
-     false, /* index  */
-     AUTO_GENERATE_ID,
-     TaskConfigOptions(false /*leaf task*/),
-     "master-task");
-  
-  HighLevelRuntime::register_legion_task<spmd_fast_solver>
-    (SPMD_TASK_ID,
-     Processor::LOC_PROC,
-     true/*single*/,
-     true/*single*/,
-     AUTO_GENERATE_ID,
-     TaskConfigOptions(false),
-     "spmd");
+  Runtime::set_top_level_task_id(TOP_LEVEL_TASK_ID);
+
+  {
+    TaskVariantRegistrar registrar(TOP_LEVEL_TASK_ID, "master-task");
+    registrar.add_constraint(ProcessorConstraint(Processor::LOC_PROC));
+    Runtime::preregister_task_variant<top_level_task>(registrar, "cpu");
+  }
+
+  {
+    TaskVariantRegistrar registrar(SPMD_TASK_ID, "spmd");
+    registrar.add_constraint(ProcessorConstraint(Processor::LOC_PROC));
+    Runtime::preregister_task_variant<spmd_fast_solver>(registrar, "cpu");
+  }
 
   // register solver tasks
   register_solver_tasks();
 
   // start legion master task
-  return HighLevelRuntime::start(argc, argv);
+  return Runtime::start(argc, argv);
 }

@@ -3,12 +3,12 @@
 
 #include "default_mapper.h"
 
-using namespace LegionRuntime::HighLevel;
+using namespace Legion;
 
 class SolverMapper : public DefaultMapper {
 public:
   SolverMapper(Machine machine, 
-	       HighLevelRuntime *rt, Processor local);
+	       Runtime *rt, Processor local);
 public:
   virtual void select_task_options(Task *task);
   virtual void slice_domain(const Task *task, const Domain &domain,

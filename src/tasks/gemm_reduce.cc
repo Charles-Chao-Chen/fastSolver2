@@ -19,14 +19,11 @@ GemmRedTask::GemmRedTask(Domain domain,
 
 void GemmRedTask::register_tasks(void)
 {
-  TASKID = HighLevelRuntime::register_legion_task
-    <GemmRedTask::cpu_task>(AUTO_GENERATE_ID,
-			    Processor::LOC_PROC, 
-			    false,
-			    true,
-			    AUTO_GENERATE_ID,
-			    TaskConfigOptions(true/*leaf*/),
-			    "GemmRed");
+  TASKID = Runtime::generate_static_task_id();
+  TaskVariantRegistrar registrar(TASKID, "Gemm_Red");
+  registrar.add_constraint(ProcessorConstraint(Processor::LOC_PROC));
+  registrar.set_leaf(true);
+  Runtime::preregister_task_variant<GemmRedTask::cpu_task>(registrar, "cpu");
 
 #ifdef SHOW_REGISTER_TASKS
   printf("Register task %d : GemmRed\n", TASKID);
@@ -35,12 +32,12 @@ void GemmRedTask::register_tasks(void)
 
 void GemmRedTask::cpu_task(const Task *task,
 			   const std::vector<PhysicalRegion> &regions,
-			   Context ctx, HighLevelRuntime *runtime) {
+			   Context ctx, Runtime *runtime) {
 
   assert(regions.size() == 3);
   assert(task->regions.size() == 3);
   assert(task->arglen == sizeof(TaskArgs));
-  Point<1> p = task->index_point.get_point<1>();
+  Point<1> p(task->index_point);
   //printf("point = %d\n", p[0]);
 
   log_solver_tasks.print("Inside gemm reduction tasks.");
@@ -68,8 +65,8 @@ void GemmRedTask::cpu_task(const Task *task,
   int Crlo = color*Crblk;
   int Crhi = (color + 1) * Crblk;
   
-  PtrMatrix AMat = get_raw_pointer(regions[0], Arlo, Arhi, AcolIdx, AcolIdx+Acols);
-  PtrMatrix BMat = get_raw_pointer(regions[1], Brlo, Brhi, BcolIdx, BcolIdx+Bcols);
+  PtrMatrix AMat = get_raw_pointer<LEGION_READ_ONLY>(regions[0], Arlo, Arhi, AcolIdx, AcolIdx+Acols);
+  PtrMatrix BMat = get_raw_pointer<LEGION_READ_ONLY>(regions[1], Brlo, Brhi, BcolIdx, BcolIdx+Bcols);
   PtrMatrix CMat = reduction_pointer(regions[2], Crlo, Crhi, CcolIdx, CcolIdx+Ccols);
   AMat.set_trans(args.transa);
   BMat.set_trans(args.transb);

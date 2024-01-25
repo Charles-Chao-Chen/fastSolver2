@@ -45,5 +45,5 @@ void Add::fold<false>(RHS &rhs1, RHS rhs2)
 }
 
 void Add::register_operator() {
-  HighLevelRuntime::register_reduction_op<Add>(REDOP_ADD);
+  Runtime::register_reduction_op<Add>(REDOP_ADD);
 }

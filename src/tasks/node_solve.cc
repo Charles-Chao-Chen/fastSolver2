@@ -16,14 +16,11 @@ NodeSolveTask::NodeSolveTask(Domain domain,
 
 void NodeSolveTask::register_tasks(void)
 {
-  TASKID = HighLevelRuntime::register_legion_task
-    <NodeSolveTask::cpu_task>(AUTO_GENERATE_ID,
-			      Processor::LOC_PROC, 
-			      false,
-			      true,
-			      AUTO_GENERATE_ID,
-			      TaskConfigOptions(true/*leaf*/),
-			      "Node_Solve");
+  TASKID = Runtime::generate_static_task_id();
+  TaskVariantRegistrar registrar(TASKID, "Node_Solve");
+  registrar.add_constraint(ProcessorConstraint(Processor::LOC_PROC));
+  registrar.set_leaf(true);
+  Runtime::preregister_task_variant<NodeSolveTask::cpu_task>(registrar, "cpu");
 
 #ifdef SHOW_REGISTER_TASKS
   printf("Register task %d : Node_Solve\n", TASKID);
@@ -39,12 +36,12 @@ void NodeSolveTask::register_tasks(void)
 // note the reversed order in VTd
 void NodeSolveTask::cpu_task(const Task *task,
 			     const std::vector<PhysicalRegion> &regions,
-			     Context ctx, HighLevelRuntime *runtime) {
+			     Context ctx, Runtime *runtime) {
 
   assert(regions.size() == 2);
   assert(task->regions.size() == 2);
   assert(task->arglen == sizeof(TaskArgs));
-  Point<1> p = task->index_point.get_point<1>();
+  Point<1> p(task->index_point);
   //  printf("point = %d\n", p[0]);
 
   log_solver_tasks.print("Inside node solve tasks.");
@@ -57,8 +54,8 @@ void NodeSolveTask::cpu_task(const Task *task,
   int rhi = (p[0] + 1) * rblk;
   //printf("(rblock=%d, Acols=%d, Bcols=%d)\n", rblk, Acols, Bcols);
   
-  PtrMatrix AMat = get_raw_pointer(regions[0], rlo, rhi, 0, Acols);
-  PtrMatrix BMat = get_raw_pointer(regions[1], rlo, rhi, 0, Bcols);
+  PtrMatrix AMat = get_raw_pointer<LEGION_READ_WRITE>(regions[0], rlo, rhi, 0, Acols);
+  PtrMatrix BMat = get_raw_pointer<LEGION_READ_WRITE>(regions[1], rlo, rhi, 0, Bcols);
 
   PtrMatrix S(rblk, rblk);
   S.identity(); // initialize to identity matrix

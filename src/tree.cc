@@ -10,7 +10,7 @@ void UTree::init(const Matrix& UMat_) {
 }
 
 void UTree::init(int level, const Matrix& UMat_,
-		 Context ctx, HighLevelRuntime *runtime) {
+		 Context ctx, Runtime *runtime) {
   assert(UMat_.rows()>0 && UMat_.cols()>0);
   this->mLevel = level;
   this->UMat   = UMat_;
@@ -22,12 +22,12 @@ void UTree::init(int level, const Matrix& UMat_,
 }
 
 void UTree::init_rhs
-(const Vector& b, Context ctx, HighLevelRuntime *runtime) {
+(const Vector& b, Context ctx, Runtime *runtime) {
   assert(false);
 }
 
 void UTree::init_rhs
-(const Matrix& b, Context ctx, HighLevelRuntime *runtime,
+(const Matrix& b, Context ctx, Runtime *runtime,
  bool wait) {
   assert(b.cols()==1);
   U.init_data(b, ctx, runtime, wait);
@@ -40,7 +40,7 @@ Vector UTree::rhs() {
 }
 
 void UTree::partition
-(int level, Context ctx, HighLevelRuntime *runtime) {
+(int level, Context ctx, Runtime *runtime) {
   // make sure UMat is valid
   assert( UMat.rows() > 0 );
   assert( UMat.cols() > 0 );
@@ -76,7 +76,7 @@ void UTree::partition
 }
 
 void UTree::horizontal_partition
-(int task_level, Context ctx, HighLevelRuntime *runtime) {
+(int task_level, Context ctx, Runtime *runtime) {
 
   // partition data
   U.partition(task_level, ctx, runtime);
@@ -124,21 +124,21 @@ LMatrix& UTree::leaf() {
   return U;
 }
 
-void UTree::clear(Context ctx, HighLevelRuntime* runtime) {
+void UTree::clear(Context ctx, Runtime* runtime) {
   U.clear(ctx, runtime);
 }
 
-Matrix UTree::solution(Context ctx, HighLevelRuntime *runtime) {
+Matrix UTree::solution(Context ctx, Runtime *runtime) {
   Matrix sln(UMat.rows(), nRhs);
   LogicalRegion lr = U.logical_region();
-  RegionRequirement req(lr, READ_ONLY, EXCLUSIVE, lr);
+  RegionRequirement req(lr, LEGION_READ_ONLY, LEGION_EXCLUSIVE, lr);
   req.add_field(FIELDID_V);
  
   InlineLauncher launcher(req);
   PhysicalRegion region = runtime->map_region(ctx, launcher);
   region.wait_until_valid();
  
-  PtrMatrix temp = get_raw_pointer(region, 0, U.rows(), 0, U.cols());
+  PtrMatrix temp = get_raw_pointer<LEGION_READ_WRITE>(region, 0, U.rows(), 0, U.cols());
   for (int j=0; j<nRhs; j++)
     for (int i=0; i<sln.rows(); i++)
       sln(i, j) = temp(i, j);
@@ -151,7 +151,7 @@ void VTree::init(const Matrix& VMat_) {
 }
 
 void VTree::init(int level, const Matrix& VMat_,
-		 Context ctx, HighLevelRuntime *runtime) {
+		 Context ctx, Runtime *runtime) {
   // make sure VMat is valid
   assert( VMat_.rows() > 0 && VMat_.cols() > 0);
   this->mLevel = level;
@@ -161,7 +161,7 @@ void VTree::init(int level, const Matrix& VMat_,
 }
 
 void VTree::partition
-(int level, Context ctx, HighLevelRuntime *runtime) {
+(int level, Context ctx, Runtime *runtime) {
   // make sure VMat is valid
   assert( VMat.rows() > 0 );
   assert( VMat.cols() > 0 );
@@ -175,7 +175,7 @@ void VTree::partition
 }
 
 void VTree::horizontal_partition
-(int task_level, Context ctx, HighLevelRuntime *runtime) {
+(int task_level, Context ctx, Runtime *runtime) {
   // create partition
   V.partition(task_level, ctx, runtime);
   // initialize region
@@ -196,7 +196,7 @@ LMatrix& VTree::level_new(int i) {
   return V;
 }
 
-void VTree::clear(Context ctx, HighLevelRuntime* runtime) {
+void VTree::clear(Context ctx, Runtime* runtime) {
   V.clear(ctx, runtime);
 }
 
@@ -213,7 +213,7 @@ void KTree::init
 
 void KTree::init
 (int level, const Matrix& UMat_, const Matrix& VMat_,  const Vector& DVec_,
- Context ctx, HighLevelRuntime *runtime) {
+ Context ctx, Runtime *runtime) {
   this->mLevel = level;
   this->UMat  = UMat_;
   this->VMat  = VMat_;
@@ -230,7 +230,7 @@ void KTree::init
 }
 
 void KTree::partition
-(int level, Context ctx, HighLevelRuntime *runtime) {
+(int level, Context ctx, Runtime *runtime) {
   // create region
   int nrow = DVec.rows();
   int nblk = pow(2, UMat.levels());
@@ -245,7 +245,7 @@ void KTree::partition
 }
 
 void KTree::horizontal_partition
-(int task_level, Context ctx, HighLevelRuntime *runtime) {
+(int task_level, Context ctx, Runtime *runtime) {
   // partition region
   K.partition(task_level, ctx, runtime);
   // initialize region
@@ -253,10 +253,10 @@ void KTree::horizontal_partition
 }
 
 void KTree::solve
-(LMatrix& U, LMatrix& V, Context ctx, HighLevelRuntime *runtime) {
+(LMatrix& U, LMatrix& V, Context ctx, Runtime *runtime) {
   K.solve(U, V, ctx, runtime);
 }
 
-void KTree::clear(Context ctx, HighLevelRuntime* runtime) {
+void KTree::clear(Context ctx, Runtime* runtime) {
   K.clear(ctx, runtime);
 }

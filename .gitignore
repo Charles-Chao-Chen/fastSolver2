@@ -8,11 +8,16 @@
 *.log
 *.gz
 
+# Generated Headers
+legion_defines.h
+realm_defines.h
+
 # Compiled Object files
 *.slo
 *.lo
 *.o
 *.obj
+*.d
 
 # Precompiled Headers
 *.gch

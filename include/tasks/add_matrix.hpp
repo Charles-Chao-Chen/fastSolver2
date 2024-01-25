@@ -2,7 +2,7 @@
 #define _add_matrix_hpp
 
 #include "legion.h"
-using namespace LegionRuntime::HighLevel;
+using namespace Legion;
 
 class AddMatrixTask : public IndexLauncher {
 public:
@@ -28,7 +28,7 @@ public:
   static void
   cpu_task(const Task *task,
 	   const std::vector<PhysicalRegion> &regions,
-	   Context ctx, HighLevelRuntime *runtime);
+	   Context ctx, Runtime *runtime);
 };
 
 #endif

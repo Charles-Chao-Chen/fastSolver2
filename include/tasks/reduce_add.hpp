@@ -2,7 +2,7 @@
 #define _reduce_add_hpp
 
 #include "legion.h"
-using namespace LegionRuntime::HighLevel;
+using namespace Legion;
 
 extern const int REDOP_ADD;
 

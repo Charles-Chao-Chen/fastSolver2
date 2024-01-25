@@ -1,6 +1,6 @@
 #include "solver_tasks.hpp"
 
-void create_solver_mapper(Machine machine, HighLevelRuntime *rt,
+void create_solver_mapper(Machine machine, Runtime *rt,
 			  const std::set<Processor> &local_procs) {
 
   create_projector(machine, rt, local_procs);
@@ -52,7 +52,7 @@ void create_solver_mapper(Machine machine, HighLevelRuntime *rt,
   }
 }
 
-void create_random_mapper(Machine machine, HighLevelRuntime *rt,
+void create_random_mapper(Machine machine, Runtime *rt,
 			  const std::set<Processor> &local_procs) {
 
   create_projector(machine, rt, local_procs);
@@ -104,7 +104,7 @@ void create_random_mapper(Machine machine, HighLevelRuntime *rt,
   }
 }
 
-void create_projector(Machine machine, HighLevelRuntime *rt,
+void create_projector(Machine machine, Runtime *rt,
 			   const std::set<Processor> &local_procs) {    
   rt->register_projection_functor
     (CONTRACTION, new Contraction(rt));
@@ -127,9 +127,9 @@ void register_solver_tasks() {
   GemmBroTask::register_tasks();
   Add::register_operator();
 #if 1
-  HighLevelRuntime::set_registration_callback(create_projector);
+  Runtime::add_registration_callback(create_projector);
 #else
-  //HighLevelRuntime::set_registration_callback(create_solver_mapper);
-  HighLevelRuntime::set_registration_callback(create_random_mapper);
+  //Runtime::add_registration_callback(create_solver_mapper);
+  Runtime::add_registration_callback(create_random_mapper);
 #endif
 }

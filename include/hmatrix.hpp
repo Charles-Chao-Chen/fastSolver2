@@ -14,13 +14,13 @@ public:
   // build U * V' + D
   void init
   (const Matrix& U, const Matrix& V, const Vector& D,
-   Context, HighLevelRuntime*);
+   Context, Runtime*);
 
   // fast solver
-  Vector solve(const Matrix& b, Context, HighLevelRuntime*);
+  Vector solve(const Matrix& b, Context, Runtime*);
 
   // destructor
-  void destroy(Context, HighLevelRuntime*);
+  void destroy(Context, Runtime*);
   
 private:
 

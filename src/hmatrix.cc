@@ -21,7 +21,7 @@ HMatrix::HMatrix(int nProc_, int level_)
 
 void HMatrix::init
 (const Matrix& U, const Matrix& V, const Vector& D,
- Context ctx, HighLevelRuntime* runtime) {
+ Context ctx, Runtime* runtime) {
   
   // sanity check
   assert( U.rows() == V.rows() );
@@ -47,7 +47,7 @@ void HMatrix::init
 }
 
 Vector HMatrix::solve
-(const Matrix& b, Context ctx, HighLevelRuntime* runtime) {
+(const Matrix& b, Context ctx, Runtime* runtime) {
 
   // check input
   assert( b.rows() > 0 );

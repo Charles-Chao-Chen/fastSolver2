@@ -5,7 +5,7 @@
 #include <random>       // std::default_random_engine
 #include <chrono>       // std::chrono::system_clock
 
-using namespace LegionRuntime;
+using namespace Legion;
 
 //Realm::Logger log_solver_mapper("random_mapper");
 
@@ -58,8 +58,8 @@ void RandomMapper::default_slice_task(const Task &task,
   shuffle(procs.begin(), procs.end(), std::default_random_engine(seed));
 
   assert(input.domain.get_dim() == 1);
-  Arrays::Rect<1> point_rect = input.domain.get_rect<1>();
-  Arrays::Point<1> num_blocks(point_rect.volume());
+  Rect<1> point_rect(input.domain);
+  Point<1> num_blocks(point_rect.volume());
   default_decompose_points<1>(point_rect, procs,
 			      num_blocks, false/*recurse*/,
 			      stealing_enabled, output.slices);  

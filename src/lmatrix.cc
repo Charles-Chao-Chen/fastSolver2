@@ -7,7 +7,7 @@ LMatrix::LMatrix() : nPart(-1) {}
 
 LMatrix::LMatrix
 (int rows, int cols, int level,
- Context ctx, HighLevelRuntime *runtime) {
+ Context ctx, Runtime *runtime) {
   create(rows, cols, ctx, runtime);
   partition(level, ctx, runtime);
   this->plevel = 1;
@@ -27,7 +27,7 @@ LMatrix::LMatrix(LogicalRegion r, int rows, int cols) {
 /*
 LMatrix::LMatrix
 (int rows, int cols, int part, IndexPartition ip, LogicalRegion lr,
- Context ctx, HighLevelRuntime *runtime)
+ Context ctx, Runtime *runtime)
   : mRows(rows), mCols(cols), colIdx(0),
     nPart(part), rblock(rows/part),
     ipart(ip), region(lr), pregion(lr) {
@@ -76,17 +76,16 @@ void LMatrix::set_parent_region(LogicalRegion lr) {pregion=lr;}
 void LMatrix::set_logical_partition(LogicalPartition lp) {lpart=lp;}
 
 void LMatrix::create
-(int rows, int cols, Context ctx, HighLevelRuntime *runtime) {
+(int rows, int cols, Context ctx, Runtime *runtime) {
   assert(rows>0 && cols>0);
   this->mRows = rows;
   this->mCols = cols;
   this->colIdx = 0;
-  Arrays::Point<2> lo = Arrays::make_point(0, 0);
-  Arrays::Point<2> hi = Arrays::make_point(mRows-1, mCols-1);
-  Arrays::Rect<2> rect(lo, hi);
+  Point<2> lo(0, 0);
+  Point<2> hi(mRows-1, mCols-1);
+  Rect<2> rect(lo, hi);
   this->fspace = runtime->create_field_space(ctx);
-  this->ispace = runtime->
-    create_index_space(ctx, Domain::from_rect<2>(rect));
+  this->ispace = runtime->create_index_space(ctx, rect);
   {
     FieldAllocator allocator = runtime->
       create_field_allocator(ctx, fspace);
@@ -98,13 +97,13 @@ void LMatrix::create
 }
 
 void LMatrix::clear
-(double value, Context ctx, HighLevelRuntime *runtime, bool wait) {
+(double value, Context ctx, Runtime *runtime, bool wait) {
   
   // assuming partition is done
   assert(nPart > 0);
   ClearMatrixTask::TaskArgs args = {rblock, mCols, value};
   ClearMatrixTask launcher(colDom, TaskArgument(&args, sizeof(args)), ArgumentMap());
-  RegionRequirement req(lpart, 0, WRITE_DISCARD, EXCLUSIVE, region);
+  RegionRequirement req(lpart, 0, LEGION_WRITE_DISCARD, LEGION_EXCLUSIVE, region);
   req.add_field(FIELDID_V);
   launcher.add_region_requirement(req);
   FutureMap fm = runtime->execute_index_space(ctx, launcher);
@@ -116,15 +115,15 @@ void LMatrix::clear
 }
 
 void LMatrix::scale
-(double alpha, Context ctx, HighLevelRuntime *runtime, bool wait) {
+(double alpha, Context ctx, Runtime *runtime, bool wait) {
 
   // if alpha = 1.0, do nothing
   if ( fabs(alpha - 1.0) < 1e-10) return;
   ScaleMatrixTask::TaskArgs args = {this->rblock * plevel, mCols, alpha};
   TaskArgument tArg(&args, sizeof(args));
   ScaleMatrixTask launcher(colDom, tArg, ArgumentMap(), colDom.get_volume());
-  RegionRequirement req(lpart, 0, READ_WRITE, EXCLUSIVE, region);
-  //RegionRequirement req(lpart, 0, WRITE_DISCARD, EXCLUSIVE, region);
+  RegionRequirement req(lpart, 0, LEGION_READ_WRITE, LEGION_EXCLUSIVE, region);
+  //RegionRequirement req(lpart, 0, LEGION_WRITE_DISCARD, LEGION_EXCLUSIVE, region);
   req.add_field(FIELDID_V);
   launcher.add_region_requirement(req);
   FutureMap fm = runtime->execute_index_space(ctx, launcher);
@@ -138,14 +137,14 @@ void LMatrix::scale
 
 void LMatrix::init_data
 (const Matrix& mat,
- Context ctx, HighLevelRuntime *runtime, bool wait) {
+ Context ctx, Runtime *runtime, bool wait) {
   assert(mCols>=mat.cols());  
   init_data(0, mat.cols(), mat, ctx, runtime, wait);
 }
 
 void LMatrix::init_data
 (int col0, int col1, const Matrix& mat,
- Context ctx, HighLevelRuntime *runtime, bool wait) {
+ Context ctx, Runtime *runtime, bool wait) {
   assert(col0>=0);
   assert(col1<=mCols);
   assert((col1-col0)>=mat.cols());
@@ -156,8 +155,8 @@ void LMatrix::init_data
   InitMatrixTask::TaskArgs args = {rblock, mat.cols(), col0, col1};
   TaskArgument tArg(&args, sizeof(args));
   InitMatrixTask launcher(colDom, tArg, seeds, nPart);
-  //RegionRequirement req(lpart, 0, WRITE_DISCARD, EXCLUSIVE, region);
-  RegionRequirement req(lpart, 0, READ_WRITE, EXCLUSIVE, region);
+  //RegionRequirement req(lpart, 0, LEGION_WRITE_DISCARD, LEGION_EXCLUSIVE, region);
+  RegionRequirement req(lpart, 0, LEGION_READ_WRITE, LEGION_EXCLUSIVE, region);
   req.add_field(FIELDID_V);
   launcher.add_region_requirement(req);
   FutureMap fm = runtime->execute_index_space(ctx, launcher);
@@ -176,16 +175,16 @@ void LMatrix::init_data
   */
 }
 
-Matrix LMatrix::to_matrix(Context ctx, HighLevelRuntime *runtime) {
+Matrix LMatrix::to_matrix(Context ctx, Runtime *runtime) {
   Matrix temp(mRows, mCols);
-  RegionRequirement req(region, READ_ONLY, EXCLUSIVE, region);
+  RegionRequirement req(region, LEGION_READ_ONLY, LEGION_EXCLUSIVE, region);
   req.add_field(FIELDID_V);
  
   InlineLauncher launcher(req);
   PhysicalRegion region = runtime->map_region(ctx, launcher);
   region.wait_until_valid();
  
-  PtrMatrix pMat = get_raw_pointer(region, 0, mRows, colIdx, colIdx+mCols);
+  PtrMatrix pMat = get_raw_pointer<LEGION_READ_WRITE>(region, 0, mRows, colIdx, colIdx+mCols);
   for (int j=0; j<mCols; j++)
     for (int i=0; i<mRows; i++)
       temp(i, j) = pMat(i, j);
@@ -194,18 +193,18 @@ Matrix LMatrix::to_matrix(Context ctx, HighLevelRuntime *runtime) {
 }
   
 Matrix LMatrix::to_matrix
-(int col0, int col1, Context ctx, HighLevelRuntime *runtime) {
+(int col0, int col1, Context ctx, Runtime *runtime) {
   assert(col0>=0);
   assert(col1<=mCols);
   Matrix temp(mRows, col1-col0);
-  RegionRequirement req(region, READ_ONLY, EXCLUSIVE, region);
+  RegionRequirement req(region, LEGION_READ_ONLY, LEGION_EXCLUSIVE, region);
   req.add_field(FIELDID_V);
  
   InlineLauncher launcher(req);
   PhysicalRegion region = runtime->map_region(ctx, launcher);
   region.wait_until_valid();
  
-  PtrMatrix pMat = get_raw_pointer(region, 0, mRows, col0, col1);
+  PtrMatrix pMat = get_raw_pointer<LEGION_READ_WRITE>(region, 0, mRows, col0, col1);
   for (int j=0; j<temp.cols(); j++)
     for (int i=0; i<temp.rows(); i++)
       temp(i, j) = pMat(i, j);
@@ -215,18 +214,18 @@ Matrix LMatrix::to_matrix
   
 Matrix LMatrix::to_matrix
 (int rlo, int rhi, int clo, int chi,
- Context ctx, HighLevelRuntime *runtime) {
+ Context ctx, Runtime *runtime) {
   assert(rlo>=0&&clo>=0);
   assert(rhi<=mRows&&chi<=mCols);
   Matrix temp(rhi-rlo, chi-clo);
-  RegionRequirement req(region, READ_ONLY, EXCLUSIVE, region);
+  RegionRequirement req(region, LEGION_READ_ONLY, LEGION_EXCLUSIVE, region);
   req.add_field(FIELDID_V);
  
   InlineLauncher launcher(req);
   PhysicalRegion region = runtime->map_region(ctx, launcher);
   region.wait_until_valid();
  
-  PtrMatrix pMat = get_raw_pointer(region, rlo, rhi, clo, chi);
+  PtrMatrix pMat = get_raw_pointer<LEGION_READ_WRITE>(region, rlo, rhi, clo, chi);
   for (int j=0; j<temp.cols(); j++)
     for (int i=0; i<temp.rows(); i++)
       temp(i, j) = pMat(i, j);
@@ -238,14 +237,14 @@ Matrix LMatrix::to_matrix
 /*
 void LMatrix::init_data
 (int nProc_, const Matrix& mat,
- Context ctx, HighLevelRuntime *runtime, bool wait) {
+ Context ctx, Runtime *runtime, bool wait) {
   assert(mCols==mat.cols());
   init_data(nProc_, 0, mCols, mat, ctx, runtime, wait);
 }
 
 void LMatrix::init_data
 (int nProc_, int col0, int col1, const Matrix& mat,
- Context ctx, HighLevelRuntime *runtime, bool wait) {
+ Context ctx, Runtime *runtime, bool wait) {
   // assuming the region has been created
   this->nProc = nProc_;  
   ArgumentMap seeds = MapSeed(nProc, mat);
@@ -259,7 +258,7 @@ void LMatrix::init_data
   assert(false);
   InitMatrixTask::TaskArgs args;// = {mRows/nProc, mat.cols(), col0, col1};
   InitMatrixTask launcher(dom, TaskArgument(&args, sizeof(args)), seeds);
-  RegionRequirement req(lp, 0, WRITE_DISCARD, EXCLUSIVE, region);
+  RegionRequirement req(lp, 0, LEGION_WRITE_DISCARD, LEGION_EXCLUSIVE, region);
   req.add_field(FIELDID_V);
   launcher.add_region_requirement(req);
   FutureMap fm = runtime->execute_index_space(ctx, launcher);
@@ -273,7 +272,7 @@ void LMatrix::init_data
 */
 void LMatrix::init_dense_blocks
 (const Matrix& U, const Matrix& V, const Vector& D,
- Context ctx, HighLevelRuntime *runtime, bool wait) {
+ Context ctx, Runtime *runtime, bool wait) {
   assert(U.num_partition()%nPart==0);
   assert(V.num_partition()%nPart==0);
   assert(D.num_partition()%nPart==0);
@@ -285,7 +284,7 @@ void LMatrix::init_dense_blocks
   DenseBlockTask::TaskArgs args = {rblock, rank, D.offset()};
   TaskArgument tArg(&args, sizeof(args));
   DenseBlockTask launcher(colDom, tArg, seeds, this->nPart);
-  RegionRequirement req(lpart, 0, WRITE_DISCARD, EXCLUSIVE, region);
+  RegionRequirement req(lpart, 0, LEGION_WRITE_DISCARD, LEGION_EXCLUSIVE, region);
   req.add_field(FIELDID_V);
   launcher.add_region_requirement(req);
   FutureMap fm = runtime->execute_index_space(ctx, launcher);
@@ -299,7 +298,7 @@ void LMatrix::init_dense_blocks
 /*
 void LMatrix::init_dense_blocks
 (int nProc_, int nblk, const Matrix& U, const Matrix& V, const Vector& D,
- Context ctx, HighLevelRuntime *runtime, bool wait) {
+ Context ctx, Runtime *runtime, bool wait) {
   
   this->nProc = nProc_;
   ArgumentMap seeds = MapSeed(nProc, U, V, D);
@@ -313,7 +312,7 @@ void LMatrix::init_dense_blocks
   assert(false);
   DenseBlockTask::TaskArgs args;// = {mRows/nProc, mCols, U.cols(), nblk/nProc};
   DenseBlockTask launcher(dom, TaskArgument(&args, sizeof(args)), seeds);
-  RegionRequirement req(lp, 0, WRITE_DISCARD, EXCLUSIVE, region);
+  RegionRequirement req(lp, 0, LEGION_WRITE_DISCARD, LEGION_EXCLUSIVE, region);
   req.add_field(FIELDID_V);
   launcher.add_region_requirement(req);
   FutureMap fm = runtime->execute_index_space(ctx, launcher);
@@ -335,7 +334,7 @@ ArgumentMap LMatrix::MapSeed(const Matrix& matrix) {
     for (int j = 0; j < blk; j++) {
       vec.push_back( matrix.rand_seed(i*blk+j) );
     }
-    argMap.set_point(DomainPoint::from_point<1>(Arrays::Point<1>(i)),
+    argMap.set_point(DomainPoint(Point<1>(i)),
 		     TaskArgument(&vec[0],sizeof(long)*(blk+1)));
   }
   return argMap;
@@ -354,7 +353,7 @@ ArgumentMap LMatrix::MapSeed
       vec.push_back(V.rand_seed(i*blk+j));
       vec.push_back(D.rand_seed(i*blk+j));
     }
-    argMap.set_point(DomainPoint::from_point<1>(Arrays::Point<1>(i)),
+    argMap.set_point(DomainPoint(Point<1>(i)),
 		     TaskArgument(&vec[0],sizeof(long)*(3*blk+1)));
   }
   return argMap;
@@ -365,7 +364,7 @@ ArgumentMap LMatrix::MapSeed(int nPart, const Matrix& matrix) {
   ArgumentMap argMap;
   for (int i = 0; i < nPart; i++) {
     long s = matrix.rand_seed(i);
-    argMap.set_point(DomainPoint::from_point<1>(Arrays::Point<1>(i)),
+    argMap.set_point(DomainPoint(Point<1>(i)),
 		     TaskArgument(&s,sizeof(s)));
   }
   return argMap;
@@ -375,45 +374,45 @@ ArgumentMap LMatrix::MapSeed(int nPart, const Matrix& U, const Matrix& V, const 
   ArgumentMap argMap;
   for (int i = 0; i < nPart; i++) {
     ThreeSeeds  threeSeeds = {U.rand_seed(i), V.rand_seed(i), D.rand_seed(i)};
-    argMap.set_point(DomainPoint::from_point<1>(Arrays::Point<1>(i)),
+    argMap.set_point(DomainPoint(Point<1>(i)),
 		     TaskArgument(&threeSeeds,sizeof(threeSeeds)));
   }
   return argMap;
 }
 */
 IndexPartition LMatrix::UniformRowPartition
-(Context ctx, HighLevelRuntime *runtime) {
+(Context ctx, Runtime *runtime) {
 
-  Arrays::Rect<1> bounds(Arrays::Point<1>(0),Arrays::Point<1>(nPart-1));
-  Domain  domain = Domain::from_rect<1>(bounds);
+  Rect<1> bounds(Point<1>(0),Point<1>(nPart-1));
+  IndexSpace color_space = runtime->create_index_space(ctx, bounds);
 
   int size = rblock;
-  DomainColoring coloring;
+  std::map<DomainPoint,Domain> coloring;
   for (int i = 0; i < nPart; i++) {
-    Arrays::Point<2> lo = Arrays::make_point(  i   *size,   0);
-    Arrays::Point<2> hi = Arrays::make_point( (i+1)*size-1, mCols-1);
-    Arrays::Rect<2> subrect(lo, hi);
-    coloring[i] = Domain::from_rect<2>(subrect);
+    Point<2> lo(  i   *size,   0);
+    Point<2> hi( (i+1)*size-1, mCols-1);
+    Rect<2> subrect(lo, hi);
+    coloring[i] = Domain(subrect);
   }
-  return runtime->create_index_partition(ctx, ispace, domain, coloring, true);
+  return runtime->create_partition_by_domain(ctx, ispace, coloring, color_space);
 }
 
 IndexPartition LMatrix::UniformRowPartition
 (int num_subregions, int col0, int col1,
- Context ctx, HighLevelRuntime *runtime) {
+ Context ctx, Runtime *runtime) {
 
-  Arrays::Rect<1> bounds(Arrays::Point<1>(0),Arrays::Point<1>(num_subregions-1));
-  Domain  domain = Domain::from_rect<1>(bounds);
+  Rect<1> bounds(Point<1>(0),Point<1>(num_subregions-1));
+  IndexSpace color_space = runtime->create_index_space(ctx, bounds);
 
   int size = mRows / num_subregions;
-  DomainColoring coloring;
+  std::map<DomainPoint,Domain> coloring;
   for (int i = 0; i < num_subregions; i++) {
-    Arrays::Point<2> lo = Arrays::make_point(  i   *size,   col0);
-    Arrays::Point<2> hi = Arrays::make_point( (i+1)*size-1, col1-1);
-    Arrays::Rect<2> subrect(lo, hi);
-    coloring[i] = Domain::from_rect<2>(subrect);
+    Point<2> lo(  i   *size,   col0);
+    Point<2> hi( (i+1)*size-1, col1-1);
+    Rect<2> subrect(lo, hi);
+    coloring[i] = Domain(subrect);
   }
-  return runtime->create_index_partition(ctx, ispace, domain, coloring, true);
+  return runtime->create_partition_by_domain(ctx, ispace, coloring, color_space);
 }
 
 Vector LMatrix::to_vector() {
@@ -422,7 +421,7 @@ Vector LMatrix::to_vector() {
 }
 
 void LMatrix::partition
-(int level, Context ctx, HighLevelRuntime *runtime) {
+(int level, Context ctx, Runtime *runtime) {
   // if level=1, the number of partition is 2 for V0 and V1
   this->nPart  = pow(2, level);
   this->rblock = mRows/nPart;
@@ -433,7 +432,7 @@ void LMatrix::partition
 }
 /*
 LMatrix LMatrix::partition
-(int level, int col0, int col1, Context ctx, HighLevelRuntime *runtime) {
+(int level, int col0, int col1, Context ctx, Runtime *runtime) {
   // if level=1, the number of partition is 2 for V0 and V1
   int num_subregions = pow(2, level);
   assert(mRows%num_subregions==0);
@@ -448,7 +447,7 @@ int LMatrix::small_block_parts() const {return smallblk;}
 // solve A x = b for each partition
 //  b will be overwritten by x
 void LMatrix::solve
-(LMatrix& b, LMatrix& V, Context ctx, HighLevelRuntime* runtime, bool wait) {
+(LMatrix& b, LMatrix& V, Context ctx, Runtime* runtime, bool wait) {
 
   // check if the matrix is square
   //assert( this->rblock == this->cols() );
@@ -474,9 +473,9 @@ void LMatrix::solve
   LeafSolveTask::TaskArgs args = {this->rblock, b.cols(), V.cols(), V.small_block_parts()};
   TaskArgument tArg(&args, sizeof(args));
   LeafSolveTask launcher(domain, tArg, ArgumentMap(), nPart);
-  RegionRequirement AReq(APart, 0, READ_ONLY,  EXCLUSIVE, ARegion);
-  RegionRequirement bReq(bPart, 0, READ_WRITE, EXCLUSIVE, bRegion);
-  RegionRequirement VReq(VPart, 0, READ_ONLY,  EXCLUSIVE, VRegion);
+  RegionRequirement AReq(APart, 0, LEGION_READ_ONLY,  LEGION_EXCLUSIVE, ARegion);
+  RegionRequirement bReq(bPart, 0, LEGION_READ_WRITE, LEGION_EXCLUSIVE, bRegion);
+  RegionRequirement VReq(VPart, 0, LEGION_READ_ONLY,  LEGION_EXCLUSIVE, VRegion);
   AReq.add_field(FIELDID_V);
   bReq.add_field(FIELDID_V);
   VReq.add_field(FIELDID_V);
@@ -494,25 +493,25 @@ void LMatrix::solve
 }
 
 void LMatrix::two_level_partition
-(Context ctx, HighLevelRuntime *runtime) {
+(Context ctx, Runtime *runtime) {
   
   // partition each subregion into two pieces
   // for V0Tu0 and V1Tu1
   for (int i=0; i<nPart; i++) {
     LogicalRegion lr = runtime->get_logical_subregion_by_color(ctx, lpart, i);
 
-    Arrays::Rect<1> bounds(Arrays::Point<1>(0),Arrays::Point<1>(1));
-    Domain  domain = Domain::from_rect<1>(bounds);
+    Rect<1> bounds(Point<1>(0),Point<1>(1));
+    IndexSpace color_space = runtime->create_index_space(ctx, bounds);
     int size = rblock/2;
-    DomainColoring coloring;
+    std::map<DomainPoint,Domain> coloring;
     for (int j = 0; j < 2; j++) {
-      Arrays::Point<2> lo = Arrays::make_point( i*rblock+j*size,   0);
-      Arrays::Point<2> hi = Arrays::make_point( i*rblock+(j+1)*size-1, mCols-1);
-      Arrays::Rect<2> subrect(lo, hi);
-      coloring[j] = Domain::from_rect<2>(subrect);
+      Point<2> lo( i*rblock+j*size,   0);
+      Point<2> hi( i*rblock+(j+1)*size-1, mCols-1);
+      Rect<2> subrect(lo, hi);
+      coloring[j] = Domain(subrect);
     }
     IndexSpace is = lr.get_index_space();
-    IndexPartition ip = runtime->create_index_partition(ctx, is, domain, coloring, true,0);
+    IndexPartition ip = runtime->create_partition_by_domain(ctx, is, coloring, color_space, true, LEGION_COMPUTE_KIND, 0);
     LogicalPartition lp = runtime->get_logical_partition(ctx, lr, ip);
     (void)lp;
   }
@@ -533,7 +532,7 @@ void LMatrix::two_level_partition
 // Note VTd needs to be reordered,
 //  as shown in the above picture.
 void LMatrix::node_solve
-(LMatrix& b, Context ctx, HighLevelRuntime* runtime, bool wait) {
+(LMatrix& b, Context ctx, Runtime* runtime, bool wait) {
 
   //--------------------------------------------------------------
   // node solve is always launched at the first level of partition
@@ -563,10 +562,10 @@ void LMatrix::node_solve
   NodeSolveTask::TaskArgs args = {rowBlk, mCols, b.cols()};
   NodeSolveTask launcher(domain, TaskArgument(&args, sizeof(args)),
 			 ArgumentMap(), domain.get_volume());
-  //RegionRequirement AReq(APart, 0, READ_ONLY,  EXCLUSIVE, ARegion);
+  //RegionRequirement AReq(APart, 0, LEGION_READ_ONLY,  LEGION_EXCLUSIVE, ARegion);
   // bug here: have to use stronger previlige
-  RegionRequirement AReq(APart, 0, READ_WRITE,  EXCLUSIVE, ARegion);
-  RegionRequirement bReq(bPart, 0, READ_WRITE, EXCLUSIVE, bRegion);
+  RegionRequirement AReq(APart, 0, LEGION_READ_WRITE,  LEGION_EXCLUSIVE, ARegion);
+  RegionRequirement bReq(bPart, 0, LEGION_READ_WRITE, LEGION_EXCLUSIVE, bRegion);
   AReq.add_field(FIELDID_V);
   bReq.add_field(FIELDID_V);
   launcher.add_region_requirement(AReq);
@@ -584,7 +583,7 @@ void LMatrix::node_solve
 void LMatrix::node_solve
 (LMatrix& VTu0, LMatrix &VTu1, LMatrix& VTd0, LMatrix &VTd1,
  PhaseBarrier pb_wait, PhaseBarrier pb_ready,
- Context ctx, HighLevelRuntime* runtime, bool wait) {
+ Context ctx, Runtime* runtime, bool wait) {
 
   LogicalRegion VTu0_rg = VTu0.logical_region();
   LogicalRegion VTu1_rg = VTu1.logical_region();
@@ -618,11 +617,11 @@ void LMatrix::node_solve
   int nRhs = VTd0.cols();
   NodeSolveRegionTask::TaskArgs args = {rank0, rank1, nRhs};
   NodeSolveRegionTask launcher(TaskArgument(&args, sizeof(args)));
-  //RegionRequirement AReq(ARegion, 0, READ_ONLY,  EXCLUSIVE, ARegion);
-  RegionRequirement VTu0_rq(VTu0_rg, READ_ONLY, EXCLUSIVE, VTu0_rg);
-  RegionRequirement VTu1_rq(VTu1_rg, READ_ONLY, EXCLUSIVE, VTu1_rg);
-  RegionRequirement VTd0_rq(VTd0_rg, READ_WRITE, EXCLUSIVE, VTd0_rg);
-  RegionRequirement VTd1_rq(VTd1_rg, READ_WRITE, EXCLUSIVE, VTd1_rg);
+  //RegionRequirement AReq(ARegion, 0, LEGION_READ_ONLY,  LEGION_EXCLUSIVE, ARegion);
+  RegionRequirement VTu0_rq(VTu0_rg, LEGION_READ_ONLY, LEGION_EXCLUSIVE, VTu0_rg);
+  RegionRequirement VTu1_rq(VTu1_rg, LEGION_READ_ONLY, LEGION_EXCLUSIVE, VTu1_rg);
+  RegionRequirement VTd0_rq(VTd0_rg, LEGION_READ_WRITE, LEGION_EXCLUSIVE, VTd0_rg);
+  RegionRequirement VTd1_rq(VTd1_rg, LEGION_READ_WRITE, LEGION_EXCLUSIVE, VTd1_rg);
   VTu0_rq.add_field(FIELDID_V);
   VTu1_rq.add_field(FIELDID_V);
   VTd0_rq.add_field(FIELDID_V);
@@ -639,7 +638,7 @@ void LMatrix::node_solve
 /*
 template <typename SolveTask>
 void LMatrix::solve
-(LMatrix& b, Context ctx, HighLevelRuntime *runtime, bool wait) {
+(LMatrix& b, Context ctx, Runtime *runtime, bool wait) {
 
   // A and b have the same number of partition
   assert( this->num_partition() == b.num_partition() );
@@ -652,8 +651,8 @@ void LMatrix::solve
 
   Domain domain = this->color_domain();
   SolveTask launcher(domain, TaskArgument(), ArgumentMap());
-  RegionRequirement AReq(APart, 0, READ_ONLY,  EXCLUSIVE, ARegion);
-  RegionRequirement bReq(bPart, 0, READ_WRITE, EXCLUSIVE, bRegion);
+  RegionRequirement AReq(APart, 0, LEGION_READ_ONLY,  LEGION_EXCLUSIVE, ARegion);
+  RegionRequirement bReq(bPart, 0, LEGION_READ_WRITE, LEGION_EXCLUSIVE, bRegion);
   AReq.add_field(FIELDID_V);
   bReq.add_field(FIELDID_V);
   launcher.add_region_requirement(AReq);
@@ -670,7 +669,7 @@ void LMatrix::solve
 void LMatrix::add
 (double alpha, const LMatrix& A,
  double beta, const LMatrix& B, LMatrix& C,
- Context ctx, HighLevelRuntime *runtime, bool wait) {
+ Context ctx, Runtime *runtime, bool wait) {
 
   // A, B and C have the same size
   assert( A.rows() == B.rows() && A.rows() == C.rows() );
@@ -692,9 +691,9 @@ void LMatrix::add
   TaskArgument tArgs(&args, sizeof(args));
   Domain domain = A.color_domain();
   AddMatrixTask launcher(domain, tArgs, ArgumentMap());  
-  RegionRequirement AReq(APart, 0, READ_ONLY, EXCLUSIVE, AReg);
-  RegionRequirement BReq(BPart, 0, READ_ONLY, EXCLUSIVE, BReg);
-  RegionRequirement CReq(CPart, 0, WRITE_DISCARD, EXCLUSIVE, CReg);
+  RegionRequirement AReq(APart, 0, LEGION_READ_ONLY, LEGION_EXCLUSIVE, AReg);
+  RegionRequirement BReq(BPart, 0, LEGION_READ_ONLY, LEGION_EXCLUSIVE, BReg);
+  RegionRequirement CReq(CPart, 0, LEGION_WRITE_DISCARD, LEGION_EXCLUSIVE, CReg);
   AReq.add_field(FIELDID_V);
   BReq.add_field(FIELDID_V);
   CReq.add_field(FIELDID_V);
@@ -715,7 +714,7 @@ void LMatrix::gemmRed // static method
 (char transa, char transb, double alpha,
  const LMatrix& A, const LMatrix& B,
  double beta, LMatrix& C,
- Context ctx, HighLevelRuntime *runtime, bool wait) {
+ Context ctx, Runtime *runtime, bool wait) {
 
   assert( fabs(beta - 0.0) < 1e-10);
   C.scale(beta, ctx, runtime);
@@ -742,9 +741,9 @@ void LMatrix::gemmRed // static method
   Domain domain = A.color_domain();
   GemmRedTask launcher(domain, tArgs, ArgumentMap(), A.nPart);
   
-  RegionRequirement AReq(APart, 0,           READ_ONLY, EXCLUSIVE, AReg);
-  RegionRequirement BReq(BPart, 0,           READ_ONLY, EXCLUSIVE, BReg);
-  RegionRequirement CReq(CPart, CONTRACTION, REDOP_ADD, EXCLUSIVE, CReg);
+  RegionRequirement AReq(APart, 0,           LEGION_READ_ONLY, LEGION_EXCLUSIVE, AReg);
+  RegionRequirement BReq(BPart, 0,           LEGION_READ_ONLY, LEGION_EXCLUSIVE, BReg);
+  RegionRequirement CReq(CPart, CONTRACTION, REDOP_ADD, LEGION_EXCLUSIVE, CReg);
   AReq.add_field(FIELDID_V);
   BReq.add_field(FIELDID_V);
   CReq.add_field(FIELDID_V);
@@ -765,7 +764,7 @@ void LMatrix::gemm // static method
 (char transa, char transb,
  double alpha, const LMatrix& A, const LMatrix& B,
  double beta, LMatrix& C,
- Context ctx, HighLevelRuntime *runtime, bool wait) {
+ Context ctx, Runtime *runtime, bool wait) {
   // skip scaling C matrix
   assert( fabs(beta - 0.0) < 1e-10);
   GemmTask::TaskArgs args = {transa, transb, alpha, beta,
@@ -774,13 +773,13 @@ void LMatrix::gemm // static method
 			     A.cols(), B.cols(), C.cols()};
   GemmTask launcher(TaskArgument(&args, sizeof(args)));
   launcher.add_region_requirement
-    (RegionRequirement(A.logical_region(),READ_ONLY,EXCLUSIVE,A.logical_region())
+    (RegionRequirement(A.logical_region(),LEGION_READ_ONLY,LEGION_EXCLUSIVE,A.logical_region())
      .add_field(FIELDID_V));
   launcher.add_region_requirement
-    (RegionRequirement(B.logical_region(),READ_ONLY,EXCLUSIVE,B.logical_region())
+    (RegionRequirement(B.logical_region(),LEGION_READ_ONLY,LEGION_EXCLUSIVE,B.logical_region())
      .add_field(FIELDID_V));
   launcher.add_region_requirement
-    (RegionRequirement(C.logical_region(),READ_WRITE,EXCLUSIVE,C.logical_region())
+    (RegionRequirement(C.logical_region(),LEGION_READ_WRITE,LEGION_EXCLUSIVE,C.logical_region())
      .add_field(FIELDID_V));
   runtime->execute_task(ctx, launcher);
 }
@@ -789,7 +788,7 @@ void LMatrix::gemm_inplace // static method
 (char transa, char transb, double alpha,
  const LMatrix& A, const LMatrix& B,
  double beta, LMatrix& C,
- Context ctx, HighLevelRuntime *runtime, bool wait) {
+ Context ctx, Runtime *runtime, bool wait) {
   // skip scaling C matrix
   assert( fabs(beta - 1.0) < 1e-10);
   GemmInplaceTask::TaskArgs args = {transa, transb, alpha, beta,
@@ -798,13 +797,13 @@ void LMatrix::gemm_inplace // static method
 				    A.column_begin()};
   GemmInplaceTask launcher(TaskArgument(&args, sizeof(args)));
   launcher.add_region_requirement
-    (RegionRequirement(A.logical_region(),READ_WRITE,EXCLUSIVE,A.logical_region())
+    (RegionRequirement(A.logical_region(),LEGION_READ_WRITE,LEGION_EXCLUSIVE,A.logical_region())
      .add_field(FIELDID_V));
   launcher.add_region_requirement
-    (RegionRequirement(B.logical_region(),READ_ONLY,EXCLUSIVE,B.logical_region())
+    (RegionRequirement(B.logical_region(),LEGION_READ_ONLY,LEGION_EXCLUSIVE,B.logical_region())
      .add_field(FIELDID_V));
   //launcher.add_region_requirement
-  //  (RegionRequirement(C.logical_region(),READ_WRITE,EXCLUSIVE,C.logical_region())
+  //  (RegionRequirement(C.logical_region(),LEGION_READ_WRITE,LEGION_EXCLUSIVE,C.logical_region())
   //    .add_field(FIELDID_V));
   runtime->execute_task(ctx, launcher);
 }
@@ -816,7 +815,7 @@ void LMatrix::gemmBro // static method
 (char transa, char transb, double alpha,
  const LMatrix& A, const LMatrix& B,
  double beta, LMatrix& C,
- Context ctx, HighLevelRuntime *runtime, bool wait) {
+ Context ctx, Runtime *runtime, bool wait) {
 
   assert( fabs(beta - 1.0) < 1e-10);
   //C.scale(beta, ctx, runtime);
@@ -844,11 +843,11 @@ void LMatrix::gemmBro // static method
   Domain domain = A.color_domain();
   GemmBroTask launcher(domain, tArgs, ArgumentMap(), A.nPart);
   
-  //RegionRequirement AReq(AP, 0,           READ_ONLY,  EXCLUSIVE, AReg);
-  RegionRequirement AReq(AP, 0,           READ_WRITE,  EXCLUSIVE, AReg);
-  RegionRequirement BReq(BP, CONTRACTION, READ_ONLY,  EXCLUSIVE, BReg);
-  //RegionRequirement BReq(BP, CONTRACTION, READ_WRITE,  EXCLUSIVE, BReg);
-  RegionRequirement CReq(CP, 0,           READ_WRITE, EXCLUSIVE, CReg);
+  //RegionRequirement AReq(AP, 0,           LEGION_READ_ONLY,  LEGION_EXCLUSIVE, AReg);
+  RegionRequirement AReq(AP, 0,           LEGION_READ_WRITE,  LEGION_EXCLUSIVE, AReg);
+  RegionRequirement BReq(BP, CONTRACTION, LEGION_READ_ONLY,  LEGION_EXCLUSIVE, BReg);
+  //RegionRequirement BReq(BP, CONTRACTION, LEGION_READ_WRITE,  LEGION_EXCLUSIVE, BReg);
+  RegionRequirement CReq(CP, 0,           LEGION_READ_WRITE, LEGION_EXCLUSIVE, CReg);
   AReq.add_field(FIELDID_V);
   BReq.add_field(FIELDID_V);
   CReq.add_field(FIELDID_V);
@@ -867,13 +866,13 @@ void LMatrix::gemmBro // static method
   
 void LMatrix::display
 (const std::string& name,
- Context ctx, HighLevelRuntime *runtime, bool wait) {
+ Context ctx, Runtime *runtime, bool wait) {
 
-  Domain dom = runtime->get_index_space_domain(ctx, region.get_index_space());
-  assert(colIdx+mCols<=dom.get_rect<2>().dim_size(1));
+  const Rect<2> rect = runtime->get_index_space_domain(ctx, region.get_index_space());
+  assert(colIdx+mCols<=(rect.hi[1] - rect.lo[1] + 1));
   DisplayMatrixTask::TaskArgs args(name, mRows, mCols, colIdx);
   DisplayMatrixTask launcher(TaskArgument(&args, sizeof(args)));
-  RegionRequirement req(region, READ_ONLY, EXCLUSIVE, region);
+  RegionRequirement req(region, LEGION_READ_ONLY, LEGION_EXCLUSIVE, region);
   req.add_field(FIELDID_V);
   launcher.add_region_requirement(req);
   Future f = runtime->execute_task(ctx, launcher);
@@ -884,7 +883,7 @@ void LMatrix::display
   }
 }
 
-void LMatrix::clear(Context ctx, HighLevelRuntime* runtime) {
+void LMatrix::clear(Context ctx, Runtime* runtime) {
   runtime->destroy_logical_region(ctx, region);
   runtime->destroy_field_space(ctx, fspace);
   runtime->destroy_index_space(ctx, ispace);

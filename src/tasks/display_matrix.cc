@@ -20,14 +20,11 @@ DisplayMatrixTask::DisplayMatrixTask
 
 void DisplayMatrixTask::register_tasks(void)
 {
-  TASKID = HighLevelRuntime::register_legion_task
-    <DisplayMatrixTask::cpu_task>(AUTO_GENERATE_ID,
-				  Processor::LOC_PROC, 
-				  true,
-				  false,
-				  AUTO_GENERATE_ID,
-				  TaskConfigOptions(true/*leaf*/),
-				  "Display_Matrix");
+  TASKID = Runtime::generate_static_task_id();
+  TaskVariantRegistrar registrar(TASKID, "Display_Matrix");
+  registrar.add_constraint(ProcessorConstraint(Processor::LOC_PROC));
+  registrar.set_leaf(true);
+  Runtime::preregister_task_variant<DisplayMatrixTask::cpu_task>(registrar, "cpu");
 
 #ifdef SHOW_REGISTER_TASKS
   printf("Register task %d : Display_Matrix\n", TASKID);
@@ -36,7 +33,7 @@ void DisplayMatrixTask::register_tasks(void)
 
 void DisplayMatrixTask::cpu_task
 (const Task *task, const std::vector<PhysicalRegion> &regions,
- Context ctx, HighLevelRuntime *runtime) {
+ Context ctx, Runtime *runtime) {
   
   assert(regions.size() == 1);
   assert(task->regions.size() == 1);
@@ -48,7 +45,7 @@ void DisplayMatrixTask::cpu_task
   const int   cols = args.cols;
   const int   colIdx = args.colIdx;
   
-  PtrMatrix A = get_raw_pointer(regions[0], 0, rows, colIdx, colIdx+cols);
+  PtrMatrix A = get_raw_pointer<LEGION_READ_WRITE>(regions[0], 0, rows, colIdx, colIdx+cols);
   A.display(name);
 }
 

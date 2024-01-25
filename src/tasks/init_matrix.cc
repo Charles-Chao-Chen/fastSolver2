@@ -21,14 +21,11 @@ InitMatrixTask::InitMatrixTask(Domain domain,
 
 void InitMatrixTask::register_tasks(void)
 {
-  TASKID = HighLevelRuntime::register_legion_task
-    <InitMatrixTask::cpu_task>(AUTO_GENERATE_ID,
-			       Processor::LOC_PROC, 
-			       false,
-			       true,
-			       AUTO_GENERATE_ID,
-			       TaskConfigOptions(true/*leaf*/),
-			       "Init_Matrix");
+  TASKID = Runtime::generate_static_task_id();
+  TaskVariantRegistrar registrar(TASKID, "Init_Matrix");
+  registrar.add_constraint(ProcessorConstraint(Processor::LOC_PROC));
+  registrar.set_leaf(true);
+  Runtime::preregister_task_variant<InitMatrixTask::cpu_task>(registrar, "cpu");
 
 #ifdef SHOW_REGISTER_TASKS
   printf("Register task %d : Init_Matrix\n", TASKID);
@@ -37,14 +34,14 @@ void InitMatrixTask::register_tasks(void)
 
 void InitMatrixTask::cpu_task(const Task *task,
 			      const std::vector<PhysicalRegion> &regions,
-			      Context ctx, HighLevelRuntime *runtime) {
+			      Context ctx, Runtime *runtime) {
   assert(regions.size() == 1);
   assert(task->regions.size() == 1);
   assert(task->arglen == sizeof(TaskArgs));
   //assert(task->local_arglen == sizeof(long));
   log_solver_tasks.print("Inside init tasks.");
 
-  Point<1> p = task->index_point.get_point<1>();
+  Point<1> p(task->index_point);
   //printf("point = %d\n", p[0]);
 
   const long nPart = *((const long*)task->local_args);
@@ -66,7 +63,7 @@ void InitMatrixTask::cpu_task(const Task *task,
     //printf(" seed = %lu \n", seed);
     int clo   = blockSize.clo;
     while (clo+cblk <= chi) {
-      PtrMatrix A = get_raw_pointer(regions[0], rlo+i*blksmall, rlo+(i+1)*blksmall, clo, clo+cblk);
+      PtrMatrix A = get_raw_pointer<LEGION_READ_WRITE>(regions[0], rlo+i*blksmall, rlo+(i+1)*blksmall, clo, clo+cblk);
       A.rand(seed);
       //A.display("sub-mat");
       //std::cout<<"LD:"<<A.LD()<<std::endl;

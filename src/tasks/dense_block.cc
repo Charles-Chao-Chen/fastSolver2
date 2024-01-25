@@ -21,14 +21,11 @@ DenseBlockTask::DenseBlockTask(Domain domain,
 
 void DenseBlockTask::register_tasks(void)
 {
-  TASKID = HighLevelRuntime::register_legion_task
-    <DenseBlockTask::cpu_task>(AUTO_GENERATE_ID,
-			       Processor::LOC_PROC, 
-			       false,
-			       true,
-			       AUTO_GENERATE_ID,
-			       TaskConfigOptions(true/*leaf*/),
-			       "Dense_Block");
+  TASKID = Runtime::generate_static_task_id();
+  TaskVariantRegistrar registrar(TASKID, "Dense_Block");
+  registrar.add_constraint(ProcessorConstraint(Processor::LOC_PROC));
+  registrar.set_leaf(true);
+  Runtime::preregister_task_variant<DenseBlockTask::cpu_task>(registrar, "cpu");
 
 #ifdef SHOW_REGISTER_TASKS
   printf("Register task %d : Dense_Block\n", TASKID);
@@ -37,7 +34,7 @@ void DenseBlockTask::register_tasks(void)
 
 void DenseBlockTask::cpu_task(const Task *task,
 			      const std::vector<PhysicalRegion> &regions,
-			      Context ctx, HighLevelRuntime *runtime) {
+			      Context ctx, Runtime *runtime) {
 
   assert(regions.size() == 1);
   assert(task->regions.size() == 1);
@@ -45,7 +42,7 @@ void DenseBlockTask::cpu_task(const Task *task,
   //  assert(task->local_arglen == sizeof(ThreeSeeds));
   log_solver_tasks.print("Inside init dense block tasks.");
   
-  Point<1> p = task->index_point.get_point<1>();
+  Point<1> p(task->index_point);
   //printf("point = %d\n", p[0]);
 
   //const ThreeSeeds seeds = *((const ThreeSeeds*)task->local_args);
@@ -64,7 +61,7 @@ void DenseBlockTask::cpu_task(const Task *task,
   const long nPart = *((const long*)task->local_args);
   int rblk = nrow / nPart;
   for (int i=0; i<nPart; i++) {
-    PtrMatrix K = get_raw_pointer(regions[0], rlo+i*rblk, rlo+(i+1)*rblk, 0, rblk);
+    PtrMatrix K = get_raw_pointer<LEGION_READ_WRITE>(regions[0], rlo+i*rblk, rlo+(i+1)*rblk, 0, rblk);
     // recover U, V and D
     PtrMatrix U(rblk, rank), V(rblk, rank), D(rblk, 1);
     const long uSeed = *((const long*)task->local_args + 1 + 3*i + 0);

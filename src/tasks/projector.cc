@@ -2,7 +2,7 @@
 
 const ProjectionID CONTRACTION = 1988;
 
-Contraction::Contraction(HighLevelRuntime *runtime)
+Contraction::Contraction(Runtime *runtime)
   : ProjectionFunctor(runtime) {
   //std::cout<<"Register projection functor with ID: "<<CONTRACTION<<std::endl;
 }

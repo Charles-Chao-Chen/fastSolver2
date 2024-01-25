@@ -1,4 +1,5 @@
 #include "utility.hpp"
+#include "tasks/reduce_add.hpp"
 
 bool is_power_of_two(int x) {
   return (x > 0) && !(x & (x-1));
@@ -7,67 +8,50 @@ bool is_power_of_two(int x) {
 double* region_pointer
 (const PhysicalRegion &region, int rlo, int rhi, int clo, int chi) {
   Rect<2> bounds, subrect;
-  bounds.lo.x[0] = rlo;
-  bounds.hi.x[0] = rhi-1;
-  bounds.lo.x[1] = clo;
-  bounds.hi.x[1] = chi-1;
-  ByteOffset offsets[2];
-  //double *base = region.get_field_accessor(FIELDID_V).template typeify<double>().template raw_rect_ptr<2>(bounds, subrect, offsets);
-  double *base = region.get_field_accessor(FIELDID_V).typeify<double>().raw_rect_ptr<2>(bounds, subrect, offsets);
-  assert(subrect == bounds);
-  assert(offsets[0].offset == sizeof(double));
-  assert(size_t(rhi-rlo) == offsets[1].offset/sizeof(double));
+  bounds.lo[0] = rlo;
+  bounds.hi[0] = rhi-1;
+  bounds.lo[1] = clo;
+  bounds.hi[1] = chi-1;
+  FieldAccessor<LEGION_READ_WRITE,double,2,coord_t,Realm::AffineAccessor<double,2,coord_t> > accessor(region, FIELDID_V);
+  size_t offset[2];
+  double *base = accessor.ptr(bounds, offset);
 #ifdef DEBUG_POINTERS
-  printf("ptr = %p (%d, %d)\n", base, offsets[0].offset, offsets[1].offset);
+  printf("ptr = %p (%d, %d)\n", base, offset[0]*sizeof(double), offset[1]*sizeof(double));
 #endif
   return base;
 }
 
+template<PrivilegeMode PRIVILEGE>
 PtrMatrix get_raw_pointer
-(const PhysicalRegion &region, int rlo, int rhi, int clo, int chi,
- bool wait) {
+(const PhysicalRegion &region, int rlo, int rhi, int clo, int chi) {
   Rect<2> bounds, subrect;
-  bounds.lo.x[0] = rlo;
-  bounds.hi.x[0] = rhi-1;
-  bounds.lo.x[1] = clo;
-  bounds.hi.x[1] = chi-1;
-  ByteOffset offsets[2];
-  //double *base = region.get_field_accessor(FIELDID_V).template typeify<double>().template raw_rect_ptr<2>(bounds, subrect, offsets);
-  double *base = region.get_field_accessor(FIELDID_V).typeify<double>().raw_rect_ptr<2>(bounds, subrect, offsets);
-#if 0
-  printf("ptr = %p (%d, %d)\n", base, offsets[0].offset, offsets[1].offset);
-#endif
-
-#if 0
-  if (wait) {
-    double *base = region.get_field_accessor(FIELDID_V).typeify<double>().raw_rect_ptr<2>(bounds, subrect, offsets);
-  }
-#endif
-
-  assert(base);
-  assert(subrect == bounds);
-  assert(offsets[0].offset == sizeof(double));
-  int ld = offsets[1].offset/sizeof(double);
+  bounds.lo[0] = rlo;
+  bounds.hi[0] = rhi-1;
+  bounds.lo[1] = clo;
+  bounds.hi[1] = chi-1;
+  FieldAccessor<PRIVILEGE,double,2,coord_t,Realm::AffineAccessor<double,2,coord_t> > accessor(region, FIELDID_V);
+  size_t offset[2];
+  double *base = const_cast<double *>(accessor.ptr(bounds, offset));
+  int ld = offset[1];
   assert(ld>=rhi-rlo);
   return PtrMatrix(rhi-rlo, chi-clo, ld, base);
 }
+template PtrMatrix get_raw_pointer<LEGION_READ_ONLY>(const PhysicalRegion &, int, int, int, int);
+template PtrMatrix get_raw_pointer<LEGION_READ_WRITE>(const PhysicalRegion &, int, int, int, int);
 
 PtrMatrix reduction_pointer
 (const PhysicalRegion &region, int rlo, int rhi, int clo, int chi) {
   Rect<2> bounds, subrect;
-  bounds.lo.x[0] = rlo;
-  bounds.hi.x[0] = rhi-1;
-  bounds.lo.x[1] = clo;
-  bounds.hi.x[1] = chi-1;
-  ByteOffset offsets[2];
-  //double *base = region.get_accessor().template typeify<double>().template raw_rect_ptr<2>(bounds, subrect, offsets);
-  double *base = region.get_accessor().typeify<double>().raw_rect_ptr<2>(bounds, subrect, offsets);
-  assert(subrect == bounds);
-  assert(offsets[0].offset == sizeof(double));
-  //assert(size_t(rhi-rlo) == offsets[1].offset/sizeof(double));
+  bounds.lo[0] = rlo;
+  bounds.hi[0] = rhi-1;
+  bounds.lo[1] = clo;
+  bounds.hi[1] = chi-1;
+  ReductionAccessor<Add,true,2,coord_t,Realm::AffineAccessor<double,2,coord_t> > accessor(region, FIELDID_V, REDOP_ADD);
+  size_t offset[2];
+  double *base = accessor.ptr(bounds, offset);
 #ifdef DEBUG_POINTERS
-  printf("ptr = %p (%d, %d)\n", base, offsets[0].offset, offsets[1].offset);
+  printf("ptr = %p (%d, %d)\n", base, offset[0]*sizeof(double), offset[1]*sizeof(double));
 #endif
-  int ld = offsets[1].offset/sizeof(double);
+  int ld = offset[1];
   return PtrMatrix(rhi-rlo, chi-clo, ld, base);
 }
